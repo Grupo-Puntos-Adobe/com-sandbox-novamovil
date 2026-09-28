@@ -1,3 +1,9 @@
+/*
+ * NovaMóvil header.
+ * Colours come from styles/colors.css (--header-*); each part keeps its
+ * responsive rules right below it. Breakpoint: 900px (mobile menu below).
+ */
+
 /* stylelint-disable no-descending-specificity */
 
 /* enable smooth height animation to intrinsic size for the mobile menu */
@@ -5,27 +11,26 @@
   interpolate-size: allow-keywords;
 }
 
-/* header colour tokens (NovaMóvil) */
-.header-wrapper {
-  --nav-bg-gradient: var(--gradient-brand);
-  --nav-text: var(--color-white);
-  --nav-text-muted: rgb(255 255 255 / 85%);
-  --nav-accent: #bfe8ff;
-  --nav-border: rgb(255 255 255 / 30%);
-  --nav-surface: rgb(17 24 39 / 14%);
-  --nav-surface-hover: rgb(17 24 39 / 24%);
+/* ==========================================================================
+   Wrapper
+   ========================================================================== */
 
+.header-wrapper {
   position: sticky;
   top: 0;
   z-index: 20;
-  color: var(--nav-text);
+  color: var(--header-text);
 }
 
-/* the gradient sits on the nav wrapper so it grows with the open mobile menu */
+/* the background sits on the nav wrapper so it grows with the open mobile menu */
 header .nav-wrapper {
-  background: var(--nav-bg-gradient);
-  box-shadow: 0 2px 12px rgb(17 24 39 / 18%);
+  background: var(--header-background);
+  box-shadow: 0 2px 12px var(--header-shadow);
 }
+
+/* ==========================================================================
+   Nav layout
+   ========================================================================== */
 
 header nav {
   box-sizing: border-box;
@@ -57,7 +62,28 @@ header nav a:any-link {
   text-decoration: none;
 }
 
-/* brand */
+header nav :is(a, button):focus-visible {
+  outline: 2px solid var(--header-text);
+  outline-offset: 2px;
+}
+
+@media (width >= 900px) {
+  header nav {
+    grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
+    gap: 0 2rem;
+    padding: 0 1.5rem;
+  }
+
+  header nav[aria-expanded='true'] {
+    height: var(--nav-height);
+    min-height: unset;
+  }
+}
+
+/* ==========================================================================
+   Brand: logo (image from the nav document or default icon) + wordmark
+   ========================================================================== */
+
 header nav .nav-brand {
   grid-area: brand;
   display: flex;
@@ -74,28 +100,55 @@ header nav .nav-brand a {
   white-space: nowrap;
 }
 
-header nav .nav-brand .icon,
-header nav .nav-brand picture,
-header nav .nav-brand img {
+/* authored image: keep its proportions, cap the height */
+header nav .nav-brand picture.nav-brand-logo {
+  display: block;
+  flex: 0 0 auto;
+}
+
+header nav .nav-brand picture.nav-brand-logo img {
+  display: block;
+  width: auto;
+  max-width: 180px;
+  height: 34px;
+  object-fit: contain;
+}
+
+/* default logo: gradient tile with the layers mark on top */
+header nav .nav-brand .icon-logo {
+  position: relative;
   display: block;
   flex: 0 0 auto;
   width: 34px;
   height: 34px;
   border-radius: 10px;
+  background: var(--header-logo-background);
 }
 
-header nav .nav-brand .icon img {
-  width: 100%;
-  height: 100%;
+header nav .nav-brand .icon-logo::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  background-color: var(--header-logo-mark);
+  mask: url('../../icons/logo.svg') center / contain no-repeat;
 }
 
-/* the "Móvil" accent — authors mark the trailing word with emphasis */
+/* the "Móvil" accent */
 header nav .nav-brand em {
-  color: var(--nav-accent);
+  color: var(--header-accent);
   font-style: normal;
 }
 
-/* sections (primary nav) */
+@media (width >= 900px) {
+  header nav .nav-brand {
+    font-size: 20px;
+  }
+}
+
+/* ==========================================================================
+   Sections: primary navigation
+   ========================================================================== */
+
 header nav .nav-sections {
   grid-area: sections;
   display: none;
@@ -114,18 +167,63 @@ header nav .nav-sections ul {
 
 /* items may be plain text when the author has not linked them yet */
 header nav .nav-sections li {
-  border-top: 1px solid var(--nav-border);
+  border-top: 1px solid var(--header-border);
   padding: 0.9rem 0.25rem;
   font-size: var(--body-font-size-s);
   font-weight: 600;
-  color: var(--nav-text);
+  color: var(--header-text);
 }
 
 header nav .nav-sections a {
   display: block;
 }
 
-/* tools (search, user, cart, hamburger) */
+@media (width >= 900px) {
+  header nav .nav-sections {
+    display: block;
+  }
+
+  header nav .nav-sections ul {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  header nav .nav-sections li {
+    position: relative;
+    padding: 0.5rem 0;
+    border: 0;
+    color: var(--header-text-muted);
+    font-size: var(--body-font-size-xs);
+    transition: color 0.15s ease;
+  }
+
+  header nav .nav-sections li:hover {
+    color: var(--header-text);
+  }
+
+  /* underline indicator on hover */
+  header nav .nav-sections li:has(a)::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--header-accent);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+
+  header nav .nav-sections li:has(a):hover::after {
+    transform: scaleX(1);
+  }
+}
+
+/* ==========================================================================
+   Tools: search, user, cart, hamburger
+   ========================================================================== */
+
 header nav .nav-tools {
   grid-area: tools;
   display: flex;
@@ -146,22 +244,17 @@ header nav .nav-hamburger button {
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: var(--nav-text);
+  color: var(--header-text);
   cursor: pointer;
 }
 
 header nav .nav-tool:hover,
 header nav .nav-search-toggle:hover,
 header nav .nav-hamburger button:hover {
-  background: var(--nav-surface-hover);
+  background: var(--header-surface-hover);
 }
 
-header nav :is(a, button):focus-visible {
-  outline: 2px solid var(--nav-text);
-  outline-offset: 2px;
-}
-
-/* mono tool icons are painted with currentcolor via a mask so they follow the header text colour */
+/* mono icons are painted with currentcolor via a mask so they follow the text colour */
 header nav .nav-tools .icon {
   display: block;
   flex: 0 0 auto;
@@ -176,12 +269,21 @@ header nav .icon-user { --icon: url('../../icons/user.svg'); }
 header nav .icon-cart { --icon: url('../../icons/cart.svg'); }
 header nav .icon-close { --icon: url('../../icons/close.svg'); }
 
-/* cart with badge: compact square on mobile, pill on desktop */
+@media (width >= 900px) {
+  header nav .nav-tools {
+    gap: 0.5rem;
+  }
+}
+
+/* ==========================================================================
+   Cart: compact square with corner badge on mobile, pill on desktop
+   ========================================================================== */
+
 header nav .nav-tool-cart {
   position: relative;
   gap: 0.5rem;
-  border: 1px solid var(--nav-border);
-  background: var(--nav-surface);
+  border: 1px solid var(--header-border);
+  background: var(--header-surface);
 }
 
 header nav .nav-tool-cart .icon {
@@ -201,14 +303,28 @@ header nav .nav-tool-badge {
   height: 22px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--color-white);
-  color: var(--color-primary);
+  background: var(--header-badge-background);
+  color: var(--header-badge-text);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
 }
 
-/* search: magnifier toggle expands a field from right to left */
+@media (width >= 900px) {
+  header nav .nav-tool-cart {
+    width: auto;
+    padding: 0 0.75rem;
+  }
+
+  header nav .nav-tool-badge {
+    position: static;
+  }
+}
+
+/* ==========================================================================
+   Search: magnifier toggle expands a field from right to left
+   ========================================================================== */
+
 header nav .nav-search {
   position: relative;
   display: flex;
@@ -222,10 +338,10 @@ header nav .nav-search-field {
   width: 0;
   padding: 0;
   overflow: hidden;
-  border-radius: 10px;
-  background: var(--color-gray-100);
   border: 2px solid transparent;
-  color: var(--color-gray-700);
+  border-radius: 10px;
+  background: var(--header-search-background);
+  color: var(--header-search-muted);
   opacity: 0;
   transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease, border-color 0.2s ease;
 }
@@ -237,15 +353,11 @@ header nav .nav-search.is-open .nav-search-field {
 }
 
 header nav .nav-search-field:focus-within {
-  border-color: var(--color-accent);
+  border-color: var(--header-search-focus);
 }
 
 header nav .nav-search.is-open .nav-search-toggle {
   display: none;
-}
-
-header nav .nav-search-icon {
-  color: var(--color-gray-400);
 }
 
 header nav .nav-search-input {
@@ -254,14 +366,14 @@ header nav .nav-search-input {
   height: 36px;
   border: 0;
   background: transparent;
-  color: var(--color-gray-900);
+  color: var(--header-search-text);
   font-family: inherit;
   font-size: var(--body-font-size-xs);
   outline: none;
 }
 
 header nav .nav-search-input::placeholder {
-  color: var(--color-gray-400);
+  color: var(--header-search-muted);
 }
 
 /* hide native clear/decoration so only our X shows */
@@ -280,13 +392,12 @@ header nav .nav-search-clear {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--color-gray-400);
+  color: var(--header-search-muted);
   cursor: pointer;
 }
 
 header nav .nav-search-clear:hover {
-  background: rgb(17 24 39 / 6%);
-  color: var(--color-gray-900);
+  color: var(--header-search-text);
 }
 
 header nav .nav-search-clear .icon {
@@ -294,7 +405,10 @@ header nav .nav-search-clear .icon {
   height: 18px;
 }
 
-/* hamburger */
+/* ==========================================================================
+   Hamburger (mobile only)
+   ========================================================================== */
+
 header nav .nav-hamburger {
   display: flex;
 }
@@ -326,77 +440,8 @@ header nav .nav-hamburger-icon::after {
   top: 6px;
 }
 
-/* desktop layout */
 @media (width >= 900px) {
-  header nav {
-    grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
-    gap: 0 2rem;
-    padding: 0 1.5rem;
-  }
-
-  header nav[aria-expanded='true'] {
-    height: var(--nav-height);
-    min-height: unset;
-  }
-
   header nav .nav-hamburger {
     display: none;
-  }
-
-  header nav .nav-brand {
-    font-size: 20px;
-  }
-
-  header nav .nav-tools {
-    gap: 0.5rem;
-  }
-
-  header nav .nav-tool-cart {
-    width: auto;
-    padding: 0 0.75rem;
-  }
-
-  header nav .nav-tool-badge {
-    position: static;
-  }
-
-  header nav .nav-sections {
-    display: block;
-  }
-
-  header nav .nav-sections ul {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-  }
-
-  header nav .nav-sections li {
-    position: relative;
-    padding: 0.5rem 0;
-    border: 0;
-    color: var(--nav-text-muted);
-    font-size: var(--body-font-size-xs);
-    transition: color 0.15s ease;
-  }
-
-  header nav .nav-sections li:hover {
-    color: var(--nav-text);
-  }
-
-  /* underline indicator on hover */
-  header nav .nav-sections li:has(a)::after {
-    content: '';
-    position: absolute;
-    inset: auto 0 0;
-    height: 2px;
-    border-radius: 2px;
-    background: currentcolor;
-    transform: scaleX(0);
-    transition: transform 0.2s ease;
-  }
-
-  header nav .nav-sections li:has(a):hover::after {
-    transform: scaleX(1);
   }
 }

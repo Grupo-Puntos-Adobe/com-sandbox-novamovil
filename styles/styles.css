@@ -11,26 +11,7 @@
  */
 
 :root {
-  /* brand palette (NovaMóvil) */
-  --color-primary: #1a4fd8;
-  --color-accent: #0b9ef0;
-  --color-white: #fff;
-  --color-gray-100: #f5f7fa;
-  --color-gray-400: #9ca3af;
-  --color-gray-700: #374151;
-  --color-gray-900: #111827;
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-
-  /* colors */
-  --background-color: var(--color-white);
-  --light-color: var(--color-gray-100);
-  --dark-color: var(--color-gray-700);
-  --text-color: var(--color-gray-700);
-  --heading-color: var(--color-gray-900);
-  --link-color: var(--color-primary);
-  --link-hover-color: var(--color-accent);
+  /* colors live in styles/colors.css */
 
   /* fonts */
   --body-font-family: plus-jakarta-sans, plus-jakarta-sans-fallback, sans-serif;

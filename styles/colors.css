@@ -1,0 +1,53 @@
+/*
+ * NovaMóvil colour tokens.
+ * This is the only file with colour values: every stylesheet and block
+ * references these variables, so changing one here updates the whole site.
+ */
+
+:root {
+  /* brand palette */
+  --color-primary: #1a4fd8; /* Azul profundo: primary actions, buttons, links */
+  --color-accent: #0b9ef0; /* Cian vibrante: gradients, highlights, hover */
+  --color-white: #fff; /* Backgrounds, card surfaces */
+  --color-gray-100: #f5f7fa; /* Page backgrounds, input fills */
+  --color-gray-200: #e5e7eb; /* Borders, dividers */
+  --color-gray-400: #9ca3af; /* Placeholder text, secondary labels */
+  --color-gray-700: #374151; /* Body text */
+  --color-gray-900: #111827; /* Headings */
+  --color-navy-950: #0f172a; /* Header gradient start */
+  --color-navy-800: #1b2e5a; /* Header gradient end */
+  --color-success: #10b981; /* Order confirmation, stock badges */
+  --color-error: #ef4444; /* Form validation, alerts */
+
+  /* gradients */
+  --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  --gradient-header: linear-gradient(90deg, var(--color-navy-950) 0%, var(--color-navy-800) 100%);
+
+  /* site */
+  --background-color: var(--color-white);
+  --light-color: var(--color-gray-100);
+  --dark-color: var(--color-gray-700);
+  --border-color: var(--color-gray-200);
+  --text-color: var(--color-gray-700);
+  --heading-color: var(--color-gray-900);
+  --link-color: var(--color-primary);
+  --link-hover-color: var(--color-accent);
+
+  /* header */
+  --header-background: var(--gradient-header);
+  --header-text: var(--color-white);
+  --header-text-muted: color-mix(in srgb, var(--color-white) 82%, transparent);
+  --header-accent: var(--color-accent);
+  --header-border: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --header-surface: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --header-surface-hover: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --header-shadow: color-mix(in srgb, var(--color-navy-950) 30%, transparent);
+  --header-logo-background: var(--gradient-brand);
+  --header-logo-mark: var(--color-white);
+  --header-badge-background: var(--color-accent);
+  --header-badge-text: var(--color-white);
+  --header-search-background: var(--color-gray-100);
+  --header-search-text: var(--color-gray-900);
+  --header-search-muted: var(--color-gray-400);
+  --header-search-focus: var(--color-accent);
+}
