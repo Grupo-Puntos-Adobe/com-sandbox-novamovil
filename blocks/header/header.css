@@ -1,447 +1,432 @@
 /*
  * NovaMóvil header.
- * Colours come from styles/colors.css (--header-*); each part keeps its
- * responsive rules right below it. Breakpoint: 900px (mobile menu below).
+ * Every rule lives inside .header-novamovil (added by header.js) so nothing
+ * leaks to the rest of the site. Colours come from styles/colors.css
+ * (--header-*); each part keeps its responsive rules right below it.
+ * Breakpoint: 900px (mobile menu below).
  */
 
 /* stylelint-disable no-descending-specificity */
 
-/* enable smooth height animation to intrinsic size for the mobile menu */
-:root {
+.header-novamovil {
+  /* enable smooth height animation to intrinsic size for the mobile menu */
   interpolate-size: allow-keywords;
-}
-
-/* ==========================================================================
-   Wrapper
-   ========================================================================== */
-
-.header-wrapper {
   position: sticky;
   top: 0;
   z-index: 20;
   color: var(--header-text);
-}
 
-/* the background sits on the nav wrapper so it grows with the open mobile menu */
-header .nav-wrapper {
-  background: var(--header-background);
-  box-shadow: 0 2px 12px var(--header-shadow);
-}
+  /* ========================================================================
+     Wrapper
+     ======================================================================== */
 
-/* ==========================================================================
-   Nav layout
-   ========================================================================== */
-
-header nav {
-  box-sizing: border-box;
-  display: grid;
-  grid-template:
-    'brand tools' var(--nav-height)
-    'sections sections' 1fr / auto 1fr;
-  align-items: center;
-  gap: 0 1rem;
-  max-width: 1264px;
-  height: var(--nav-height);
-  margin: auto;
-  padding: 0 1rem;
-  font-family: var(--body-font-family);
-}
-
-header nav[aria-expanded='true'] {
-  height: auto;
-  min-height: var(--nav-height);
-}
-
-header nav p {
-  margin: 0;
-  line-height: 1;
-}
-
-header nav a:any-link {
-  color: currentcolor;
-  text-decoration: none;
-}
-
-header nav :is(a, button):focus-visible {
-  outline: 2px solid var(--header-text);
-  outline-offset: 2px;
-}
-
-@media (width >= 900px) {
-  header nav {
-    grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
-    gap: 0 2rem;
-    padding: 0 1.5rem;
+  /* the background sits on the nav wrapper so it grows with the open mobile menu */
+  & .nav-wrapper {
+    background: var(--header-background);
+    box-shadow: 0 2px 12px var(--header-shadow);
   }
 
-  header nav[aria-expanded='true'] {
+  /* ========================================================================
+     Nav layout
+     ======================================================================== */
+
+  & nav {
+    box-sizing: border-box;
+    display: grid;
+    grid-template:
+      'brand tools' var(--nav-height)
+      'sections sections' 1fr / auto 1fr;
+    align-items: center;
+    gap: 0 1rem;
+    max-width: 1264px;
     height: var(--nav-height);
-    min-height: unset;
-  }
-}
+    margin: auto;
+    padding: 0 1rem;
+    font-family: var(--body-font-family);
 
-/* ==========================================================================
-   Brand: logo (image from the nav document or default icon) + wordmark
-   ========================================================================== */
+    &[aria-expanded='true'] {
+      height: auto;
+      min-height: var(--nav-height);
+    }
 
-header nav .nav-brand {
-  grid-area: brand;
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
+    & p {
+      margin: 0;
+      line-height: 1;
+    }
 
-header nav .nav-brand a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  white-space: nowrap;
-}
+    @media (width >= 900px) {
+      grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
+      gap: 0 2rem;
+      padding: 0 1.5rem;
 
-/* authored image: keep its proportions, cap the height */
-header nav .nav-brand picture.nav-brand-logo {
-  display: block;
-  flex: 0 0 auto;
-}
-
-header nav .nav-brand picture.nav-brand-logo img {
-  display: block;
-  width: auto;
-  max-width: 180px;
-  height: 34px;
-  object-fit: contain;
-}
-
-/* default logo: gradient tile with the layers mark on top */
-header nav .nav-brand .icon-logo {
-  position: relative;
-  display: block;
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--header-logo-background);
-}
-
-header nav .nav-brand .icon-logo::after {
-  content: '';
-  position: absolute;
-  inset: 7px;
-  background-color: var(--header-logo-mark);
-  mask: url('../../icons/logo.svg') center / contain no-repeat;
-}
-
-/* the "Móvil" accent */
-header nav .nav-brand em {
-  color: var(--header-accent);
-  font-style: normal;
-}
-
-@media (width >= 900px) {
-  header nav .nav-brand {
-    font-size: 20px;
-  }
-}
-
-/* ==========================================================================
-   Sections: primary navigation
-   ========================================================================== */
-
-header nav .nav-sections {
-  grid-area: sections;
-  display: none;
-}
-
-header nav[aria-expanded='true'] .nav-sections {
-  display: block;
-  padding: 0.5rem 0 1rem;
-}
-
-header nav .nav-sections ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* items may be plain text when the author has not linked them yet */
-header nav .nav-sections li {
-  border-top: 1px solid var(--header-border);
-  padding: 0.9rem 0.25rem;
-  font-size: var(--body-font-size-s);
-  font-weight: 600;
-  color: var(--header-text);
-}
-
-header nav .nav-sections a {
-  display: block;
-}
-
-@media (width >= 900px) {
-  header nav .nav-sections {
-    display: block;
+      &[aria-expanded='true'] {
+        height: var(--nav-height);
+        min-height: unset;
+      }
+    }
   }
 
-  header nav .nav-sections ul {
+  & a:any-link {
+    color: currentcolor;
+    text-decoration: none;
+  }
+
+  & :is(a, button):focus-visible {
+    outline: 2px solid var(--header-text);
+    outline-offset: 2px;
+  }
+
+  /* ========================================================================
+     Brand: logo (image from the nav document or default icon) + wordmark
+     ======================================================================== */
+
+  & .nav-brand {
+    grid-area: brand;
     display: flex;
     align-items: center;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+
+    & a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      white-space: nowrap;
+    }
+
+    /* authored image: keep its proportions, cap the height */
+    & picture.nav-brand-logo {
+      display: block;
+      flex: 0 0 auto;
+
+      & img {
+        display: block;
+        width: auto;
+        max-width: 180px;
+        height: 34px;
+        object-fit: contain;
+      }
+    }
+
+    /* default logo: gradient tile with the layers mark on top */
+    & .icon-logo {
+      position: relative;
+      display: block;
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--header-logo-background);
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 7px;
+        background-color: var(--header-logo-mark);
+        mask: url('../../icons/logo.svg') center / contain no-repeat;
+      }
+    }
+
+    /* the "Móvil" accent */
+    & em {
+      color: var(--header-accent);
+      font-style: normal;
+    }
+
+    @media (width >= 900px) {
+      font-size: 20px;
+    }
+  }
+
+  /* ========================================================================
+     Sections: primary navigation
+     ======================================================================== */
+
+  & .nav-sections {
+    grid-area: sections;
+    display: none;
+
+    & ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* items may be plain text when the author has not linked them yet */
+    & li {
+      border-top: 1px solid var(--header-border);
+      padding: 0.9rem 0.25rem;
+      font-size: var(--body-font-size-s);
+      font-weight: 600;
+      color: var(--header-text);
+    }
+
+    & a {
+      display: block;
+    }
+
+    @media (width >= 900px) {
+      display: block;
+
+      & ul {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+      }
+
+      & li {
+        position: relative;
+        padding: 0.5rem 0;
+        border: 0;
+        color: var(--header-text-muted);
+        font-size: var(--body-font-size-xs);
+        transition: color 0.15s ease;
+
+        &:hover {
+          color: var(--header-text);
+        }
+
+        /* underline indicator on hover */
+        &:has(a)::after {
+          content: '';
+          position: absolute;
+          inset: auto 0 0;
+          height: 2px;
+          border-radius: 2px;
+          background: var(--header-accent);
+          transform: scaleX(0);
+          transition: transform 0.2s ease;
+        }
+
+        &:has(a):hover::after {
+          transform: scaleX(1);
+        }
+      }
+    }
+  }
+
+  & nav[aria-expanded='true'] .nav-sections {
+    display: block;
+    padding: 0.5rem 0 1rem;
+  }
+
+  /* ========================================================================
+     Tools: search, user, cart, hamburger
+     ======================================================================== */
+
+  & .nav-tools {
+    grid-area: tools;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+
+    /* mono icons are painted with currentcolor via a mask so they follow the text colour */
+    & .icon {
+      display: block;
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      background-color: currentcolor;
+      mask: var(--icon) center / contain no-repeat;
+    }
+
+    @media (width >= 900px) {
+      gap: 0.5rem;
+    }
+  }
+
+  & .nav-tool,
+  & .nav-search-toggle,
+  & .nav-hamburger button {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    gap: 2rem;
-  }
-
-  header nav .nav-sections li {
-    position: relative;
-    padding: 0.5rem 0;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     border: 0;
-    color: var(--header-text-muted);
-    font-size: var(--body-font-size-xs);
-    transition: color 0.15s ease;
-  }
-
-  header nav .nav-sections li:hover {
+    border-radius: 10px;
+    background: transparent;
     color: var(--header-text);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--header-surface-hover);
+    }
   }
 
-  /* underline indicator on hover */
-  header nav .nav-sections li:has(a)::after {
-    content: '';
+  & .icon-search { --icon: url('../../icons/search.svg'); }
+  & .icon-user { --icon: url('../../icons/user.svg'); }
+  & .icon-cart { --icon: url('../../icons/cart.svg'); }
+  & .icon-close { --icon: url('../../icons/close.svg'); }
+
+  /* ========================================================================
+     Cart: compact square with corner badge on mobile, pill on desktop
+     ======================================================================== */
+
+  & .nav-tool-cart {
+    position: relative;
+    gap: 0.5rem;
+    border: 1px solid var(--header-border);
+    background: var(--header-surface);
+
+    & .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    @media (width >= 900px) {
+      width: auto;
+      padding: 0 0.75rem;
+    }
+  }
+
+  & .nav-tool-badge {
     position: absolute;
-    inset: auto 0 0;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--header-badge-background);
+    color: var(--header-badge-text);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+
+    @media (width >= 900px) {
+      position: static;
+    }
+  }
+
+  /* ========================================================================
+     Search: magnifier toggle expands a field from right to left
+     ======================================================================== */
+
+  & .nav-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    &.is-open .nav-search-field {
+      width: min(320px, 60vw);
+      padding: 0 0.5rem 0 0.75rem;
+      opacity: 1;
+    }
+
+    &.is-open .nav-search-toggle {
+      display: none;
+    }
+  }
+
+  & .nav-search-field {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: var(--header-search-background);
+    color: var(--header-search-muted);
+    opacity: 0;
+    transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease, border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: var(--header-search-focus);
+    }
+  }
+
+  & .nav-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    color: var(--header-search-text);
+    font-family: inherit;
+    font-size: var(--body-font-size-xs);
+    outline: none;
+
+    &::placeholder {
+      color: var(--header-search-muted);
+    }
+
+    /* hide native clear/decoration so only our X shows */
+    &::-webkit-search-cancel-button {
+      appearance: none;
+    }
+  }
+
+  & .nav-search-clear {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--header-search-muted);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--header-search-text);
+    }
+
+    & .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  /* ========================================================================
+     Hamburger (mobile only)
+     ======================================================================== */
+
+  & .nav-hamburger {
+    display: flex;
+
+    @media (width >= 900px) {
+      display: none;
+    }
+  }
+
+  & .nav-hamburger-icon,
+  & .nav-hamburger-icon::before,
+  & .nav-hamburger-icon::after {
+    box-sizing: border-box;
+    display: block;
+    position: relative;
+    width: 20px;
     height: 2px;
     border-radius: 2px;
-    background: var(--header-accent);
-    transform: scaleX(0);
-    transition: transform 0.2s ease;
+    background: currentcolor;
   }
 
-  header nav .nav-sections li:has(a):hover::after {
-    transform: scaleX(1);
-  }
-}
-
-/* ==========================================================================
-   Tools: search, user, cart, hamburger
-   ========================================================================== */
-
-header nav .nav-tools {
-  grid-area: tools;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.25rem;
-}
-
-header nav .nav-tool,
-header nav .nav-search-toggle,
-header nav .nav-hamburger button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--header-text);
-  cursor: pointer;
-}
-
-header nav .nav-tool:hover,
-header nav .nav-search-toggle:hover,
-header nav .nav-hamburger button:hover {
-  background: var(--header-surface-hover);
-}
-
-/* mono icons are painted with currentcolor via a mask so they follow the text colour */
-header nav .nav-tools .icon {
-  display: block;
-  flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  background-color: currentcolor;
-  mask: var(--icon) center / contain no-repeat;
-}
-
-header nav .icon-search { --icon: url('../../icons/search.svg'); }
-header nav .icon-user { --icon: url('../../icons/user.svg'); }
-header nav .icon-cart { --icon: url('../../icons/cart.svg'); }
-header nav .icon-close { --icon: url('../../icons/close.svg'); }
-
-@media (width >= 900px) {
-  header nav .nav-tools {
-    gap: 0.5rem;
-  }
-}
-
-/* ==========================================================================
-   Cart: compact square with corner badge on mobile, pill on desktop
-   ========================================================================== */
-
-header nav .nav-tool-cart {
-  position: relative;
-  gap: 0.5rem;
-  border: 1px solid var(--header-border);
-  background: var(--header-surface);
-}
-
-header nav .nav-tool-cart .icon {
-  width: 20px;
-  height: 20px;
-}
-
-header nav .nav-tool-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--header-badge-background);
-  color: var(--header-badge-text);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-@media (width >= 900px) {
-  header nav .nav-tool-cart {
-    width: auto;
-    padding: 0 0.75rem;
+  & .nav-hamburger-icon::before,
+  & .nav-hamburger-icon::after {
+    content: '';
+    position: absolute;
+    left: 0;
   }
 
-  header nav .nav-tool-badge {
-    position: static;
+  & .nav-hamburger-icon::before {
+    top: -6px;
   }
-}
 
-/* ==========================================================================
-   Search: magnifier toggle expands a field from right to left
-   ========================================================================== */
-
-header nav .nav-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-header nav .nav-search-field {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 0;
-  padding: 0;
-  overflow: hidden;
-  border: 2px solid transparent;
-  border-radius: 10px;
-  background: var(--header-search-background);
-  color: var(--header-search-muted);
-  opacity: 0;
-  transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease, border-color 0.2s ease;
-}
-
-header nav .nav-search.is-open .nav-search-field {
-  width: min(320px, 60vw);
-  padding: 0 0.5rem 0 0.75rem;
-  opacity: 1;
-}
-
-header nav .nav-search-field:focus-within {
-  border-color: var(--header-search-focus);
-}
-
-header nav .nav-search.is-open .nav-search-toggle {
-  display: none;
-}
-
-header nav .nav-search-input {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 36px;
-  border: 0;
-  background: transparent;
-  color: var(--header-search-text);
-  font-family: inherit;
-  font-size: var(--body-font-size-xs);
-  outline: none;
-}
-
-header nav .nav-search-input::placeholder {
-  color: var(--header-search-muted);
-}
-
-/* hide native clear/decoration so only our X shows */
-header nav .nav-search-input::-webkit-search-cancel-button {
-  appearance: none;
-}
-
-header nav .nav-search-clear {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--header-search-muted);
-  cursor: pointer;
-}
-
-header nav .nav-search-clear:hover {
-  color: var(--header-search-text);
-}
-
-header nav .nav-search-clear .icon {
-  width: 18px;
-  height: 18px;
-}
-
-/* ==========================================================================
-   Hamburger (mobile only)
-   ========================================================================== */
-
-header nav .nav-hamburger {
-  display: flex;
-}
-
-header nav .nav-hamburger-icon,
-header nav .nav-hamburger-icon::before,
-header nav .nav-hamburger-icon::after {
-  box-sizing: border-box;
-  display: block;
-  position: relative;
-  width: 20px;
-  height: 2px;
-  border-radius: 2px;
-  background: currentcolor;
-}
-
-header nav .nav-hamburger-icon::before,
-header nav .nav-hamburger-icon::after {
-  content: '';
-  position: absolute;
-  left: 0;
-}
-
-header nav .nav-hamburger-icon::before {
-  top: -6px;
-}
-
-header nav .nav-hamburger-icon::after {
-  top: 6px;
-}
-
-@media (width >= 900px) {
-  header nav .nav-hamburger {
-    display: none;
+  & .nav-hamburger-icon::after {
+    top: 6px;
   }
 }

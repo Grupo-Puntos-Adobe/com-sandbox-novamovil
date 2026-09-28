@@ -188,7 +188,8 @@ export default async function decorate(block) {
   const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
   const fragment = await loadFragment(navPath);
 
-  // decorate nav DOM
+  // decorate nav DOM; every header style is scoped under .header-novamovil
+  block.classList.add('header-novamovil');
   block.textContent = '';
   const nav = document.createElement('nav');
   nav.id = 'nav';
