@@ -11,17 +11,30 @@
  */
 
 :root {
+  /* brand palette (NovaMóvil) */
+  --color-primary: #1a4fd8;
+  --color-accent: #0b9ef0;
+  --color-white: #fff;
+  --color-gray-100: #f5f7fa;
+  --color-gray-400: #9ca3af;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+
   /* colors */
-  --background-color: white;
-  --light-color: #f8f8f8;
-  --dark-color: #505050;
-  --text-color: #131313;
-  --link-color: #3b63fb;
-  --link-hover-color: #1d3ecf;
+  --background-color: var(--color-white);
+  --light-color: var(--color-gray-100);
+  --dark-color: var(--color-gray-700);
+  --text-color: var(--color-gray-700);
+  --heading-color: var(--color-gray-900);
+  --link-color: var(--color-primary);
+  --link-hover-color: var(--color-accent);
 
   /* fonts */
-  --body-font-family: roboto, roboto-fallback, sans-serif;
-  --heading-font-family: roboto-condensed, roboto-condensed-fallback, sans-serif;
+  --body-font-family: plus-jakarta-sans, plus-jakarta-sans-fallback, sans-serif;
+  --heading-font-family: plus-jakarta-sans, plus-jakarta-sans-bold-fallback, sans-serif;
 
   /* body sizes */
   --body-font-size-m: 22px;
@@ -42,15 +55,16 @@
 
 /* fallback fonts */
 @font-face {
-  font-family: roboto-condensed-fallback;
-  size-adjust: 88.82%;
+  font-family: plus-jakarta-sans-fallback;
+  size-adjust: 92.58%;
   src: local('Arial');
 }
 
 @font-face {
-  font-family: roboto-fallback;
-  size-adjust: 99.529%;
-  src: local('Arial');
+  font-family: plus-jakarta-sans-bold-fallback;
+  size-adjust: 84.6%;
+  src: local('Arial Bold'), local('Arial');
+  font-weight: 700;
 }
 
 @media (width >= 900px) {
@@ -106,8 +120,9 @@ h5,
 h6 {
   margin-top: 0.8em;
   margin-bottom: 0.25em;
+  color: var(--heading-color);
   font-family: var(--heading-font-family);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.25;
   scroll-margin: 40px;
 }
@@ -182,7 +197,7 @@ button.button {
   border-radius: 2.4em;
   padding: 0.5em 1.2em;
   font: inherit;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.25;
   text-decoration: none;
   cursor: pointer;

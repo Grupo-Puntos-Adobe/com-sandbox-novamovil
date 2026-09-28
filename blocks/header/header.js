@@ -1,4 +1,4 @@
-import { getMetadata } from '../../scripts/aem.js';
+import { getMetadata, decorateIcons } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 
 // media query match that indicates mobile/tablet width
@@ -9,6 +9,9 @@ const TOOL_DEFAULTS = {
   cuenta: '/cuenta',
   carrito: '/carrito',
 };
+
+// brand wordmark used when the nav document has no brand text (e.g. only an emoji)
+const BRAND_DEFAULT = 'Nova<em>Móvil</em>';
 
 function closeOnEscape(e) {
   if (e.code !== 'Escape') return;
@@ -97,6 +100,35 @@ function buildSearch() {
 }
 
 /**
+ * Rebuilds the brand as a single home link: logo icon + wordmark.
+ * Falls back to the default logo/wordmark when the author omits them.
+ * @param {Element} navBrand The .nav-brand section
+ */
+function buildBrand(navBrand) {
+  const authoredLink = navBrand.querySelector('a');
+  const logo = navBrand.querySelector('.icon, picture');
+  if (logo) logo.remove();
+
+  const link = document.createElement('a');
+  link.className = 'nav-brand-link';
+  link.href = authoredLink ? authoredLink.getAttribute('href') : '/';
+
+  const icon = logo || document.createElement('span');
+  if (!logo) icon.className = 'icon icon-logo';
+  link.append(icon);
+
+  // keep the authored wordmark (incl. <em>) only if it contains letters
+  const source = authoredLink || navBrand.querySelector('p') || navBrand;
+  const name = document.createElement('span');
+  name.className = 'nav-brand-name';
+  name.innerHTML = /\p{L}/u.test(source.textContent) ? source.innerHTML.trim() : BRAND_DEFAULT;
+  link.append(name);
+
+  navBrand.replaceChildren(link);
+  decorateIcons(navBrand);
+}
+
+/**
  * Builds an icon tool link (user, cart) with optional badge
  */
 function buildToolLink({
@@ -140,16 +172,9 @@ export default async function decorate(block) {
     if (section) section.classList.add(`nav-${c}`);
   });
 
-  // brand: link + logo image, ensure it points home
+  // brand: logo + wordmark as one link, ensure it points home
   const navBrand = nav.querySelector('.nav-brand');
-  if (navBrand) {
-    const brandLink = navBrand.querySelector('.button');
-    if (brandLink) {
-      brandLink.className = '';
-      const container = brandLink.closest('.button-container');
-      if (container) container.className = '';
-    }
-  }
+  if (navBrand) buildBrand(navBrand);
 
   // sections: primary navigation links
   const navSections = nav.querySelector('.nav-sections');
