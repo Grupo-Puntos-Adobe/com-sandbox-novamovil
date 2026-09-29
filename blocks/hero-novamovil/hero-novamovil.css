@@ -213,7 +213,9 @@ main .section > .hero-novamovil-wrapper {
     /* first button, or the one authored in bold */
     & a:any-link:is(.primary, .accent),
     & p:first-child a:any-link:not(.secondary) {
-      background: var(--gradient-brand);
+      /* border-box: paint the gradient under the transparent border too, otherwise
+         the repeating gradient shows a cian line along the left edge */
+      background: var(--gradient-brand) border-box;
       box-shadow: 0 8px 24px var(--hero-novamovil-button-glow);
     }
 
