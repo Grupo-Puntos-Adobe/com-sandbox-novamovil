@@ -21,12 +21,14 @@
   --color-slate-300: #b3c1dc; /* Body text on navy backgrounds */
   --color-success: #10b981; /* Order confirmation, stock badges */
   --color-error: #ef4444; /* Form validation, alerts */
+  --color-warning: #d97706; /* Warnings */
 
   /* gradients */
   --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   --gradient-header: linear-gradient(90deg, var(--color-navy-950) 0%, var(--color-navy-800) 100%);
 
   /* site */
+  --page-background: var(--color-gray-100); /* body; blocks keep their own surfaces */
   --background-color: var(--color-white);
   --light-color: var(--color-gray-100);
   --dark-color: var(--color-gray-700);
@@ -68,6 +70,25 @@
   --hero-novamovil-button-secondary-hover: color-mix(in srgb, var(--color-white) 16%, transparent);
   --hero-novamovil-button-secondary-border: color-mix(in srgb, var(--color-white) 20%, transparent);
   --hero-novamovil-media-shadow: color-mix(in srgb, var(--color-navy-950) 55%, transparent);
+
+  /* card-categories (each card's hover colour comes from the service data) */
+  --card-categories-surface: var(--color-white);
+  --card-categories-border: var(--border-color);
+  --card-categories-label: var(--heading-color);
+  --card-categories-default-color: var(--color-primary);
+  --card-categories-skeleton: var(--color-gray-200);
+  --card-categories-skeleton-shine: var(--color-gray-100);
+  --card-categories-empty-text: var(--text-color);
+  --card-categories-empty-border: var(--color-gray-200);
+
+  /* toast (floating alerts); error/warning/success are deepened so white text passes 4.5:1 */
+  --toast-text: var(--color-white);
+  --toast-error-background: color-mix(in srgb, var(--color-error) 75%, var(--color-gray-900));
+  --toast-warning-background: color-mix(in srgb, var(--color-warning) 70%, var(--color-gray-900));
+  --toast-success-background: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --toast-info-background: var(--color-primary);
+  --toast-close-hover: color-mix(in srgb, var(--color-white) 18%, transparent);
+  --toast-shadow: color-mix(in srgb, var(--color-navy-950) 25%, transparent);
 
   /* footer */
   --footer-background: var(--color-navy-950);
