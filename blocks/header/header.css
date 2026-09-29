@@ -54,6 +54,11 @@
       line-height: 1;
     }
 
+    /* very narrow phones: tighten so brand + tools fit on one row */
+    @media (width < 360px) {
+      gap: 0 0.5rem;
+    }
+
     @media (width >= 900px) {
       grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
       gap: 0 2rem;
@@ -132,6 +137,19 @@
     & em {
       color: var(--header-accent);
       font-style: normal;
+    }
+
+    @media (width < 360px) {
+      font-size: 16px;
+
+      & a {
+        gap: 0.5rem;
+      }
+
+      & .icon-logo {
+        width: 30px;
+        height: 30px;
+      }
     }
 
     @media (width >= 900px) {
@@ -255,6 +273,11 @@
 
     &:hover {
       background: var(--header-surface-hover);
+    }
+
+    @media (width < 360px) {
+      width: 36px;
+      height: 36px;
     }
   }
 
