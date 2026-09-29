@@ -1,5 +1,6 @@
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
+import buildBrand from '../../scripts/brand.js';
 
 // media query match that indicates mobile/tablet width
 const isDesktop = window.matchMedia('(min-width: 900px)');
@@ -9,10 +10,6 @@ const TOOL_DEFAULTS = {
   cuenta: '/cuenta',
   carrito: '/carrito',
 };
-
-// brand used when the nav document has no logo image / no brand text
-const BRAND_NAME = 'NovaMóvil';
-const BRAND_ACCENT = 'Móvil';
 
 function closeOnEscape(e) {
   if (e.code !== 'Escape') return;
@@ -101,64 +98,6 @@ function buildSearch() {
 }
 
 /**
- * Builds the wordmark. Keeps the authored markup (incl. <em>); if the author
- * did not emphasise anything, the trailing "Móvil" gets the accent colour.
- * @param {string} html Authored wordmark markup, or empty for the default
- * @returns {Element} the .nav-brand-name span
- */
-function buildBrandName(html) {
-  const name = document.createElement('span');
-  name.className = 'nav-brand-name';
-  name.innerHTML = html || BRAND_NAME;
-  if (!name.querySelector('em') && name.textContent.trim().endsWith(BRAND_ACCENT)) {
-    const text = name.textContent.trim();
-    const em = document.createElement('em');
-    em.textContent = BRAND_ACCENT;
-    name.replaceChildren(text.slice(0, -BRAND_ACCENT.length), em);
-  }
-  return name;
-}
-
-/**
- * Rebuilds the brand as a single home link.
- * - logo: the image from the nav document; else the authored :logo: icon; else the default icon
- * - wordmark: the authored text; else "NovaMóvil" (omitted when an image stands alone)
- * @param {Element} navBrand The .nav-brand section
- */
-function buildBrand(navBrand) {
-  const authoredLink = navBrand.querySelector('a');
-  const picture = navBrand.querySelector('picture');
-  const icon = navBrand.querySelector('.icon');
-  [picture, icon].forEach((el) => el?.remove());
-
-  // authored wordmark: first link/paragraph that still has letters once the logo is removed
-  const textSource = [authoredLink, ...navBrand.querySelectorAll('p')]
-    .find((el) => el && /\p{L}/u.test(el.textContent));
-  const authoredName = textSource ? textSource.innerHTML.trim() : '';
-
-  const link = document.createElement('a');
-  link.className = 'nav-brand-link';
-  link.href = authoredLink ? authoredLink.getAttribute('href') : '/';
-
-  if (picture) {
-    picture.classList.add('nav-brand-logo');
-    const img = picture.querySelector('img');
-    if (img && !img.alt) img.alt = authoredName ? '' : BRAND_NAME;
-    link.append(picture);
-  } else {
-    // the default logo is painted by CSS from the colour tokens, so drop any <img>
-    const logo = icon || document.createElement('span');
-    logo.className = 'icon icon-logo nav-brand-logo';
-    logo.replaceChildren();
-    link.append(logo);
-  }
-
-  if (authoredName || !picture) link.append(buildBrandName(authoredName));
-
-  navBrand.replaceChildren(link);
-}
-
-/**
  * Builds an icon tool link (user, cart) with optional badge
  */
 function buildToolLink({
@@ -205,7 +144,7 @@ export default async function decorate(block) {
 
   // brand: logo + wordmark as one link, ensure it points home
   const navBrand = nav.querySelector('.nav-brand');
-  if (navBrand) buildBrand(navBrand);
+  if (navBrand) navBrand.replaceChildren(buildBrand(navBrand, 'nav-brand'));
 
   // sections: primary navigation links
   const navSections = nav.querySelector('.nav-sections');

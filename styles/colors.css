@@ -11,6 +11,7 @@
   --color-white: #fff; /* Backgrounds, card surfaces */
   --color-gray-100: #f5f7fa; /* Page backgrounds, input fills */
   --color-gray-200: #e5e7eb; /* Borders, dividers */
+  --color-gray-300: #b4b8c5; /* Secondary text on dark backgrounds */
   --color-gray-400: #9ca3af; /* Placeholder text, secondary labels */
   --color-gray-700: #374151; /* Body text */
   --color-gray-900: #111827; /* Headings */
@@ -33,6 +34,10 @@
   --link-color: var(--color-primary);
   --link-hover-color: var(--color-accent);
 
+  /* brand logo (shared by header and footer) */
+  --brand-logo-background: var(--gradient-brand);
+  --brand-logo-mark: var(--color-white);
+
   /* header */
   --header-background: var(--gradient-header);
   --header-text: var(--color-white);
@@ -42,12 +47,25 @@
   --header-surface: color-mix(in srgb, var(--color-white) 8%, transparent);
   --header-surface-hover: color-mix(in srgb, var(--color-white) 14%, transparent);
   --header-shadow: color-mix(in srgb, var(--color-navy-950) 30%, transparent);
-  --header-logo-background: var(--gradient-brand);
-  --header-logo-mark: var(--color-white);
+  --header-logo-background: var(--brand-logo-background);
+  --header-logo-mark: var(--brand-logo-mark);
   --header-badge-background: var(--color-accent);
   --header-badge-text: var(--color-white);
   --header-search-background: var(--color-gray-100);
   --header-search-text: var(--color-gray-900);
   --header-search-muted: var(--color-gray-400);
   --header-search-focus: var(--color-accent);
+
+  /* footer */
+  --footer-background: var(--color-navy-950);
+  --footer-heading: var(--color-white);
+  --footer-text: var(--color-gray-300);
+  --footer-link: var(--color-gray-400);
+  --footer-link-hover: var(--color-white);
+  --footer-accent: var(--color-accent);
+  --footer-border: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --footer-chip-background: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --footer-chip-text: var(--color-gray-400);
+  --footer-logo-background: var(--brand-logo-background);
+  --footer-logo-mark: var(--brand-logo-mark);
 }
