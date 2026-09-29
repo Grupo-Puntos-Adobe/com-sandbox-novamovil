@@ -17,6 +17,8 @@
   --color-gray-900: #111827; /* Headings */
   --color-navy-950: #0f172a; /* Header gradient start */
   --color-navy-800: #1b2e5a; /* Header gradient end */
+  --color-navy-700: #163a6e; /* Hero gradient end */
+  --color-slate-300: #b3c1dc; /* Body text on navy backgrounds */
   --color-success: #10b981; /* Order confirmation, stock badges */
   --color-error: #ef4444; /* Form validation, alerts */
 
@@ -55,6 +57,26 @@
   --header-search-text: var(--color-gray-900);
   --header-search-muted: var(--color-gray-400);
   --header-search-focus: var(--color-accent);
+
+  /* hero */
+  --hero-background: linear-gradient(135deg, var(--color-navy-950) 0%, var(--color-navy-800) 55%, var(--color-navy-700) 100%);
+  --hero-glow: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  --hero-text: var(--color-white);
+  --hero-text-muted: var(--color-slate-300);
+  --hero-highlight: var(--gradient-brand);
+  --hero-eyebrow-text: var(--color-accent);
+  --hero-eyebrow-border: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  --hero-eyebrow-background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --hero-button-primary: var(--gradient-brand);
+  --hero-button-primary-glow: color-mix(in srgb, var(--color-primary) 45%, transparent);
+  --hero-button-secondary-background: color-mix(in srgb, var(--color-white) 10%, transparent);
+  --hero-button-secondary-hover: color-mix(in srgb, var(--color-white) 16%, transparent);
+  --hero-button-secondary-border: color-mix(in srgb, var(--color-white) 28%, transparent);
+  --hero-button-text: var(--color-white);
+  --hero-stat-value: var(--color-white);
+  --hero-stat-label: var(--color-gray-400);
+  --hero-media-background: var(--color-gray-900);
+  --hero-media-shadow: color-mix(in srgb, var(--color-navy-950) 55%, transparent);
 
   /* footer */
   --footer-background: var(--color-navy-950);

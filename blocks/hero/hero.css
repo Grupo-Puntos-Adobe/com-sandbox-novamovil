@@ -1,37 +1,300 @@
-.hero-container .hero-wrapper {
-  max-width: unset;
+/*
+ * NovaMóvil hero.
+ * Every rule lives inside .hero-novamovil (added by hero.js) so nothing leaks
+ * to the rest of the site. Colours come from styles/colors.css (--hero-*);
+ * each part keeps its responsive rules right below it.
+ * Breakpoint: 900px (single column and no image below).
+ */
+
+/*
+ * Only exception outside .hero-novamovil: let the section wrapper that holds
+ * the hero span the full width (the site wrapper caps content at 1200px).
+ */
+main .section > .hero-wrapper:has(> .hero-novamovil) {
+  max-width: none;
   padding: 0;
 }
 
-.hero {
+.hero-novamovil {
   position: relative;
-  padding: 40px 24px;
-  min-height: 300px;
-}
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--hero-background);
+  color: var(--hero-text);
+  font-family: var(--body-font-family);
 
-.hero h1 {
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  color: var(--background-color);
-}
+  /* ========================================================================
+     Decorative circles
+     ======================================================================== */
 
-.hero picture {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  object-fit: cover;
-  box-sizing: border-box;
-}
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    background: var(--hero-glow);
+    pointer-events: none;
+  }
 
-.hero img {
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
-}
+  /* top right */
+  &::before {
+    top: -60px;
+    right: -120px;
+    width: 280px;
+    height: 280px;
 
-@media (width >= 900px) {
-  .hero {
-    padding: 40px 32px;
+    @media (width >= 900px) {
+      top: -20px;
+      right: -20px;
+      width: 340px;
+      height: 340px;
+    }
+  }
+
+  /* bottom centre */
+  &::after {
+    bottom: -140px;
+    left: 30%;
+    width: 240px;
+    height: 240px;
+
+    @media (width >= 900px) {
+      bottom: -90px;
+      width: 300px;
+      height: 300px;
+    }
+  }
+
+  /* ========================================================================
+     Container: one column on mobile, text + image from 900px
+     ======================================================================== */
+
+  & .hero-inner {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 48px;
+    max-width: 1336px;
+    margin: auto;
+    padding: 64px 20px;
+
+    @media (width >= 900px) {
+      grid-template-columns: 1fr 1fr;
+      padding: 80px 24px 84px;
+    }
+  }
+
+  & .hero-content {
+    min-width: 0;
+  }
+
+  /* ========================================================================
+     Eyebrow: pill with a cian dot
+     ======================================================================== */
+
+  & .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 6px 14px;
+    border: 1px solid var(--hero-eyebrow-border);
+    border-radius: 999px;
+    background: var(--hero-eyebrow-background);
+    color: var(--hero-eyebrow-text);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+
+    &::before {
+      content: '';
+      flex: 0 0 auto;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentcolor;
+    }
+  }
+
+  /* ========================================================================
+     Title and highlighted word
+     ======================================================================== */
+
+  & .hero-title {
+    /* keeps the design's three-line break at any font size */
+    max-width: 8.5em;
+    margin: 20px 0 0;
+    color: var(--hero-text);
+    font-family: var(--heading-font-family);
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+
+    @media (width >= 900px) {
+      font-size: 56px;
+    }
+  }
+
+  & .hero-highlight {
+    background: var(--hero-highlight);
+    background-clip: text;
+    color: transparent;
+    font-style: normal;
+  }
+
+  /* ========================================================================
+     Description
+     ======================================================================== */
+
+  & .hero-description {
+    max-width: 420px;
+    margin: 20px 0 0;
+    color: var(--hero-text-muted);
+    font-size: 16px;
+    line-height: 1.65;
+
+    @media (width >= 900px) {
+      font-size: 17px;
+      line-height: 1.7;
+    }
+  }
+
+  /* ========================================================================
+     Actions: primary (gradient) and secondary (translucent) buttons
+     ======================================================================== */
+
+  & .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+
+    & p {
+      margin: 0;
+    }
+
+    & a:any-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      height: 46px;
+      padding: 0 24px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: var(--hero-button-text);
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--hero-text);
+        outline-offset: 2px;
+      }
+
+      @media (width >= 900px) {
+        height: 52px;
+        padding: 0 28px;
+        font-size: 15px;
+      }
+    }
+
+    /* first button, or the one authored in bold */
+    & a:any-link:is(.primary, .accent),
+    & p:first-child a:any-link:not(.secondary) {
+      background: var(--hero-button-primary);
+      box-shadow: 0 8px 24px var(--hero-button-primary-glow);
+    }
+
+    & a:any-link.secondary,
+    & p:not(:first-child) a:any-link:not(.primary, .accent) {
+      border-color: var(--hero-button-secondary-border);
+      background: var(--hero-button-secondary-background);
+
+      &:hover {
+        background: var(--hero-button-secondary-hover);
+      }
+    }
+
+    @media (width >= 900px) {
+      gap: 12px;
+      margin-top: 32px;
+    }
+  }
+
+  /* ========================================================================
+     Stats
+     ======================================================================== */
+
+  & .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    margin: 36px 0 0;
+    padding: 0;
+    list-style: none;
+
+    @media (width >= 900px) {
+      margin-top: 40px;
+    }
+  }
+
+  & .hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  & .hero-stat-value {
+    color: var(--hero-stat-value);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  & .hero-stat-label {
+    color: var(--hero-stat-label);
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  /* ========================================================================
+     Media: hidden on mobile, rounded card with shadow from 900px
+     ======================================================================== */
+
+  & .hero-media {
+    display: none;
+
+    & picture,
+    & img {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    & img {
+      object-fit: cover;
+    }
+
+    @media (width >= 900px) {
+      display: block;
+      justify-self: center;
+      width: min(100%, 380px);
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--hero-media-background);
+      box-shadow: 0 30px 60px var(--hero-media-shadow);
+    }
   }
 }
