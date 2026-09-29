@@ -32,10 +32,15 @@
     }
 
     @media (width >= 600px) {
-      /* fixed 140px tracks: every card is the same size, the row stays left-aligned
-         and cards wrap to the next row when they do not fit */
+      /* all cards fit: fixed 140px equal cards, left-aligned as in the design */
       grid-template-columns: repeat(auto-fill, 140px);
       gap: 16px;
+
+      /* they wrap: card-categories.js balances the rows (6 → 3 + 3) and the
+         cards stretch so no row is left half empty */
+      &.is-balanced {
+        grid-template-columns: repeat(var(--card-categories-columns), minmax(0, 1fr));
+      }
     }
   }
 
@@ -61,6 +66,7 @@
     color: var(--card-categories-label);
     text-align: center;
     text-decoration: none;
+    cursor: pointer;
 
     /* identity transform so hover does not create a new stacking context */
     translate: 0 0;
