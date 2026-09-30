@@ -15,3 +15,4 @@ package-lock.json
 test/*
 sync-block-collection.sh
 content-drive/
+documentation/
