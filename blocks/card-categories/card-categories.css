@@ -36,10 +36,10 @@
       grid-template-columns: repeat(auto-fill, 140px);
       gap: 16px;
 
-      /* they wrap: card-categories.js balances the rows (6 → 3 + 3) and the
+      /* they wrap: scripts/block-utils.js balances the rows (6 → 3 + 3) and the
          cards stretch so no row is left half empty */
       &.is-balanced {
-        grid-template-columns: repeat(var(--card-categories-columns), minmax(0, 1fr));
+        grid-template-columns: repeat(var(--balanced-columns), minmax(0, 1fr));
       }
     }
   }

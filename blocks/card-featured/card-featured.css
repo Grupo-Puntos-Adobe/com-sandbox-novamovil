@@ -1,0 +1,371 @@
+/*
+ * NovaMóvil featured products (block "Card Featured").
+ * Every rule lives inside .card-featured; colours come from styles/colors.css
+ * (--card-featured-*). Each part keeps its responsive rules right below it.
+ * Breakpoint: 600px (one card per row below; equal cards in balanced rows from 600px).
+ */
+
+.card-featured {
+  font-family: var(--body-font-family);
+
+  /* ========================================================================
+     Header: section title + "Ver todos"
+     ======================================================================== */
+
+  & .card-featured-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-block-end: 24px;
+
+    @media (width >= 600px) {
+      margin-block-end: 32px;
+    }
+  }
+
+  & .card-featured-title {
+    margin: 0;
+  }
+
+  & .card-featured-link {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    block-size: 38px;
+    padding: 0 18px;
+    border: 1px solid var(--card-featured-link);
+    border-radius: 10px;
+    color: var(--card-featured-link);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--card-featured-link-hover);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-featured-link);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     List: one card per row on mobile, equal cards in balanced rows from 600px
+     ======================================================================== */
+
+  & .card-featured-list {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    /* every row as tall as the tallest card, so all cards stay symmetric */
+    grid-auto-rows: 1fr;
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (width >= 600px) {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+
+      /* scripts/block-utils.js: as many columns as fit, rows balanced (4 → 2 + 2) */
+      &.is-balanced {
+        grid-template-columns: repeat(var(--balanced-columns), minmax(0, 1fr));
+      }
+    }
+  }
+
+  /* ========================================================================
+     Card: image area + body; the whole card is clickable, hover only lifts it
+     ======================================================================== */
+
+  & .card-featured-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--card-featured-border);
+    border-radius: 14px;
+    background: var(--card-featured-surface);
+    cursor: pointer;
+
+    /* identity transform so hover does not create a new stacking context */
+    translate: 0 0;
+    transition: translate 0.2s ease;
+
+    &:hover,
+    &:focus-within {
+      translate: 0 -4px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &:hover,
+      &:focus-within {
+        translate: 0 0;
+      }
+    }
+  }
+
+  /* ========================================================================
+     Media: product image centred on a light background, badge and promo tags
+     ======================================================================== */
+
+  & .card-featured-media {
+    --card-featured-media-size: 168px;
+
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    overflow: hidden;
+    block-size: var(--card-featured-media-size);
+    background: var(--card-featured-media-background);
+
+    /* square crop centred on the light background, as in the design; any photo
+       shape (portrait, landscape) stays inside the image area */
+    & img {
+      display: block;
+      inline-size: min(100%, var(--card-featured-media-size));
+      block-size: var(--card-featured-media-size);
+      object-fit: cover;
+    }
+
+    @media (width >= 600px) {
+      --card-featured-media-size: 200px;
+    }
+  }
+
+  & .card-featured-media-fallback {
+    color: var(--card-featured-muted);
+    font-size: 13px;
+  }
+
+  & .card-featured-badge,
+  & .card-featured-promo {
+    position: absolute;
+    inset-block-start: 12px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  & .card-featured-badge {
+    inset-inline-start: 12px;
+    background: var(--card-featured-badge-background);
+    color: var(--card-featured-badge-text);
+  }
+
+  & .card-featured-promo {
+    inset-inline-end: 12px;
+    background: var(--card-featured-promo-background);
+    color: var(--card-featured-promo-text);
+  }
+
+  /* ========================================================================
+     Body: brand, name, rating, prices and the button pinned to the bottom
+     ======================================================================== */
+
+  & .card-featured-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    padding: 18px;
+
+    /* :where keeps this reset weaker than the per-element margins below */
+    & :where(p) {
+      margin: 0;
+    }
+
+    @media (width >= 600px) {
+      padding: 20px 18px 18px;
+    }
+  }
+
+  & .card-featured-brand {
+    color: var(--card-featured-brand);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* two lines at most, so long names do not break the card symmetry */
+  & .card-featured-name {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 2px 0 0;
+    color: var(--card-featured-name);
+    font-family: var(--body-font-family);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  & .card-featured-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-block-start: 6px;
+  }
+
+  /* five stars filled up to the rating percentage */
+  & .card-featured-stars {
+    background: linear-gradient(
+      90deg,
+      var(--card-featured-star) var(--card-featured-rating, 0%),
+      var(--card-featured-star-empty) var(--card-featured-rating, 0%)
+    );
+    background-clip: text;
+    color: transparent;
+    font-size: 14px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  & .card-featured-reviews {
+    color: var(--card-featured-muted);
+    font-size: 12px;
+  }
+
+  & .card-featured-prices {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+
+    /* minimum space above the button, which is pinned to the bottom of the card */
+    margin-block: 18px 12px;
+  }
+
+  & .card-featured-price {
+    color: var(--card-featured-price);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  & .card-featured-old-price {
+    color: var(--card-featured-muted);
+    font-size: 14px;
+  }
+
+  & .card-featured-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    block-size: 40px;
+    margin-block-start: auto;
+    border-radius: 10px;
+    background: var(--card-featured-button-background);
+    color: var(--card-featured-button-text);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    /* stretched link: the whole card opens the product */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:hover {
+      background: var(--card-featured-button-hover);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-featured-button-text);
+      outline-offset: 2px;
+    }
+  }
+
+  & .card-featured-sr-only {
+    position: absolute;
+    overflow: hidden;
+    inline-size: 1px;
+    block-size: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ========================================================================
+     Loading skeleton and empty state
+     ======================================================================== */
+
+  & .card-featured-skeleton {
+    block-size: 380px;
+    border-radius: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--card-featured-skeleton) 25%,
+      var(--card-featured-skeleton-shine) 50%,
+      var(--card-featured-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: card-featured-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    @media (width >= 600px) {
+      block-size: 400px;
+    }
+  }
+
+  & .card-featured-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 32px 20px;
+    border: 1px dashed var(--card-featured-empty-border);
+    border-radius: 14px;
+    background: var(--card-featured-surface);
+    text-align: center;
+
+    & p {
+      margin: 0;
+    }
+
+    @media (width >= 600px) {
+      padding: 40px 24px;
+    }
+  }
+
+  & .card-featured-empty-icon {
+    margin-block-end: 6px;
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  & .card-featured-empty-title {
+    color: var(--card-featured-name);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  & .card-featured-empty-text {
+    color: var(--card-featured-empty-text);
+    font-size: 14px;
+  }
+}
+
+@keyframes card-featured-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

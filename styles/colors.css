@@ -13,6 +13,7 @@
   --color-gray-200: #e5e7eb; /* Borders, dividers */
   --color-gray-300: #b4b8c5; /* Secondary text on dark backgrounds */
   --color-gray-400: #9ca3af; /* Placeholder text, secondary labels */
+  --color-gray-500: #6b7280; /* Small secondary text on white (brand, old price, reviews) */
   --color-gray-700: #374151; /* Body text */
   --color-gray-900: #111827; /* Headings */
   --color-navy-950: #0f172a; /* Header gradient start */
@@ -22,6 +23,9 @@
   --color-success: #10b981; /* Order confirmation, stock badges */
   --color-error: #ef4444; /* Form validation, alerts */
   --color-warning: #d97706; /* Warnings */
+  --color-amber-500: #f59e0b; /* Rating stars */
+  --color-yellow-100: #fef9c3; /* Promo tag background */
+  --color-yellow-800: #854d0e; /* Promo tag text */
 
   /* gradients */
   --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
@@ -80,6 +84,30 @@
   --card-categories-skeleton-shine: var(--color-gray-100);
   --card-categories-empty-text: var(--text-color);
   --card-categories-empty-border: var(--color-gray-200);
+
+  /* card-featured (product cards) */
+  --card-featured-surface: var(--color-white);
+  --card-featured-border: var(--border-color);
+  --card-featured-media-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+  --card-featured-badge-background: var(--gradient-brand);
+  --card-featured-badge-text: var(--color-white);
+  --card-featured-promo-background: var(--color-yellow-100);
+  --card-featured-promo-text: var(--color-yellow-800);
+  --card-featured-brand: var(--color-gray-500);
+  --card-featured-name: var(--heading-color);
+  --card-featured-star: var(--color-amber-500);
+  --card-featured-star-empty: var(--color-gray-200);
+  --card-featured-muted: var(--color-gray-500);
+  --card-featured-price: var(--color-primary);
+  --card-featured-button-background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+  --card-featured-button-hover: color-mix(in srgb, var(--color-primary) 16%, var(--color-white));
+  --card-featured-button-text: var(--color-primary);
+  --card-featured-link: var(--color-primary);
+  --card-featured-link-hover: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  --card-featured-skeleton: var(--color-gray-200);
+  --card-featured-skeleton-shine: var(--color-gray-100);
+  --card-featured-empty-text: var(--text-color);
+  --card-featured-empty-border: var(--color-gray-200);
 
   /* toast (floating alerts); error/warning/success are deepened so white text passes 4.5:1 */
   --toast-text: var(--color-white);

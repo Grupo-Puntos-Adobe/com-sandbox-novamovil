@@ -1,6 +1,9 @@
 import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
+import {
+  readRawCell, alertOptions, safeHref, observeBalancedColumns,
+} from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
 const FALLBACK_CATEGORIES = [
@@ -29,8 +32,6 @@ const SKELETON_COUNT = 6;
 const CARD_MIN_WIDTH = 140;
 const CARD_GAP = 16;
 const multiColumn = window.matchMedia('(width >= 600px)');
-const DEFAULT_ALERT_SECONDS = 5;
-const DEFAULT_ALERT_COLOR = 'error';
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const MESSAGES = {
   error: 'No pudimos cargar las categorías. Intenta de nuevo más tarde.',
@@ -38,36 +39,6 @@ const MESSAGES = {
   emptyText: 'Vuelve pronto para descubrir nuestras novedades.',
   listLabel: 'Categorías',
 };
-
-/**
- * The Endpoint cell exactly as authored (readBlockConfig would resolve a relative
- * link against the page, but relative paths must go to the API base URL).
- * @param {Element} block
- * @returns {string}
- */
-function readEndpoint(block) {
-  const row = [...block.querySelectorAll(':scope > div')]
-    .find((r) => r.children[0]?.textContent.trim().toLowerCase() === 'endpoint');
-  const cell = row?.children[1];
-  if (!cell) return '';
-  return (cell.querySelector('a')?.getAttribute('href') || cell.textContent).trim();
-}
-
-/**
- * Only same-site paths and http(s) URLs are accepted as card links.
- * @param {string} path
- * @returns {string|null}
- */
-function safeHref(path) {
-  if (typeof path !== 'string' || !path.trim()) return null;
-  try {
-    const url = new URL(path.trim(), window.location.href);
-    if (!['http:', 'https:'].includes(url.protocol)) return null;
-    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : url.href;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Keeps active categories with a label and a valid link, without duplicates, by `order`.
@@ -158,26 +129,6 @@ function buildEmpty() {
 }
 
 /**
- * Balances the rows when the cards do not fit in one row: 6 cards become 3 + 3
- * (instead of 5 + 1 or 4 + 2) and stretch to the full width, so no row is left
- * half empty. When they all fit, the design's fixed 140px cards are kept.
- * @param {Element} list The .card-categories-list
- */
-function balanceRows(list) {
-  const count = list.children.length;
-  const fit = Math.floor((list.clientWidth + CARD_GAP) / (CARD_MIN_WIDTH + CARD_GAP));
-  const maxColumns = Math.max(1, fit);
-  const wraps = multiColumn.matches && count > maxColumns;
-  list.classList.toggle('is-balanced', wraps);
-  if (wraps) {
-    const rows = Math.ceil(count / maxColumns);
-    list.style.setProperty('--card-categories-columns', Math.ceil(count / rows));
-  } else {
-    list.style.removeProperty('--card-categories-columns');
-  }
-}
-
-/**
  * Renders the cards, or the empty message when there is nothing to show.
  * @param {Element} block
  * @param {Object[]} categories Normalised categories
@@ -192,7 +143,8 @@ function render(block, categories) {
   list.setAttribute('aria-label', MESSAGES.listLabel);
   list.append(...categories.map(buildCard));
   block.replaceChildren(list);
-  new ResizeObserver(() => balanceRows(list)).observe(list);
+  // 6 cards that do not fit in one row become 3 + 3 and stretch; one row keeps 140px cards
+  observeBalancedColumns(list, { minWidth: CARD_MIN_WIDTH, gap: CARD_GAP, query: multiColumn });
 }
 
 /**
@@ -224,12 +176,9 @@ async function loadFromService(block, endpoint, alert) {
  */
 export default function decorate(block) {
   const config = readBlockConfig(block);
-  const endpoint = readEndpoint(block);
-  const seconds = Number.parseFloat(config['alert-duration']);
-  const alert = {
-    duration: (Number.isFinite(seconds) && seconds >= 0 ? seconds : DEFAULT_ALERT_SECONDS) * 1000,
-    variant: String(config['alert-color'] || DEFAULT_ALERT_COLOR).trim().toLowerCase(),
-  };
+  const cell = readRawCell(block, 'endpoint');
+  const endpoint = cell.href || cell.text;
+  const alert = alertOptions(config);
 
   if (!endpoint) {
     render(block, normalize(FALLBACK_CATEGORIES));
