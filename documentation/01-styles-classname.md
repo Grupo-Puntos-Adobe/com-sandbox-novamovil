@@ -1,4 +1,4 @@
-# 08 · Funcionalidad Styles y Classname: cómo se agregó, paso a paso
+# 01 · Funcionalidad Styles y Classname: cómo se agregó, paso a paso
 
 Esta guía explica **qué hace**, **en qué archivos está**, **cómo funciona por dentro**, **por qué se
 hizo así** y **cómo agregarla a un bloque nuevo**.
@@ -274,7 +274,7 @@ propiedades inventadas o valores inválidos.
 |---|---|
 | `dc91d2b` | Primera versión: se llamaba **para todos los bloques** desde `decorateMain` en 📦 `scripts/scripts.js` |
 | `b6495eb` | El título pasa a estar dentro del bloque (`buildBlockHeader`) y se agrega `flow-root` para los márgenes |
-| *(este commit)* | **Solo bloques NovaMóvil:** se quita la llamada de `scripts/scripts.js` (vuelve a quedar **idéntico al template**) y cada bloque NovaMóvil la llama en la primera línea de su `decorate` |
+| `5e0f0b5` | **Solo bloques NovaMóvil:** se quita la llamada de `scripts/scripts.js` (vuelve a quedar **idéntico al template**) y cada bloque NovaMóvil la llama en la primera línea de su `decorate` |
 
 Por qué se cambió: así los bloques del template (`cards`, `columns`, `hero`…) quedan intactos, y
 `scripts/scripts.js` vuelve a ser el archivo original, lo que facilita actualizar el template en el futuro.
