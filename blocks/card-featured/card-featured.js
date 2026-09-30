@@ -2,7 +2,7 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
-  readRawCell, alertOptions, safeHref, observeBalancedColumns,
+  readRawCell, alertOptions, safeHref, observeBalancedColumns, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -247,19 +247,6 @@ function buildCard(product) {
   return li;
 }
 
-function buildHeader(title, link) {
-  if (!title && !link.text) return null;
-  const header = el('div', 'card-featured-header');
-  if (title) header.append(el('h2', 'card-featured-title', title));
-  const href = safeHref(link.href);
-  if (link.text && href) {
-    const cta = el('a', 'card-featured-link', link.text);
-    cta.href = href;
-    header.append(cta);
-  }
-  return header;
-}
-
 function buildSkeleton() {
   const list = el('ul', 'card-featured-list');
   list.setAttribute('aria-hidden', 'true');
@@ -334,7 +321,7 @@ export default function decorate(block) {
   const endpointCell = readRawCell(block, 'endpoint');
   const endpoint = endpointCell.href || endpointCell.text;
   const linkTemplate = readRawCell(block, 'product link').text || DEFAULT_PRODUCT_LINK;
-  const header = buildHeader(readRawCell(block, 'title').text, readRawCell(block, 'link'));
+  const header = buildBlockHeader(block, 'card-featured');
   const alert = alertOptions(config);
 
   if (!endpoint) {

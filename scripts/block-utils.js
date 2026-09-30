@@ -53,6 +53,38 @@ export function safeHref(path) {
 }
 
 /**
+ * Optional section header owned by the block, from its Title (and Link) rows, so the
+ * block's main class wraps title + content (Styles/Classname then apply around both).
+ * Markup: div.{prefix}-header > h2.{prefix}-heading + a.{prefix}-link
+ * @param {Element} block
+ * @param {string} prefix Block class, e.g. 'card-featured'
+ * @returns {Element|null} the header, or null when there is no title nor link
+ */
+export function buildBlockHeader(block, prefix) {
+  const title = readRawCell(block, 'title').text;
+  const link = readRawCell(block, 'link');
+  const href = link.text ? safeHref(link.href) : null;
+  if (!title && !href) return null;
+
+  const header = document.createElement('div');
+  header.className = `${prefix}-header`;
+  if (title) {
+    const heading = document.createElement('h2');
+    heading.className = `${prefix}-heading`;
+    heading.textContent = title;
+    header.append(heading);
+  }
+  if (href) {
+    const cta = document.createElement('a');
+    cta.className = `${prefix}-link`;
+    cta.href = href;
+    cta.textContent = link.text;
+    header.append(cta);
+  }
+  return header;
+}
+
+/**
  * Keeps grid rows balanced: when the items do not fit in one row they are spread
  * evenly (6 → 3 + 3, 4 → 2 + 2 instead of 5 + 1 or 3 + 1) through the
  * --balanced-columns custom property and the .is-balanced class.

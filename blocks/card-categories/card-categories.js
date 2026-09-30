@@ -2,7 +2,7 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
-  readRawCell, alertOptions, safeHref, observeBalancedColumns,
+  readRawCell, alertOptions, safeHref, observeBalancedColumns, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -129,20 +129,22 @@ function buildEmpty() {
 }
 
 /**
- * Renders the cards, or the empty message when there is nothing to show.
+ * Renders the header and the cards, or the empty message when there is nothing to show.
  * @param {Element} block
+ * @param {Element|null} header Optional title (Title row)
  * @param {Object[]} categories Normalised categories
  */
-function render(block, categories) {
+function render(block, header, categories) {
   block.removeAttribute('aria-busy');
+  const content = [header].filter(Boolean);
   if (!categories.length) {
-    block.replaceChildren(buildEmpty());
+    block.replaceChildren(...content, buildEmpty());
     return;
   }
   const list = buildList('card-categories-list');
-  list.setAttribute('aria-label', MESSAGES.listLabel);
+  list.setAttribute('aria-label', header?.querySelector('h2')?.textContent || MESSAGES.listLabel);
   list.append(...categories.map(buildCard));
-  block.replaceChildren(list);
+  block.replaceChildren(...content, list);
   // 6 cards that do not fit in one row become 3 + 3 and stretch; one row keeps 140px cards
   observeBalancedColumns(list, { minWidth: CARD_MIN_WIDTH, gap: CARD_GAP, query: multiColumn });
 }
@@ -151,26 +153,26 @@ function render(block, categories) {
  * Loads categories from the service; on any error logs it, shows a floating alert and
  * the empty message.
  */
-async function loadFromService(block, endpoint, alert) {
+async function loadFromService(block, header, endpoint, alert) {
   try {
     const response = await get(endpoint);
     const categories = response?.data?.categories;
     if (!Array.isArray(categories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    render(block, normalize(categories));
+    render(block, header, normalize(categories));
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-categories] Could not load categories from', endpoint, error);
     showToast(MESSAGES.error, alert);
-    render(block, []);
+    render(block, header, []);
   }
 }
 
 /**
  * Card Categories: category cards fed by a service (Endpoint row) or by the internal JSON.
  * The block name gives the main .card-categories class that scopes every style.
- * Optional rows: Alert Duration (seconds, 0 = until closed), Alert Color
+ * Optional rows: Title, Alert Duration (seconds, 0 = until closed), Alert Color
  * (error | warning | info | success, or a hex colour).
  * @param {Element} block The card-categories block element
  */
@@ -179,14 +181,15 @@ export default function decorate(block) {
   const cell = readRawCell(block, 'endpoint');
   const endpoint = cell.href || cell.text;
   const alert = alertOptions(config);
+  const header = buildBlockHeader(block, 'card-categories');
 
   if (!endpoint) {
-    render(block, normalize(FALLBACK_CATEGORIES));
+    render(block, header, normalize(FALLBACK_CATEGORIES));
     return;
   }
 
   // skeleton keeps the layout stable; the request does not block the following sections
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(buildSkeleton());
-  loadFromService(block, endpoint, alert);
+  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
+  loadFromService(block, header, endpoint, alert);
 }

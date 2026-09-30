@@ -7,12 +7,22 @@
  */
 
 .card-categories {
-  /* space below the section title, as in the design (~32px) */
-  margin-block-start: 20px;
   font-family: var(--body-font-family);
 
-  @media (width >= 600px) {
-    margin-block-start: 24px;
+  /* ========================================================================
+     Header: section title (Title row), ~32px above the cards as in the design
+     ======================================================================== */
+
+  & .card-categories-header {
+    margin-block-end: 20px;
+
+    @media (width >= 600px) {
+      margin-block-end: 24px;
+    }
+  }
+
+  & .card-categories-heading {
+    margin: 0;
   }
 
   /* ========================================================================

@@ -2,7 +2,7 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
-  readRawCell, alertOptions, safeHref, observeBalancedColumns,
+  readRawCell, alertOptions, safeHref, observeBalancedColumns, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -127,13 +127,6 @@ function buildCard(promo) {
   return li;
 }
 
-function buildHeader(title) {
-  if (!title) return null;
-  const header = el('div', 'card-promotions-header');
-  header.append(el('h2', 'card-promotions-heading', title));
-  return header;
-}
-
 function buildSkeleton() {
   const list = el('ul', 'card-promotions-list');
   list.setAttribute('aria-hidden', 'true');
@@ -209,7 +202,7 @@ export default function decorate(block) {
   const endpointCell = readRawCell(block, 'endpoint');
   const endpoint = endpointCell.href || endpointCell.text;
   const linkTemplate = readRawCell(block, 'promo link').text || DEFAULT_PROMO_LINK;
-  const header = buildHeader(readRawCell(block, 'title').text);
+  const header = buildBlockHeader(block, 'card-promotions');
   const alert = alertOptions(config);
 
   if (!endpoint) {

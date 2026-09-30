@@ -72,6 +72,10 @@ export default function applyBlockOptions(block) {
     const key = keyCell.textContent.trim().toLowerCase();
     if (STYLE_KEYS.includes(key)) {
       applyAuthorStyles(block, valueCell.textContent);
+      // authored margins add to the section spacing instead of collapsing into it
+      if (block.getAttribute('style') && block.parentElement) {
+        block.parentElement.style.display = 'flow-root';
+      }
       row.remove();
     } else if (CLASS_KEYS.includes(key)) {
       applyAuthorClasses(block, valueCell.textContent);
