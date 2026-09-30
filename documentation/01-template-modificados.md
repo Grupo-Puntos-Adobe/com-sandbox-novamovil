@@ -2,14 +2,13 @@
 
 Todos son 📦 archivos base del AEM Boilerplate y están en git.
 
-## ✏️ Modificados (11)
+## ✏️ Modificados (10)
 
 | Archivo | Para qué sirve | Qué cambiamos | Parte del template que afecta |
 |---|---|---|---|
 | `head.html` | `<head>` de todas las páginas | Agrega `<link>` a `styles/colors.css` | Carga inicial de todas las páginas |
 | `404.html` | Página de error 404 | Agrega `<link>` a `styles/colors.css` | Página 404 |
 | `.hlxignore` | Archivos del repo que **no** se publican | Cambia `.*` por la lista explícita de dotfiles (para no ocultar `/.rum`) y agrega `content-drive/` y `documentation/` | Qué se publica del código |
-| `scripts/scripts.js` | Arranque de la página | Importa `block-options.js` y en `decorateMain` aplica las filas **Styles / Classname** a todos los bloques | Decoración de **todos** los bloques (también dentro de fragmentos) |
 | `styles/styles.css` | Estilos globales | Colores movidos a `colors.css`; fuente Plus Jakarta Sans; `h2` 24/28 px; fondo `--page-background`; pesos de títulos/botones; escala `z-index` (toast 900, header 1000); `scroll-padding-top` por el header fijo | Todo el sitio |
 | `styles/fonts.css` | Declaración de fuentes | Roboto / Roboto Condensed → Plus Jakarta Sans 400/600/700/800 | Tipografía de todo el sitio |
 | `blocks/header/header.js` | Arma el header desde el documento `nav` | Header NovaMóvil: logo (desde Drive o `NovaMóvil` por defecto), menú, búsqueda que se expande, cuenta, carrito con contador, menú móvil | Header de todas las páginas |
@@ -26,3 +25,9 @@ Todos son 📦 archivos base del AEM Boilerplate y están en git.
 | `fonts/roboto-medium.woff2` | Igual |
 | `fonts/roboto-bold.woff2` | Igual |
 | `fonts/roboto-condensed-bold.woff2` | Igual |
+
+## Modificados y luego revertidos
+
+| Archivo | Historia |
+|---|---|
+| `scripts/scripts.js` | Llamaba a `applyBlockOptions` para todos los bloques (`dc91d2b`). Se revirtió: ahora es **idéntico al template** y cada bloque NovaMóvil llama la función (ver [08-styles-classname.md](08-styles-classname.md)) |

@@ -11,7 +11,6 @@ import {
   loadCSS,
   buildBlock,
 } from './aem.js';
-import applyBlockOptions from './block-options.js';
 
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
   const innerTT = window.trustedTypes.createPolicy('tt-inner', {
@@ -153,8 +152,6 @@ export function decorateMain(main) {
   buildAutoBlocks(main);
   decorateSections(main);
   decorateBlocks(main);
-  // optional Styles / Classname rows, available in every block
-  main.querySelectorAll('div.block').forEach(applyBlockOptions);
   decorateButtons(main);
 }
 

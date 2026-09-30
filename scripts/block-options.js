@@ -1,12 +1,13 @@
 /*
- * Optional authoring rows available in EVERY block (called once per block from
- * decorateMain in scripts.js, before the block's own JS runs):
+ * Optional authoring rows for the NovaMóvil blocks (hero-novamovil, card-*). Opt-in:
+ * a block calls applyBlockOptions(block) as the FIRST line of its decorate(); template
+ * blocks (cards, columns, hero…) do not call it and are left untouched.
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
  *
  * Both rows are optional and can be anywhere in the table (usually right after the
- * block name). They are removed from the block, so its own code never sees them.
+ * block name). They are removed from the block, so the rest of its code never sees them.
  * Styles: declarations separated by ";" (a comma can be part of a CSS value, e.g.
  * rgba(0, 0, 0, .5) or a font list). Bare numbers get "px" (padding-left: 20 → 20px).
  * Classname: names separated by spaces or commas.

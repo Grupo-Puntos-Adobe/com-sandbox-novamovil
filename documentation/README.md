@@ -23,10 +23,10 @@ es nuestro, y en qué parte del template influye cada cosa.
 
 | Tipo | Cantidad |
 |---|---|
-| 📦 ✏️ Archivos base modificados | 11 |
+| 📦 ✏️ Archivos base modificados | 10 |
 | 📦 🗑️ Archivos base eliminados | 4 |
 | 🆕 Archivos nuevos en git (código, fuentes, iconos, docx) | 32 |
-| 🆕 Archivos nuevos de esta documentación | 8 |
+| 🆕 Archivos nuevos de esta documentación | 9 |
 | 🔒 Archivos solo locales | 95 (+ `node_modules/`) |
 
 ## Índice
@@ -40,6 +40,7 @@ es nuestro, y en qué parte del template influye cada cosa.
 | [05-fuera-del-repo.md](05-fuera-del-repo.md) | Cambios que no son archivos: configuración del sitio y ramas |
 | [06-mapa-del-template.md](06-mapa-del-template.md) | Cómo se conecta cada archivo nuevo con el template |
 | [07-sin-cambios.md](07-sin-cambios.md) | Archivos del template que siguen tal como vinieron |
+| [08-styles-classname.md](08-styles-classname.md) | **Cómo se agregó la funcionalidad Styles / Classname**, paso a paso |
 
 ## Reglas del proyecto (resumen)
 

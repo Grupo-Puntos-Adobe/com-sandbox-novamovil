@@ -5,6 +5,7 @@
 | Archivo / carpeta | Nota |
 |---|---|
 | `scripts/aem.js` | Núcleo de AEM. **Nunca se edita** |
+| `scripts/scripts.js` | Se modificó y luego se revirtió; hoy es idéntico al template (ver 01 y 08) |
 | `scripts/consent-check.js`, `scripts/consented.js` | Carga condicionada al consentimiento (cookies) |
 | `styles/lazy-styles.css` | Estilos que se cargan después |
 | `sync-block-collection.sh` | Script del template para traer bloques de la Block Collection |

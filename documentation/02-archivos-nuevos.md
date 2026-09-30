@@ -13,7 +13,7 @@ Todos son 🆕 creados por nosotros y se suben a git (los `.docx` están en [03-
 
 | Archivo | Para qué sirve | Parte del template que afecta |
 |---|---|---|
-| `scripts/block-options.js` | Filas opcionales **Styles / Classname** en cualquier bloque (valida y aplica, quita la fila) | Lo llama `scripts/scripts.js` → `decorateMain` |
+| `scripts/block-options.js` | Filas opcionales **Styles / Classname** solo para los bloques NovaMóvil (valida, aplica y quita la fila). Ver [08-styles-classname.md](08-styles-classname.md) | Lo llaman `hero-novamovil` y los `card-*` en la 1.ª línea de su `decorate` |
 | `scripts/block-utils.js` | Utilidades de bloques: leer celda sin procesar (`readRawCell`), título del bloque (`buildBlockHeader`), opciones de alerta, enlaces seguros, filas balanceadas | Lo importan los bloques `card-*` |
 | `scripts/brand.js` | Logo de marca (imagen de Drive o texto `NovaMóvil` por defecto) | Lo usan `blocks/header/header.js` y `blocks/footer/footer.js` |
 | `scripts/toast.js` | Alerta flotante arriba a la derecha (duración y color configurables) | La usan los bloques `card-*` cuando falla un servicio |
@@ -55,4 +55,4 @@ Todos son 🆕 creados por nosotros y se suben a git (los `.docx` están en [03-
 
 | Archivo | Para qué sirve | Parte del template que afecta |
 |---|---|---|
-| `documentation/*.md` | Esta carpeta (8 archivos) | Ninguna; excluida de la publicación en `.hlxignore` |
+| `documentation/*.md` | Esta carpeta (9 archivos) | Ninguna; excluida de la publicación en `.hlxignore` |

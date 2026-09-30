@@ -9,14 +9,13 @@
  ├─► 🆕 styles/colors.css           (colores de todo el sitio)
  ├─► 📦 styles/styles.css ─► 📦 styles/fonts.css ─► 🆕 fonts/plus-jakarta-sans-*.woff2
  └─► 📦 scripts/scripts.js
-       ├─ decorateMain
-       │    └─► 🆕 scripts/block-options.js   (Styles / Classname en TODOS los bloques)
        ├─ 📦 aem.js loadHeader ─► 📦 blocks/header/header.js ─► 🆕 scripts/brand.js
        │                                                     └─► 🆕 icons/*.svg (decorateIcons)
        ├─ 📦 aem.js loadFooter ─► 📦 blocks/footer/footer.js ─► 🆕 scripts/brand.js
        └─ 📦 aem.js loadBlock (según la tabla del documento)
-            ├─► 🆕 blocks/hero-novamovil
+            ├─► 🆕 blocks/hero-novamovil ─► 🆕 scripts/block-options.js
             └─► 🆕 blocks/card-categories · card-featured · card-promotions
+                   ├─► 🆕 scripts/block-options.js (Styles / Classname, 1.ª línea de decorate)
                    ├─► 🆕 scripts/block-utils.js   (título, celdas, filas balanceadas)
                    ├─► 🆕 scripts/api/http-client.js ─► 🆕 scripts/api/interceptors.js
                    └─► 🆕 scripts/toast.js ─► 🆕 styles/toast.css
@@ -39,7 +38,8 @@
 
 ## Orden de ejecución de un bloque
 
-1. `decorateMain` (📦 `scripts.js`): crea secciones y bloques.
-2. `applyBlockOptions` (🆕 `block-options.js`): aplica y quita las filas `Styles` / `Classname`.
-3. `decorateButtons` (📦 `aem.js`): convierte enlaces en negrita en botones.
-4. JS del bloque (`decorate(block)`): lee sus filas (`Title`, `Endpoint`…) y pinta.
+1. `decorateMain` (📦 `scripts.js`): crea secciones y bloques y convierte enlaces en negrita en botones.
+2. `loadBlock` (📦 `aem.js`): carga el CSS y el JS del bloque.
+3. JS del bloque (`decorate(block)`):
+   1. `applyBlockOptions` (🆕 `block-options.js`), solo bloques NovaMóvil: aplica y quita `Styles` / `Classname`.
+   2. Lee sus filas (`Title`, `Endpoint`…) y pinta.

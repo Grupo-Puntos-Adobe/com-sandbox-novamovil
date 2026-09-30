@@ -1,4 +1,5 @@
 import { readBlockConfig } from '../../scripts/aem.js';
+import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
@@ -198,6 +199,7 @@ async function loadFromService(block, header, endpoint, linkTemplate, alert) {
  * @param {Element} block The card-promotions block element
  */
 export default function decorate(block) {
+  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const config = readBlockConfig(block);
   const endpointCell = readRawCell(block, 'endpoint');
   const endpoint = endpointCell.href || endpointCell.text;

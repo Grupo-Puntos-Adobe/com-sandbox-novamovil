@@ -1,3 +1,5 @@
+import applyBlockOptions from '../../scripts/block-options.js';
+
 const HEADING = 'h1, h2, h3, h4, h5, h6';
 
 /**
@@ -79,6 +81,7 @@ function buildContent(items) {
  * @param {Element} block The hero-novamovil block element
  */
 export default function decorate(block) {
+  applyBlockOptions(block); // optional Styles / Classname rows, before reading the cells
   const cells = [...block.querySelectorAll(':scope > div > div')];
   const mediaCell = cells.find((c) => c.querySelector('picture') && !c.querySelector(HEADING));
   const contentCell = cells.find((c) => c !== mediaCell && c.textContent.trim());
