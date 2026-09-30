@@ -32,6 +32,15 @@
 
   /* nav height */
   --nav-height: 64px;
+
+  /* stacking order (z-index scale): the header stays above everything */
+  --z-index-toast: 900;
+  --z-index-header: 1000;
+}
+
+/* anchors (#id) are not hidden under the fixed header */
+html {
+  scroll-padding-top: var(--nav-height);
 }
 
 /* fallback fonts */

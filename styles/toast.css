@@ -8,7 +8,7 @@
   --toast-background: var(--toast-error-background);
 
   position: fixed;
-  z-index: 1000;
+  z-index: var(--z-index-toast);
 
   /* reset popover UA styles (centred, bordered) */
   inset: calc(var(--nav-height) + 16px + var(--toast-offset, 0px)) 16px auto auto;
