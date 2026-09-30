@@ -106,7 +106,7 @@ Estado actual de los tres servicios:
 |---|---|---|
 | `/api/v1/home/categories` | 200 | ✅ `*` |
 | `/api/v1/home/promotions` | 200 | ✅ `*` |
-| `/api/v1/products/featured` | **404** (falta guardar el ejemplo en Postman) | ✅ `*` |
+| `/api/v1/products/featured` | 200 | ✅ `*` |
 
 ### Paso 2 · Crear el error uniforme `ApiError` (`scripts/api/interceptors.js`)
 

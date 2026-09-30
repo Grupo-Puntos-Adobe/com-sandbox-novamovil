@@ -11,6 +11,17 @@
  * Styles: declarations separated by ";" (a comma can be part of a CSS value, e.g.
  * rgba(0, 0, 0, .5) or a font list). Bare numbers get "px" (padding-left: 20 → 20px).
  * Classname: names separated by spaces or commas.
+ *
+ * Called by: hero-novamovil, card-categories, card-featured, card-promotions (first line
+ * of decorate). New NovaMóvil blocks must do the same.
+ *
+ * Flow:
+ *   applyBlockOptions(block)            default export, one call per block
+ *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
+ *     └─ "Classname" row → applyAuthorClasses(block, text)
+ *     (both rows are then removed)
+ *
+ * Guide: documentation/01-styles-classname.md
  */
 
 const STYLE_KEYS = ['styles', 'style'];

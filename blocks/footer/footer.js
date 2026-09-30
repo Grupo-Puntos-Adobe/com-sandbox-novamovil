@@ -1,7 +1,28 @@
+/*
+ * NovaMóvil footer (template block, rewritten). All styles are scoped under .footer-novamovil.
+ *
+ * Entry point: decorate(block), called by loadFooter() (scripts/aem.js) from loadLazy()
+ * in scripts/scripts.js, on every page.
+ *
+ * Content: the "footer" document (or the page's `footer` metadata), 3 sections:
+ *   1. brand + tagline   2. link columns (each heading starts a column)   3. copyright + payments
+ * A missing footer document renders an empty footer instead of failing.
+ *
+ * Flow:
+ *   decorate(block)
+ *     ├─ loadFragment(footerPath)                blocks/fragment/fragment.js
+ *     ├─ section 1 → buildBrandColumn(items)     → buildBrand() scripts/brand.js
+ *     ├─ section 2 → buildLinkColumns(items)
+ *     └─ section 3 → buildBottom(items)
+ *     (sectionContent() extracts the authored elements of each section)
+ *
+ * Output: div.footer-novamovil > div.footer-inner > (div.footer-grid + div.footer-bottom)
+ */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 import buildBrand from '../../scripts/brand.js';
 
+// true when the element has any letter (tells a text brand from a lone logo image)
 const hasLetters = (el) => /\p{L}/u.test(el.textContent);
 
 /**

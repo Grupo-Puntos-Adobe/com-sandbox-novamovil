@@ -1,3 +1,30 @@
+/*
+ * Card Categories block: category cards from a service (Endpoint row) or the internal JSON.
+ *
+ * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
+ * "Card Categories" table.
+ *
+ * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration, Alert Color.
+ *
+ * Flow:
+ *   decorate(block)
+ *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
+ *     ├─ readBlockConfig(block)          scripts/aem.js → alert-duration, alert-color
+ *     ├─ readRawCell(block, 'endpoint')  scripts/block-utils.js → endpoint exactly as authored
+ *     ├─ alertOptions(config)            scripts/block-utils.js → { duration, variant }
+ *     ├─ buildBlockHeader(block, …)      scripts/block-utils.js → h2 from the Title row
+ *     ├─ no endpoint → render(normalize(FALLBACK_CATEGORIES))
+ *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
+ *                         ├─ get(endpoint)   scripts/api/http-client.js
+ *                         ├─ ok    → render(normalize(data.categories))
+ *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
+ *   render(block, header, categories)
+ *     ├─ none → buildEmpty()
+ *     └─ buildCard() per category + observeBalancedColumns() (scripts/block-utils.js)
+ *
+ * Expected response: { data: { categories: [{ id, label, icon, path, color, active, order }] } }
+ * Guide: documentation/02-integracion-endpoints.md
+ */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
@@ -92,12 +119,20 @@ function buildCard(category) {
   return li;
 }
 
+/**
+ * @param {string} className
+ * @returns {Element} empty ul
+ */
 function buildList(className) {
   const list = document.createElement('ul');
   list.className = className;
   return list;
 }
 
+/**
+ * Grey placeholder cards shown while the service answers (avoids layout shift).
+ * @returns {Element} ul hidden from assistive technology
+ */
 function buildSkeleton() {
   const list = buildList('card-categories-list card-categories-loading');
   list.setAttribute('aria-hidden', 'true');
@@ -109,6 +144,10 @@ function buildSkeleton() {
   return list;
 }
 
+/**
+ * "No categories" message: empty list or service error.
+ * @returns {Element} div[role=status]
+ */
 function buildEmpty() {
   const empty = document.createElement('div');
   empty.className = 'card-categories-empty';
@@ -153,6 +192,10 @@ function render(block, header, categories) {
 /**
  * Loads categories from the service; on any error logs it, shows a floating alert and
  * the empty message.
+ * @param {Element} block
+ * @param {Element|null} header
+ * @param {string} endpoint Full URL or path relative to API_BASE_URL
+ * @param {{duration: number, variant: string}} alert showToast options
  */
 async function loadFromService(block, header, endpoint, alert) {
   try {

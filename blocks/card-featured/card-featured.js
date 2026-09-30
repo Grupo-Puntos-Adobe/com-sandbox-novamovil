@@ -1,3 +1,33 @@
+/*
+ * Card Featured block: featured product cards from a service (Endpoint row) or the internal JSON.
+ *
+ * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
+ * "Card Featured" table.
+ *
+ * Authored rows (all optional): Styles, Classname, Title, Link ("Ver todos"), Endpoint,
+ * Product Link ("/productos/{sku}"), Alert Duration, Alert Color.
+ *
+ * Flow:
+ *   decorate(block)
+ *     ├─ applyBlockOptions(block)          scripts/block-options.js → Styles / Classname rows
+ *     ├─ readBlockConfig(block)            scripts/aem.js → alert-duration, alert-color
+ *     ├─ readRawCell(block, 'endpoint' | 'product link')   scripts/block-utils.js
+ *     ├─ alertOptions(config)              scripts/block-utils.js → { duration, variant }
+ *     ├─ buildBlockHeader(block, …)        scripts/block-utils.js → h2 + "Ver todos" link
+ *     ├─ no endpoint → render(normalize(FALLBACK_PRODUCTS))
+ *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
+ *                         ├─ get(endpoint)   scripts/api/http-client.js
+ *                         ├─ ok    → render(normalize(data.products))
+ *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
+ *   render(block, header, products)
+ *     ├─ none → buildEmpty()
+ *     └─ buildCard() per product + observeBalancedColumns() (scripts/block-utils.js)
+ *          └─ buildMedia() · buildRating() · buildPrices() (formatPrice) · "Ver producto" link
+ *
+ * Expected response: { data: { products: [{ id, sku, brand, name, description, image, price,
+ *   oldPrice, promo, currency, rating, reviews, badge, active, path? }] } }
+ * Guide: documentation/02-integracion-endpoints.md
+ */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
@@ -101,10 +131,18 @@ const MESSAGES = {
   imageFallback: 'Imagen no disponible',
 };
 
+// service values → trimmed string ('' if not a string) / number (null if not numeric)
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
 const number = (value) => (value === null || value === '' || !Number.isFinite(Number(value))
   ? null : Number(value));
 
+/**
+ * Formats a price as es-MX currency without decimals ($19,999); an unknown currency code
+ * falls back to MXN.
+ * @param {number} value
+ * @param {string} currency ISO 4217 code, e.g. 'MXN'
+ * @returns {string}
+ */
 function formatPrice(value, currency) {
   try {
     return new Intl.NumberFormat(LOCALE, { style: 'currency', currency, maximumFractionDigits: 0 })
@@ -119,6 +157,9 @@ function formatPrice(value, currency) {
 /**
  * Builds the product link from the item's own path/url or the authored template,
  * e.g. "/productos/{sku}" (placeholders: {sku}, {productId}, {id}).
+ * @param {Object} item Raw product
+ * @param {string} template Product Link row or DEFAULT_PRODUCT_LINK
+ * @returns {string|null} null when a placeholder could not be filled
  */
 function productHref(item, template) {
   const own = safeHref(item.path || item.url);
@@ -129,6 +170,7 @@ function productHref(item, template) {
 
 /**
  * Active products with a name, a price and a valid link, without duplicates.
+ * Validates every field (URLs with safeHref, currency code, rating 0-5, oldPrice > price).
  * @param {Object[]} list Raw products (service or fallback)
  * @param {string} linkTemplate
  * @returns {Object[]}
@@ -165,6 +207,13 @@ function normalize(list, linkTemplate) {
     });
 }
 
+/**
+ * createElement shortcut; content is always set as text (never HTML).
+ * @param {string} tag
+ * @param {string} [className]
+ * @param {string} [content]
+ * @returns {Element}
+ */
 function el(tag, className, content) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -172,6 +221,12 @@ function el(tag, className, content) {
   return node;
 }
 
+/**
+ * Square image box with the badge ("Más vendido") and promo ("13% OFF") labels; a missing
+ * or broken image shows "Imagen no disponible".
+ * @param {Object} product Normalised product
+ * @returns {Element} div.card-featured-media
+ */
 function buildMedia(product) {
   const media = el('div', 'card-featured-media');
   const fallback = () => {
@@ -196,6 +251,12 @@ function buildMedia(product) {
   return media;
 }
 
+/**
+ * Stars filled to the rating through --card-featured-rating (CSS) + review count;
+ * screen readers get a single "Calificación 4.6 de 5, 2,341 reseñas" label.
+ * @param {Object} product Normalised product
+ * @returns {Element|null} null when the product has no rating
+ */
 function buildRating(product) {
   if (product.rating === null) return null;
   const rating = el('p', 'card-featured-rating');
@@ -213,6 +274,12 @@ function buildRating(product) {
   return rating;
 }
 
+/**
+ * Current price + crossed-out old price (only when higher), with hidden labels for
+ * screen readers.
+ * @param {Object} product Normalised product
+ * @returns {Element} p.card-featured-prices
+ */
 function buildPrices(product) {
   const prices = el('p', 'card-featured-prices');
   const current = el('span', 'card-featured-price');
@@ -229,6 +296,8 @@ function buildPrices(product) {
 /**
  * One product card; service data is only ever set as text or validated URLs.
  * The whole card is clickable through the "Ver producto" link.
+ * @param {Object} product Normalised product
+ * @returns {Element} li.card-featured-item
  */
 function buildCard(product) {
   const li = el('li', 'card-featured-item');
@@ -248,6 +317,10 @@ function buildCard(product) {
   return li;
 }
 
+/**
+ * Grey placeholder cards shown while the service answers (avoids layout shift).
+ * @returns {Element} ul hidden from assistive technology
+ */
 function buildSkeleton() {
   const list = el('ul', 'card-featured-list');
   list.setAttribute('aria-hidden', 'true');
@@ -255,6 +328,10 @@ function buildSkeleton() {
   return list;
 }
 
+/**
+ * "No featured products" message: empty list or service error.
+ * @returns {Element} div[role=status]
+ */
 function buildEmpty() {
   const empty = el('div', 'card-featured-empty');
   empty.setAttribute('role', 'status');
@@ -270,6 +347,9 @@ function buildEmpty() {
 
 /**
  * Renders the header and the cards (or the empty message).
+ * @param {Element} block
+ * @param {Element|null} header Title / Link rows (buildBlockHeader)
+ * @param {Object[]} products Normalised products
  */
 function render(block, header, products) {
   block.removeAttribute('aria-busy');
@@ -295,6 +375,11 @@ function render(block, header, products) {
 /**
  * Loads products from the service; on any error logs it, shows a floating alert and
  * the empty message.
+ * @param {Element} block
+ * @param {Element|null} header
+ * @param {string} endpoint Full URL or path relative to API_BASE_URL
+ * @param {string} linkTemplate Product Link row
+ * @param {{duration: number, variant: string}} alert showToast options
  */
 async function loadFromService(block, header, endpoint, linkTemplate, alert) {
   try {

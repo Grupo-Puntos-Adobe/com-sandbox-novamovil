@@ -1,3 +1,23 @@
+/*
+ * Hero Novamovil block: text column (eyebrow, title, description, buttons, stats) + image.
+ *
+ * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
+ * "Hero Novamovil" table. It is the first section, so it is loaded eagerly (LCP).
+ *
+ * Authoring: one row with two cells (text | image) in any order, plus the optional
+ * Styles / Classname rows.
+ *
+ * Flow:
+ *   decorate(block)
+ *     ├─ applyBlockOptions(block)   scripts/block-options.js → Styles / Classname rows
+ *     ├─ finds the media cell (picture) and the content cell (text)
+ *     ├─ buildContent(items)        → div.hero-content
+ *     │    ├─ isButtonParagraph()   link-only paragraphs → grouped in div.hero-actions
+ *     │    └─ decorateStat(li)      "<strong>4.9M+</strong> Usuarios" → value + label
+ *     └─ div.hero-media             picture with loading=eager + fetchpriority=high
+ *
+ * Output: div.hero-novamovil > div.hero-inner > (div.hero-content + div.hero-media)
+ */
 import applyBlockOptions from '../../scripts/block-options.js';
 
 const HEADING = 'h1, h2, h3, h4, h5, h6';

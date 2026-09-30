@@ -1,4 +1,14 @@
-// NovaMóvil brand (logo + wordmark), shared by the header and footer blocks.
+/*
+ * NovaMóvil brand (logo + wordmark) as one home link, shared by the header and footer.
+ *
+ * Called by: blocks/header/header.js (prefix 'nav-brand') and
+ * blocks/footer/footer.js (prefix 'footer-brand').
+ *
+ * Flow:
+ *   buildBrand(source, prefix)      default export
+ *     ├─ logo: authored <picture> → else authored :logo: icon → else default icon-logo span
+ *     └─ buildBrandName(html, prefix) → wordmark, "Móvil" wrapped in <em> for the accent colour
+ */
 
 // brand used when the authored document has no logo image / no brand text
 const BRAND_NAME = 'NovaMóvil';

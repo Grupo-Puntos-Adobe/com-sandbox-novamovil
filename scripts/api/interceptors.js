@@ -5,6 +5,12 @@
  *   response(response, config) -> receives the raw fetch Response, returns the data
  *   error(error, config)       -> may log/transform the error; rethrow to propagate it
  * All three hooks are optional. Add new interceptors here and register them by name.
+ *
+ * Used by: scripts/api/http-client.js (resolveInterceptors, ApiError).
+ * Registry: 'public' → [publicInterceptor]. Blocks pick a chain with
+ * get(url, { interceptor: 'name' }); unknown names fall back to 'public'.
+ *
+ * Guide: documentation/02-integracion-endpoints.md
  */
 
 /**

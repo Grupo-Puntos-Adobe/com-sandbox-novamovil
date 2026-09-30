@@ -4,6 +4,16 @@
  * element otherwise. Styles: styles/toast.css (.toast-novamovil), loaded on first use.
  *
  * showToast('No pudimos cargar las categorías', { duration: 5000, variant: 'error' });
+ *
+ * Called by: loadFromService() of card-categories, card-featured and card-promotions
+ * (error path), with the options built by alertOptions() in scripts/block-utils.js.
+ *
+ * Flow:
+ *   showToast(message, options)
+ *     ├─ loadCSS(styles/toast.css)   scripts/aem.js, only on the first call
+ *     ├─ builds div.toast-novamovil (text + close button), popover="manual" when supported
+ *     ├─ restack()                   places it below the visible toasts
+ *     └─ timer (paused on hover/focus) → removeToast() → restack()
  */
 import { loadCSS } from './aem.js';
 
@@ -17,7 +27,10 @@ const supportsPopover = typeof HTMLElement !== 'undefined'
 let cssLoaded;
 const toasts = [];
 
-// stack visible toasts from the top: each one sits below the previous ones
+/**
+ * Stacks the visible toasts from the top: each one sits below the previous ones
+ * (--toast-offset is read by styles/toast.css).
+ */
 function restack() {
   let offset = 0;
   toasts.forEach((toast) => {
@@ -26,6 +39,11 @@ function restack() {
   });
 }
 
+/**
+ * Fades the toast out, removes it and restacks the rest. Safe to call twice
+ * (timer + close button).
+ * @param {HTMLElement} toast
+ */
 function removeToast(toast) {
   if (!toast.isConnected || toast.classList.contains('is-leaving')) return;
   clearTimeout(toast.timer);

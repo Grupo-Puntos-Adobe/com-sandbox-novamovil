@@ -1,3 +1,24 @@
+/*
+ * NovaMóvil header (template block, rewritten). All styles are scoped under .header-novamovil.
+ *
+ * Entry point: decorate(block), called by loadHeader() (scripts/aem.js) from loadLazy()
+ * in scripts/scripts.js, on every page.
+ *
+ * Content: the "nav" document (or the page's `nav` metadata), 3 sections:
+ *   1. brand (logo + wordmark)   2. section links   3. tools (Mi cuenta / Carrito links)
+ *
+ * Flow:
+ *   decorate(block)
+ *     ├─ loadFragment(navPath)        blocks/fragment/fragment.js → nav document sections
+ *     ├─ .nav-brand    → buildBrand(section, 'nav-brand')   scripts/brand.js
+ *     ├─ .nav-tools    → reads authored cuenta/carrito hrefs (else TOOL_DEFAULTS), then:
+ *     │                   buildSearch()  → toggleSearch()
+ *     │                   buildToolLink() × 2 (user, cart + badge)
+ *     │                   hamburger      → toggleMenu()
+ *     └─ listeners: breakpoint change → toggleMenu(); Escape → closeOnEscape()
+ *
+ * Output: header > div.header.header-novamovil > div.nav-wrapper > nav#nav
+ */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 import buildBrand from '../../scripts/brand.js';
@@ -11,6 +32,10 @@ const TOOL_DEFAULTS = {
   carrito: '/carrito',
 };
 
+/**
+ * Escape closes the open search first, then the mobile menu (focus returns to the hamburger).
+ * @param {KeyboardEvent} e
+ */
 function closeOnEscape(e) {
   if (e.code !== 'Escape') return;
   const nav = document.getElementById('nav');
@@ -99,6 +124,12 @@ function buildSearch() {
 
 /**
  * Builds an icon tool link (user, cart) with optional badge
+ * @param {Object} tool
+ * @param {string} tool.href
+ * @param {string} tool.label Accessible name (the link only shows an icon)
+ * @param {string} tool.icon Icon name in /icons (user, cart)
+ * @param {string} [tool.badge] Counter shown on the icon (e.g. cart items)
+ * @returns {Element} a.nav-tool
  */
 function buildToolLink({
   href, label, icon, badge,

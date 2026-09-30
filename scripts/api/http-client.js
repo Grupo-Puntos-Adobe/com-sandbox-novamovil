@@ -2,6 +2,20 @@
  * NovaMóvil HTTP client: the only place that calls fetch().
  * Components call get()/post()/request(); interceptors (scripts/api/interceptors.js)
  * decide headers, auth and how responses and errors are handled.
+ *
+ * Called by: loadFromService() of card-categories, card-featured and card-promotions
+ * (get(endpoint)). No library: native fetch + AbortSignal.
+ *
+ * Flow:
+ *   get(url) / post(url, body) → request(url, options)
+ *     ├─ resolveInterceptors(interceptor)   interceptors.js ('public' by default)
+ *     ├─ interceptor.request(config)        each one, in order
+ *     ├─ buildUrl(url, params)              relative path → API_BASE_URL
+ *     ├─ fetch(…) with AbortSignal.timeout  network/timeout error → ApiError
+ *     ├─ interceptor.response(response)     'public' → checks status, returns JSON
+ *     └─ on any error: interceptor.error(e) may recover; otherwise the ApiError is thrown
+ *
+ * Guide: documentation/02-integracion-endpoints.md
  */
 import { ApiError, resolveInterceptors } from './interceptors.js';
 

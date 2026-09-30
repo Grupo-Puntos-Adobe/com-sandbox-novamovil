@@ -1,4 +1,14 @@
-// Helpers shared by the NovaMóvil service-fed blocks (card-categories, card-featured).
+/*
+ * Helpers shared by the NovaMóvil blocks. Pure DOM/string utilities, no network calls.
+ *
+ * Exports and who uses them:
+ *   readRawCell(block, key)            card-* → Endpoint / Product Link / Promo Link, as authored
+ *   alertOptions(config)               card-* → Alert Duration / Alert Color → showToast options
+ *   safeHref(path)                     card-* → validates every link/image URL from service data
+ *   buildBlockHeader(block, prefix)    card-* → Title (+ Link) rows → div.{prefix}-header
+ *   balanceColumns(list, options)      used by observeBalancedColumns
+ *   observeBalancedColumns(list, opts) card-* → keeps grid rows even (6 → 3 + 3) on resize
+ */
 
 const DEFAULT_ALERT_SECONDS = 5;
 const DEFAULT_ALERT_VARIANT = 'error';

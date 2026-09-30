@@ -1,3 +1,34 @@
+/*
+ * Card Promotions block: promotion cards (photo + gradient in the promotion colour) from a
+ * service (Endpoint row) or the internal JSON.
+ *
+ * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
+ * "Card Promotions" table.
+ *
+ * Authored rows (all optional): Styles, Classname, Title, Endpoint,
+ * Promo Link ("/promociones/{id}"), Alert Duration, Alert Color.
+ *
+ * Flow:
+ *   decorate(block)
+ *     ├─ applyBlockOptions(block)          scripts/block-options.js → Styles / Classname rows
+ *     ├─ readBlockConfig(block)            scripts/aem.js → alert-duration, alert-color
+ *     ├─ readRawCell(block, 'endpoint' | 'promo link')   scripts/block-utils.js
+ *     ├─ alertOptions(config)              scripts/block-utils.js → { duration, variant }
+ *     ├─ buildBlockHeader(block, …)        scripts/block-utils.js → h2 from the Title row
+ *     ├─ no endpoint → render(normalize(FALLBACK_PROMOTIONS))
+ *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
+ *                         ├─ get(endpoint)   scripts/api/http-client.js
+ *                         ├─ ok    → render(normalize(data.promotions))
+ *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
+ *   render(block, header, promotions)
+ *     ├─ none → buildEmpty()
+ *     └─ buildCard() per promotion (promoHref) + observeBalancedColumns() (block-utils.js)
+ *
+ * Expected response:
+ *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }
+ * The gradient colour is passed to CSS as --card-promotions-item-color on each card.
+ * Guide: documentation/02-integracion-endpoints.md
+ */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
@@ -51,10 +82,14 @@ const MESSAGES = {
   emptyText: 'Vuelve pronto para descubrir nuestras nuevas ofertas.',
 };
 
+// service value → trimmed string ('' if not a string)
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
 
 /**
  * The promotion's own path/url, or the authored template (placeholder: {id}).
+ * @param {Object} item Raw promotion
+ * @param {string} template Promo Link row or DEFAULT_PROMO_LINK
+ * @returns {string|null} null when the placeholder could not be filled
  */
 function promoHref(item, template) {
   const own = safeHref(item.path || item.url);
@@ -90,6 +125,13 @@ function normalize(list, linkTemplate) {
     .sort((a, b) => a.order - b.order);
 }
 
+/**
+ * createElement shortcut; content is always set as text (never HTML).
+ * @param {string} tag
+ * @param {string} [className]
+ * @param {string} [content]
+ * @returns {Element}
+ */
 function el(tag, className, content) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -100,6 +142,8 @@ function el(tag, className, content) {
 /**
  * One promotion card: photo, gradient in the promotion colour (bottom → top), texts.
  * Service data is only ever set as text or validated URLs.
+ * @param {Object} promo Normalised promotion
+ * @returns {Element} li > a.card-promotions-item
  */
 function buildCard(promo) {
   const li = el('li');
@@ -128,6 +172,10 @@ function buildCard(promo) {
   return li;
 }
 
+/**
+ * Grey placeholder cards shown while the service answers (avoids layout shift).
+ * @returns {Element} ul hidden from assistive technology
+ */
 function buildSkeleton() {
   const list = el('ul', 'card-promotions-list');
   list.setAttribute('aria-hidden', 'true');
@@ -135,6 +183,10 @@ function buildSkeleton() {
   return list;
 }
 
+/**
+ * "No promotions" message: empty list or service error.
+ * @returns {Element} div[role=status]
+ */
 function buildEmpty() {
   const empty = el('div', 'card-promotions-empty');
   empty.setAttribute('role', 'status');
@@ -150,6 +202,9 @@ function buildEmpty() {
 
 /**
  * Renders the header and the cards (or the empty message).
+ * @param {Element} block
+ * @param {Element|null} header Title row (buildBlockHeader)
+ * @param {Object[]} promotions Normalised promotions
  */
 function render(block, header, promotions) {
   block.removeAttribute('aria-busy');
@@ -176,6 +231,11 @@ function render(block, header, promotions) {
 /**
  * Loads promotions from the service; on any error logs it, shows a floating alert and
  * the empty message.
+ * @param {Element} block
+ * @param {Element|null} header
+ * @param {string} endpoint Full URL or path relative to API_BASE_URL
+ * @param {string} linkTemplate Promo Link row
+ * @param {{duration: number, variant: string}} alert showToast options
  */
 async function loadFromService(block, header, endpoint, linkTemplate, alert) {
   try {
