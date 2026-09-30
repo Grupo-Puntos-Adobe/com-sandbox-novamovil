@@ -1,0 +1,227 @@
+/*
+ * NovaMóvil promotions (block "Card Promotions").
+ * Every rule lives inside .card-promotions; colours come from styles/colors.css
+ * (--card-promotions-*). Each card's gradient colour comes from the service data
+ * through --card-promotions-item-color. Each part keeps its responsive rules below it.
+ * Breakpoint: 768px (one card per row below; up to three per row, balanced, from 768px).
+ */
+
+.card-promotions {
+  font-family: var(--body-font-family);
+
+  /* ========================================================================
+     Header: section title
+     ======================================================================== */
+
+  & .card-promotions-header {
+    margin-block-end: 24px;
+
+    @media (width >= 600px) {
+      margin-block-end: 32px;
+    }
+  }
+
+  & .card-promotions-heading {
+    margin: 0;
+  }
+
+  /* ========================================================================
+     List: one card per row on mobile, up to three equal cards from 768px
+     ======================================================================== */
+
+  & .card-promotions-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    & > li {
+      display: flex;
+    }
+
+    @media (width >= 768px) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+
+      /* scripts/block-utils.js: rows balanced when there are more than three */
+      &.is-balanced {
+        grid-template-columns: repeat(var(--balanced-columns), minmax(0, 1fr));
+      }
+    }
+  }
+
+  /* ========================================================================
+     Card: photo + gradient in the promotion colour (bottom → top) + texts;
+     hover only lifts it
+     ======================================================================== */
+
+  & .card-promotions-item {
+    --card-promotions-item-color: var(--card-promotions-default-color);
+
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+    block-size: 168px;
+    border-radius: 14px;
+    background: var(--card-promotions-media-background);
+    color: var(--card-promotions-text);
+    text-decoration: none;
+    cursor: pointer;
+
+    /* identity transform so hover does not create a new stacking context */
+    translate: 0 0;
+    transition: translate 0.2s ease;
+
+    /* gradient: almost solid colour at the bottom, fading out by ~80% of the height */
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        color-mix(in srgb, var(--card-promotions-item-color) 92%, transparent) 0%,
+        color-mix(in srgb, var(--card-promotions-item-color) 60%, transparent) 40%,
+        transparent 80%
+      );
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--card-promotions-text);
+      text-decoration: none;
+      translate: 0 -4px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-promotions-item-color);
+      outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &:hover,
+      &:focus-visible {
+        translate: 0 0;
+      }
+    }
+
+    @media (width >= 768px) {
+      block-size: 200px;
+    }
+  }
+
+  & .card-promotions-image {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  & .card-promotions-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 16px 18px;
+
+    @media (width >= 768px) {
+      padding: 20px 20px 24px;
+    }
+  }
+
+  & .card-promotions-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+
+    @media (width >= 768px) {
+      font-size: 22px;
+    }
+  }
+
+  & .card-promotions-sub {
+    color: var(--card-promotions-text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+
+    @media (width >= 768px) {
+      font-size: 13px;
+    }
+  }
+
+  /* ========================================================================
+     Loading skeleton and empty state
+     ======================================================================== */
+
+  & .card-promotions-skeleton {
+    block-size: 168px;
+    border-radius: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--card-promotions-skeleton) 25%,
+      var(--card-promotions-skeleton-shine) 50%,
+      var(--card-promotions-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: card-promotions-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    @media (width >= 768px) {
+      block-size: 200px;
+    }
+  }
+
+  & .card-promotions-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 32px 20px;
+    border: 1px dashed var(--card-promotions-empty-border);
+    border-radius: 14px;
+    background: var(--card-promotions-empty-surface);
+    text-align: center;
+
+    & :where(p) {
+      margin: 0;
+    }
+
+    @media (width >= 600px) {
+      padding: 40px 24px;
+    }
+  }
+
+  & .card-promotions-empty-icon {
+    margin-block-end: 6px;
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  & .card-promotions-empty-title {
+    color: var(--card-promotions-empty-title);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  & .card-promotions-empty-text {
+    color: var(--card-promotions-empty-text);
+    font-size: 14px;
+  }
+}
+
+@keyframes card-promotions-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

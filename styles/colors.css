@@ -109,6 +109,18 @@
   --card-featured-empty-text: var(--text-color);
   --card-featured-empty-border: var(--color-gray-200);
 
+  /* card-promotions (each card's gradient colour comes from the service data) */
+  --card-promotions-text: var(--color-white);
+  --card-promotions-text-muted: color-mix(in srgb, var(--color-white) 88%, transparent);
+  --card-promotions-default-color: var(--color-primary);
+  --card-promotions-media-background: var(--color-navy-950);
+  --card-promotions-skeleton: var(--card-featured-skeleton);
+  --card-promotions-skeleton-shine: var(--card-featured-skeleton-shine);
+  --card-promotions-empty-text: var(--card-featured-empty-text);
+  --card-promotions-empty-border: var(--card-featured-empty-border);
+  --card-promotions-empty-surface: var(--card-featured-surface);
+  --card-promotions-empty-title: var(--card-featured-name);
+
   /* toast (floating alerts); error/warning/success are deepened so white text passes 4.5:1 */
   --toast-text: var(--color-white);
   --toast-error-background: color-mix(in srgb, var(--color-error) 75%, var(--color-gray-900));
