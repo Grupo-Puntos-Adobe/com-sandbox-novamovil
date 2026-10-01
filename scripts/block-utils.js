@@ -11,7 +11,7 @@
  */
 
 const DEFAULT_ALERT_SECONDS = 5;
-const DEFAULT_ALERT_VARIANT = 'error';
+const DEFAULT_ALERT_VARIANT = "error";
 
 /**
  * Reads a key/value row exactly as authored (readBlockConfig resolves links against
@@ -21,14 +21,18 @@ const DEFAULT_ALERT_VARIANT = 'error';
  * @returns {{text: string, href: string}}
  */
 export function readRawCell(block, key) {
-  const row = [...block.querySelectorAll(':scope > div')]
-    .find((r) => r.children[0]?.textContent.trim().toLowerCase() === key.toLowerCase());
+  const row = [...block.querySelectorAll(":scope > div")].find(
+    (r) =>
+      r.children[0]?.textContent.trim().toLowerCase() === key.toLowerCase(),
+  );
   const cell = row?.children[1];
-  if (!cell) return { text: '', href: '' };
-  const link = cell.querySelector('a');
+  if (!cell) {
+    return { text: "", href: "" };
+  }
+  const link = cell.querySelector("a");
   return {
     text: (link?.textContent || cell.textContent).trim(),
-    href: (link?.getAttribute('href') || '').trim(),
+    href: (link?.getAttribute("href") || "").trim(),
   };
 }
 
@@ -39,10 +43,15 @@ export function readRawCell(block, key) {
  * @returns {{duration: number, variant: string}}
  */
 export function alertOptions(config) {
-  const seconds = Number.parseFloat(config['alert-duration']);
+  const seconds = Number.parseFloat(config["alert-duration"]);
   return {
-    duration: (Number.isFinite(seconds) && seconds >= 0 ? seconds : DEFAULT_ALERT_SECONDS) * 1000,
-    variant: String(config['alert-color'] || DEFAULT_ALERT_VARIANT).trim().toLowerCase(),
+    duration:
+      (Number.isFinite(seconds) && seconds >= 0
+        ? seconds
+        : DEFAULT_ALERT_SECONDS) * 1000,
+    variant: String(config["alert-color"] || DEFAULT_ALERT_VARIANT)
+      .trim()
+      .toLowerCase(),
   };
 }
 
@@ -52,11 +61,17 @@ export function alertOptions(config) {
  * @returns {string|null}
  */
 export function safeHref(path) {
-  if (typeof path !== 'string' || !path.trim()) return null;
+  if (typeof path !== "string" || !path.trim()) {
+    return null;
+  }
   try {
     const url = new URL(path.trim(), window.location.href);
-    if (!['http:', 'https:'].includes(url.protocol)) return null;
-    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : url.href;
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return null;
+    }
+    return url.origin === window.location.origin
+      ? `${url.pathname}${url.search}${url.hash}`
+      : url.href;
   } catch {
     return null;
   }
@@ -71,21 +86,23 @@ export function safeHref(path) {
  * @returns {Element|null} the header, or null when there is no title nor link
  */
 export function buildBlockHeader(block, prefix) {
-  const title = readRawCell(block, 'title').text;
-  const link = readRawCell(block, 'link');
+  const title = readRawCell(block, "title").text;
+  const link = readRawCell(block, "link");
   const href = link.text ? safeHref(link.href) : null;
-  if (!title && !href) return null;
+  if (!title && !href) {
+    return null;
+  }
 
-  const header = document.createElement('div');
+  const header = document.createElement("div");
   header.className = `${prefix}-header`;
   if (title) {
-    const heading = document.createElement('h2');
+    const heading = document.createElement("h2");
     heading.className = `${prefix}-heading`;
     heading.textContent = title;
     header.append(heading);
   }
   if (href) {
-    const cta = document.createElement('a');
+    const cta = document.createElement("a");
     cta.className = `${prefix}-link`;
     cta.href = href;
     cta.textContent = link.text;
@@ -107,20 +124,33 @@ export function buildBlockHeader(block, prefix) {
  *   use as many columns as fit (items keep the width of a full row instead of the CSS default)
  * @param {number} [options.maxColumns=Infinity] Never more columns than this per row
  */
-export function balanceColumns(list, {
-  minWidth, gap, query, fillSingleRow = false, maxColumns: columnLimit = Infinity,
-}) {
+export function balanceColumns(
+  list,
+  {
+    minWidth,
+    gap,
+    query,
+    fillSingleRow = false,
+    maxColumns: columnLimit = Infinity,
+  },
+) {
   const count = list.children.length;
   const fit = Math.floor((list.clientWidth + gap) / (minWidth + gap));
   const maxColumns = Math.max(1, Math.min(fit, columnLimit));
   let columns = null;
   if (!query || query.matches) {
-    if (count > maxColumns) columns = Math.ceil(count / Math.ceil(count / maxColumns));
-    else if (fillSingleRow) columns = maxColumns;
+    if (count > maxColumns) {
+      columns = Math.ceil(count / Math.ceil(count / maxColumns));
+    } else if (fillSingleRow) {
+      columns = maxColumns;
+    }
   }
-  list.classList.toggle('is-balanced', columns !== null);
-  if (columns) list.style.setProperty('--balanced-columns', columns);
-  else list.style.removeProperty('--balanced-columns');
+  list.classList.toggle("is-balanced", columns !== null);
+  if (columns) {
+    list.style.setProperty("--balanced-columns", columns);
+  } else {
+    list.style.removeProperty("--balanced-columns");
+  }
 }
 
 /**
