@@ -12,6 +12,16 @@
  * rgba(0, 0, 0, .5) or a font list). Bare numbers get "px" (padding-left: 20 → 20px).
  * Classname: names separated by spaces or commas.
  *
+ * Separators accepted:
+ *   ┌─────────────┬──────────────────────────────────────────────┐
+ *   │ Styles      │ ";"   "\n"                                   │
+ *   │ Classname   │ espacio   tab   "\n"   ","   ";"             │
+ *   └─────────────┴──────────────────────────────────────────────┘
+ *   (Styles NO acepta "," porque rompería valores como rgba(0,0,0,.5) o Arial, sans-serif)
+ *   (Styles NO acepta espacios ni tabs porque son parte de la sintaxis CSS:
+ *    padding: 0 20px, margin: 10px auto, font: italic bold 12px Arial…)
+ *   (Classname acepta ";" de forma defensiva: si el autor lo escribe por error, no rompe)
+ *
  * Called by: hero-novamovil, card-categories, card-featured, card-promotions (first line
  * of decorate). New NovaMóvil blocks must do the same.
  *
@@ -24,13 +34,26 @@
  * Guide: documentation/01-styles-classname.md
  */
 
-const STYLE_KEYS = ['styles', 'style'];
-const CLASS_KEYS = ['classname', 'classnames', 'class name', 'class names', 'class'];
+const STYLE_KEYS = ["styles", "style"];
+const CLASS_KEYS = [
+  "classname",
+  "classnames",
+  "class name",
+  "class names",
+  "class",
+];
 const PROPERTY = /^-{0,2}[a-z][a-z0-9-]*$/i;
 const CLASS_NAME = /^-?[_a-z][_a-z0-9-]*$/i;
 // no external resources or script-like values from authored styles
 const UNSAFE_VALUE = /url\s*\(|expression\s*\(|javascript:|@import|[<>{}]/i;
 const BARE_NUMBER = /^-?\d*\.?\d+$/;
+
+// Separadores de authoring
+// STYLE_SEPARATOR: ";" y "\n". NO acepta "," (rompería rgba(0,0,0,.5), Arial, sans-serif)
+// ni espacios/tabs (son parte de la sintaxis CSS: padding: 0 20px).
+const STYLE_SEPARATOR = /[;\n]/;
+// CLASS_SEPARATOR: espacio, tab, "\n", "," y ";" (este último defensivo).
+const CLASS_SEPARATOR = /[\s,;]+/;
 
 /**
  * Applies "property: value; property: value" to the element; invalid or unsafe
@@ -39,23 +62,34 @@ const BARE_NUMBER = /^-?\d*\.?\d+$/;
  * @param {string} declarations
  */
 export function applyAuthorStyles(element, declarations) {
-  String(declarations || '')
-    .split(/;|\n/)
+  String(declarations || "")
+    .split(STYLE_SEPARATOR) // ✅ VALIDOS: ";"  "\n"
     .map((declaration) => declaration.trim())
     .filter(Boolean)
     .forEach((declaration) => {
-      const separator = declaration.indexOf(':');
-      if (separator < 1) return;
+      const separator = declaration.indexOf(":");
+      if (separator < 1) {
+        return;
+      }
       const property = declaration.slice(0, separator).trim().toLowerCase();
       let value = declaration.slice(separator + 1).trim();
-      if (!PROPERTY.test(property) || !value || UNSAFE_VALUE.test(value)) return;
+      if (!PROPERTY.test(property) || !value || UNSAFE_VALUE.test(value)) {
+        return;
+      }
       const important = /!important$/i.test(value);
-      value = value.replace(/\s*!important$/i, '');
+      value = value.replace(/\s*!important$/i, "");
 
-      element.style.setProperty(property, value, important ? 'important' : '');
+      element.style.setProperty(property, value, important ? "important" : "");
       // unitless numbers are invalid for lengths: retry as px (padding-left: 20 → 20px)
-      if (!element.style.getPropertyValue(property) && BARE_NUMBER.test(value)) {
-        element.style.setProperty(property, `${value}px`, important ? 'important' : '');
+      if (
+        !element.style.getPropertyValue(property) &&
+        BARE_NUMBER.test(value)
+      ) {
+        element.style.setProperty(
+          property,
+          `${value}px`,
+          important ? "important" : "",
+        );
       }
     });
 }
@@ -66,8 +100,8 @@ export function applyAuthorStyles(element, declarations) {
  * @param {string} names
  */
 export function applyAuthorClasses(element, names) {
-  String(names || '')
-    .split(/[\s,]+/)
+  String(names || "")
+    .split(CLASS_SEPARATOR) // ✅ VALIDOS: espacio  tab  "\n"  ","  ";"
     .map((name) => name.trim())
     .filter((name) => CLASS_NAME.test(name))
     .forEach((name) => element.classList.add(name));
@@ -78,15 +112,17 @@ export function applyAuthorClasses(element, names) {
  * @param {HTMLElement} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
-  [...block.querySelectorAll(':scope > div')].forEach((row) => {
+  [...block.querySelectorAll(":scope > div")].forEach((row) => {
     const [keyCell, valueCell] = row.children;
-    if (!keyCell || !valueCell || row.children.length !== 2) return;
+    if (!keyCell || !valueCell || row.children.length !== 2) {
+      return;
+    }
     const key = keyCell.textContent.trim().toLowerCase();
     if (STYLE_KEYS.includes(key)) {
       applyAuthorStyles(block, valueCell.textContent);
       // authored margins add to the section spacing instead of collapsing into it
-      if (block.getAttribute('style') && block.parentElement) {
-        block.parentElement.style.display = 'flow-root';
+      if (block.getAttribute("style") && block.parentElement) {
+        block.parentElement.style.display = "flow-root";
       }
       row.remove();
     } else if (CLASS_KEYS.includes(key)) {
