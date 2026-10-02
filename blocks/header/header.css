@@ -5,28 +5,21 @@
  *   - Only classes, never tag selectors. header.js adds the classes.
  *   - Every rule lives inside .header-novamovil, at most 2 levels deep:
  *       .header-novamovil > & .part > its state (&.is-open, &:hover) or its resolution.
- *   - Resolutions by name (styles/foundations/breakpoints.css): mobile and tablet use the
- *     hamburger menu, desktop the horizontal one. Sizes are variables at the top, so a
- *     resolution usually only changes a variable.
- *   - Colours come from styles/colors.css (--header-*).
+ *   - Sizes are written directly where they apply; each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css: mobile and tablet use the hamburger
+ *     menu, desktop the horizontal one).
+ *   - The only variables are colours (styles/colors.css, --header-*) and the site tokens
+ *     shared with the rest of the page (--nav-height, --body-font-*, --z-index-header).
  *
- * Sections: 1 root & sizes · 2 bar · 3 brand · 4 menu · 5 tools · 6 cart · 7 search ·
+ * Sections: 1 root · 2 bar · 3 brand · 4 menu · 5 tools · 6 cart · 7 search ·
  *           8 hamburger · 9 page scroll lock
  */
 
 .header-novamovil {
   /* ========================================================================
-     1. Root & sizes (always fixed at the top, above everything; the <header>
+     1. Root (always fixed at the top, above everything; the <header>
         keeps --nav-height so the page does not jump under it)
      ======================================================================== */
-
-  --nav-padding-inline: 1rem;
-  --nav-gap: 1rem;
-  --nav-brand-font-size: 18px;
-  --nav-brand-gap: 0.6rem;
-  --nav-logo-size: 34px;
-  --nav-tools-gap: 0.25rem;
-  --nav-button-size: 40px;
 
   /* smooth height animation to the intrinsic size of the mobile menu */
   interpolate-size: allow-keywords;
@@ -35,22 +28,6 @@
   inset-inline: 0;
   z-index: var(--z-index-header);
   color: var(--header-text);
-
-  /* phones: tighter so brand + tools fit on one row */
-  @container style(--mobile: on) {
-    --nav-gap: 0.5rem;
-    --nav-brand-font-size: 16px;
-    --nav-brand-gap: 0.5rem;
-    --nav-logo-size: 30px;
-    --nav-button-size: 36px;
-  }
-
-  @container style(--desktop: on) {
-    --nav-padding-inline: 1.5rem;
-    --nav-gap: 2rem;
-    --nav-brand-font-size: 20px;
-    --nav-tools-gap: 0.5rem;
-  }
 
   /* links of the header: no global link colours or underline (each one has its own :focus-visible) */
   & .nav-brand-link,
@@ -77,11 +54,11 @@
       'brand tools' var(--nav-height)
       'sections sections' 1fr / auto 1fr;
     align-items: center;
-    gap: 0 var(--nav-gap);
+    gap: 0 1rem;
     max-width: 1264px;
     height: var(--nav-height);
     margin: auto;
-    padding: 0 var(--nav-padding-inline);
+    padding: 0 1rem;
     font-family: var(--body-font-family);
 
     /* mobile menu open: grows with its content, never taller than the screen */
@@ -92,8 +69,15 @@
       overflow-y: auto;
     }
 
+    /* phones: tighter so brand + tools fit on one row */
+    @container style(--mobile: on) {
+      gap: 0 0.5rem;
+    }
+
     @container style(--desktop: on) {
       grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
+      gap: 0 2rem;
+      padding: 0 1.5rem;
 
       /* a menu left open on mobile/tablet is ignored on desktop */
       &.is-open {
@@ -113,16 +97,28 @@
     grid-area: brand;
     display: flex;
     align-items: center;
-    font-size: var(--nav-brand-font-size);
+    font-size: 18px;
     font-weight: 800;
     letter-spacing: -0.01em;
+
+    @container style(--mobile: on) {
+      font-size: 16px;
+    }
+
+    @container style(--desktop: on) {
+      font-size: 20px;
+    }
   }
 
   & .nav-brand-link {
     display: inline-flex;
     align-items: center;
-    gap: var(--nav-brand-gap);
+    gap: 0.6rem;
     white-space: nowrap;
+
+    @container style(--mobile: on) {
+      gap: 0.5rem;
+    }
 
     &:focus-visible {
       outline: 2px solid var(--header-text);
@@ -147,10 +143,15 @@
   /* default logo: gradient tile with the layers mark on top */
   & .icon-logo {
     position: relative;
-    width: var(--nav-logo-size);
-    height: var(--nav-logo-size);
+    width: 34px;
+    height: 34px;
     border-radius: 10px;
     background: var(--header-logo-background);
+
+    @container style(--mobile: on) {
+      width: 30px;
+      height: 30px;
+    }
 
     &::after {
       content: '';
@@ -258,7 +259,11 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--nav-tools-gap);
+    gap: 0.25rem;
+
+    @container style(--desktop: on) {
+      gap: 0.5rem;
+    }
   }
 
   /* mono icons painted with currentcolor through a mask, so they follow the text colour */
@@ -268,13 +273,15 @@
     width: 22px;
     height: 22px;
     background-color: currentcolor;
-    mask: var(--icon) center / contain no-repeat;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
   }
 
-  & .icon-search { --icon: url('../../icons/search.svg'); }
-  & .icon-user { --icon: url('../../icons/user.svg'); }
-  & .icon-cart { --icon: url('../../icons/cart.svg'); }
-  & .icon-close { --icon: url('../../icons/close.svg'); }
+  & .icon-search { mask-image: url('../../icons/search.svg'); }
+  & .icon-user { mask-image: url('../../icons/user.svg'); }
+  & .icon-cart { mask-image: url('../../icons/cart.svg'); }
+  & .icon-close { mask-image: url('../../icons/close.svg'); }
 
   /* square icon buttons: user, cart, search toggle, hamburger */
   & .nav-tool,
@@ -283,8 +290,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--nav-button-size);
-    height: var(--nav-button-size);
+    width: 40px;
+    height: 40px;
     padding: 0;
     border: 0;
     border-radius: 10px;
@@ -294,6 +301,11 @@
 
     &:hover {
       background: var(--header-surface-hover);
+    }
+
+    @container style(--mobile: on) {
+      width: 36px;
+      height: 36px;
     }
 
     &:focus-visible {
