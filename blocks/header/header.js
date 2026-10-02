@@ -15,16 +15,17 @@
  *     │                   buildSearch()  → toggleSearch()
  *     │                   buildToolLink() × 2 (user, cart + badge)
  *     │                   hamburger      → toggleMenu()
- *     └─ listeners: breakpoint change → toggleMenu(); Escape → closeOnEscape()
+ *     └─ listeners: Escape → closeOnEscape(); section link click → toggleMenu(nav, false)
+ *
+ * No resolution logic here: header.css decides what each resolution shows with the names of
+ * styles/foundations/breakpoints.css (hamburger on mobile/tablet, horizontal menu on desktop,
+ * page scroll locked while the mobile menu is open). JS only toggles aria-expanded.
  *
  * Output: header > div.header.header-novamovil > div.nav-wrapper > nav#nav
  */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 import buildBrand from '../../scripts/brand.js';
-
-// media query match that indicates mobile/tablet width
-const isDesktop = window.matchMedia('(min-width: 900px)');
 
 // tool links (author can override the labels/urls in the nav document tools section)
 const TOOL_DEFAULTS = {
@@ -47,8 +48,8 @@ function closeOnEscape(e) {
     toggleSearch(search, false);
     return;
   }
-  // close the mobile menu if open
-  if (!isDesktop.matches && nav.getAttribute('aria-expanded') === 'true') {
+  // close the mobile menu if open (on desktop the CSS ignores this state)
+  if (nav.getAttribute('aria-expanded') === 'true') {
     // eslint-disable-next-line no-use-before-define
     toggleMenu(nav, false);
     nav.querySelector('.nav-hamburger button').focus();
@@ -63,7 +64,6 @@ function closeOnEscape(e) {
 function toggleMenu(nav, forceExpanded = null) {
   const expanded = forceExpanded !== null ? !forceExpanded : nav.getAttribute('aria-expanded') === 'true';
   const button = nav.querySelector('.nav-hamburger button');
-  document.body.style.overflowY = (expanded || isDesktop.matches) ? '' : 'hidden';
   nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
   if (button) button.setAttribute('aria-label', expanded ? 'Abrir menú' : 'Cerrar menú');
 }
@@ -218,15 +218,13 @@ export default async function decorate(block) {
   tools.append(hamburger);
   nav.setAttribute('aria-expanded', 'false');
 
-  // reset the mobile menu state when crossing the desktop breakpoint
-  isDesktop.addEventListener('change', () => toggleMenu(nav, isDesktop.matches));
   window.addEventListener('keydown', closeOnEscape);
 
   // close the mobile menu when a section link is followed
   if (navSections) {
     navSections.querySelectorAll('a').forEach((a) => {
       a.addEventListener('click', () => {
-        if (!isDesktop.matches) toggleMenu(nav, true);
+        toggleMenu(nav, false);
       });
     });
   }

@@ -3,7 +3,8 @@
  * Every rule lives inside .header-novamovil (added by header.js) so nothing
  * leaks to the rest of the site. Colours come from styles/colors.css
  * (--header-*); each part keeps its responsive rules right below it.
- * Breakpoint: 900px (mobile menu below).
+ * Resolutions by name (styles/foundations/breakpoints.css): mobile and tablet use the
+ * hamburger menu, desktop the horizontal one. No resolution logic in header.js.
  */
 
 /* stylelint-disable no-descending-specificity */
@@ -62,19 +63,22 @@
       line-height: 1;
     }
 
-    /* very narrow phones: tighten so brand + tools fit on one row */
-    @media (width < 360px) {
+    /* phones: tighten so brand + tools fit on one row */
+    @container style(--mobile: on) {
       gap: 0 0.5rem;
     }
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
       gap: 0 2rem;
       padding: 0 1.5rem;
 
+      /* a menu left open on mobile/tablet is ignored on desktop */
       &[aria-expanded='true'] {
         height: var(--nav-height);
         min-height: unset;
+        max-block-size: none;
+        overflow-y: visible;
       }
     }
   }
@@ -147,7 +151,7 @@
       font-style: normal;
     }
 
-    @media (width < 360px) {
+    @container style(--mobile: on) {
       font-size: 16px;
 
       & a {
@@ -160,7 +164,7 @@
       }
     }
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       font-size: 20px;
     }
   }
@@ -192,7 +196,7 @@
       display: block;
     }
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       display: block;
 
       & ul {
@@ -236,6 +240,10 @@
   & nav[aria-expanded='true'] .nav-sections {
     display: block;
     padding: 0.5rem 0 1rem;
+
+    @container style(--desktop: on) {
+      padding: 0;
+    }
   }
 
   /* ========================================================================
@@ -259,7 +267,7 @@
       mask: var(--icon) center / contain no-repeat;
     }
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       gap: 0.5rem;
     }
   }
@@ -283,7 +291,7 @@
       background: var(--header-surface-hover);
     }
 
-    @media (width < 360px) {
+    @container style(--mobile: on) {
       width: 36px;
       height: 36px;
     }
@@ -309,7 +317,7 @@
       height: 20px;
     }
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       width: auto;
       padding: 0 0.75rem;
     }
@@ -333,7 +341,7 @@
     font-weight: 700;
     line-height: 1;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       position: static;
     }
   }
@@ -429,7 +437,7 @@
   & .nav-hamburger {
     display: flex;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       display: none;
     }
   }
@@ -459,5 +467,12 @@
 
   & .nav-hamburger-icon::after {
     top: 6px;
+  }
+}
+
+/* the page does not scroll behind the open mobile/tablet menu (no JS needed) */
+@container style(--mobile-tablet: on) {
+  body:has(.header-novamovil nav[aria-expanded='true']) {
+    overflow-y: hidden;
   }
 }
