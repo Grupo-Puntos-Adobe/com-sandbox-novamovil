@@ -34,13 +34,13 @@
  * Guide: documentation/01-styles-classname.md
  */
 
-const STYLE_KEYS = ["styles", "style"];
+const STYLE_KEYS = ['styles', 'style'];
 const CLASS_KEYS = [
-  "classname",
-  "classnames",
-  "class name",
-  "class names",
-  "class",
+  'classname',
+  'classnames',
+  'class name',
+  'class names',
+  'class',
 ];
 const PROPERTY = /^-{0,2}[a-z][a-z0-9-]*$/i;
 const CLASS_NAME = /^-?[_a-z][_a-z0-9-]*$/i;
@@ -62,12 +62,12 @@ const CLASS_SEPARATOR = /[\s,;]+/;
  * @param {string} declarations
  */
 export function applyAuthorStyles(element, declarations) {
-  String(declarations || "")
+  String(declarations || '')
     .split(STYLE_SEPARATOR) // ✅ VALIDOS: ";"  "\n"
     .map((declaration) => declaration.trim())
     .filter(Boolean)
     .forEach((declaration) => {
-      const separator = declaration.indexOf(":");
+      const separator = declaration.indexOf(':');
       if (separator < 1) {
         return;
       }
@@ -77,18 +77,18 @@ export function applyAuthorStyles(element, declarations) {
         return;
       }
       const important = /!important$/i.test(value);
-      value = value.replace(/\s*!important$/i, "");
+      value = value.replace(/\s*!important$/i, '');
 
-      element.style.setProperty(property, value, important ? "important" : "");
+      element.style.setProperty(property, value, important ? 'important' : '');
       // unitless numbers are invalid for lengths: retry as px (padding-left: 20 → 20px)
       if (
-        !element.style.getPropertyValue(property) &&
-        BARE_NUMBER.test(value)
+        !element.style.getPropertyValue(property)
+        && BARE_NUMBER.test(value)
       ) {
         element.style.setProperty(
           property,
           `${value}px`,
-          important ? "important" : "",
+          important ? 'important' : '',
         );
       }
     });
@@ -100,7 +100,7 @@ export function applyAuthorStyles(element, declarations) {
  * @param {string} names
  */
 export function applyAuthorClasses(element, names) {
-  String(names || "")
+  String(names || '')
     .split(CLASS_SEPARATOR) // ✅ VALIDOS: espacio  tab  "\n"  ","  ";"
     .map((name) => name.trim())
     .filter((name) => CLASS_NAME.test(name))
@@ -112,7 +112,7 @@ export function applyAuthorClasses(element, names) {
  * @param {HTMLElement} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
-  [...block.querySelectorAll(":scope > div")].forEach((row) => {
+  [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell] = row.children;
     if (!keyCell || !valueCell || row.children.length !== 2) {
       return;
@@ -121,8 +121,8 @@ export default function applyBlockOptions(block) {
     if (STYLE_KEYS.includes(key)) {
       applyAuthorStyles(block, valueCell.textContent);
       // authored margins add to the section spacing instead of collapsing into it
-      if (block.getAttribute("style") && block.parentElement) {
-        block.parentElement.style.display = "flow-root";
+      if (block.getAttribute('style') && block.parentElement) {
+        block.parentElement.style.display = 'flow-root';
       }
       row.remove();
     } else if (CLASS_KEYS.includes(key)) {
