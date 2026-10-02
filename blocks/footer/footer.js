@@ -16,6 +16,11 @@
  *     └─ section 3 → buildBottom(items)
  *     (sectionContent() extracts the authored elements of each section)
  *
+ * Classes used by footer.css (no tag selectors): footer-inner, footer-grid, footer-brand(-link,
+ * -logo, -image, -name, -accent), footer-tagline, footer-column, footer-column-title,
+ * footer-links, footer-link, footer-column-text, footer-bottom, footer-copyright,
+ * footer-payments, footer-payment, footer-inline-link (links inside tagline/copyright).
+ *
  * Output: div.footer-novamovil > div.footer-inner > (div.footer-grid + div.footer-bottom)
  */
 import { getMetadata } from '../../scripts/aem.js';
@@ -127,6 +132,7 @@ function buildBrandColumn(items) {
   column.append(buildBrand(source, 'footer-brand'));
   tagline.forEach((el) => {
     el.classList.add('footer-tagline');
+    el.querySelectorAll('a').forEach((a) => a.classList.add('footer-inline-link'));
     column.append(el);
   });
   return column;
@@ -140,11 +146,17 @@ function buildBrandColumn(items) {
 function buildLinkColumns(items) {
   const columns = [];
   items.forEach((el) => {
-    if (/^H[1-6]$/.test(el.tagName) || !columns.length) {
+    const isHeading = /^H[1-6]$/.test(el.tagName);
+    if (isHeading || !columns.length) {
       const column = document.createElement('div');
       column.className = 'footer-column';
       columns.push(column);
     }
+    // class hooks so footer.css never styles tags
+    if (isHeading) el.classList.add('footer-column-title');
+    else if (el.tagName === 'UL' || el.tagName === 'OL') el.classList.add('footer-links');
+    else el.classList.add('footer-column-text');
+    el.querySelectorAll('a').forEach((a) => a.classList.add('footer-link'));
     columns.at(-1).append(el);
   });
   return columns;
@@ -162,8 +174,10 @@ function buildBottom(items) {
     if (el.tagName === 'UL' || el.tagName === 'OL') {
       el.classList.add('footer-payments');
       el.setAttribute('aria-label', 'Medios de pago');
+      [...el.children].forEach((li) => li.classList.add('footer-payment'));
     } else {
       el.classList.add('footer-copyright');
+      el.querySelectorAll('a').forEach((a) => a.classList.add('footer-inline-link'));
     }
     bottom.append(el);
   });

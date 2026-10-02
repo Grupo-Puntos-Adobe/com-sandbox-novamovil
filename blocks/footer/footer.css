@@ -1,35 +1,32 @@
 /*
  * NovaMóvil footer.
- * Every rule lives inside .footer-novamovil (added by footer.js) so nothing
- * leaks to the rest of the site. Colours come from styles/colors.css
- * (--footer-*); each part keeps its responsive rules right below it.
- * Breakpoint: 768px (single column below, four columns from tablet up).
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. footer.js adds the classes.
+ *   - Every rule lives inside .footer-novamovil, at most 2 levels deep:
+ *       .footer-novamovil > & .part > its state (&:hover, &:focus-visible) or its resolution.
+ *   - Sizes are written directly where they apply; each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css: one column on mobile, brand + three
+ *     link columns from tablet up).
+ *   - The only variables are colours (styles/colors.css, --footer-*) and the site font
+ *     (--body-font-family).
+ *
+ * Sections: 1 root · 2 container & grid · 3 brand · 4 link columns · 5 bottom
  */
 
 .footer-novamovil {
+  /* ========================================================================
+     1. Root
+     ======================================================================== */
+
   background: var(--footer-background);
   color: var(--footer-text);
   font-family: var(--body-font-family);
   font-size: 14px;
   line-height: 1.6;
 
-  & p {
-    margin: 0;
-  }
-
-  & a:any-link {
-    color: currentcolor;
-    text-decoration: none;
-  }
-
-  & a:focus-visible {
-    outline: 2px solid var(--footer-heading);
-    outline-offset: 2px;
-    border-radius: 2px;
-  }
-
   /* ========================================================================
-     Container
+     2. Container & grid: one column on mobile, brand + three columns from tablet
      ======================================================================== */
 
   & .footer-inner {
@@ -38,31 +35,27 @@
     margin: auto;
     padding: 40px 1.25rem 32px;
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       padding: 48px 1rem 40px;
     }
   }
-
-  /* ========================================================================
-     Grid: one column on mobile, brand + three link columns from tablet up
-     ======================================================================== */
 
   & .footer-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 40px;
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       grid-template-columns: repeat(4, 1fr);
       gap: 32px;
     }
   }
 
   /* ========================================================================
-     Brand: logo (image from the footer document or default icon) + wordmark + tagline
+     3. Brand: logo (authored image or default icon) + wordmark + tagline
      ======================================================================== */
 
-  & a.footer-brand-link {
+  & .footer-brand-link {
     display: flex;
     width: fit-content;
     align-items: center;
@@ -72,34 +65,33 @@
     font-weight: 800;
     letter-spacing: -0.01em;
     line-height: 1;
+    text-decoration: none;
     white-space: nowrap;
 
-    /* the "Móvil" accent */
-    & em {
-      color: var(--footer-accent);
-      font-style: normal;
+    &:focus-visible {
+      outline: 2px solid var(--footer-heading);
+      outline-offset: 2px;
+      border-radius: 2px;
     }
   }
 
-  /* authored image: keep its proportions, cap the height */
-  & picture.footer-brand-logo {
+  & .footer-brand-logo {
     display: block;
     flex: 0 0 auto;
+  }
 
-    & img {
-      display: block;
-      width: auto;
-      max-width: 180px;
-      height: 32px;
-      object-fit: contain;
-    }
+  /* authored image: keep its proportions, cap the height */
+  & .footer-brand-image {
+    display: block;
+    width: auto;
+    max-width: 180px;
+    height: 32px;
+    object-fit: contain;
   }
 
   /* default logo: gradient tile with the layers mark on top */
   & .icon-logo {
     position: relative;
-    display: block;
-    flex: 0 0 auto;
     width: 32px;
     height: 32px;
     border-radius: 9px;
@@ -114,57 +106,70 @@
     }
   }
 
+  /* the "Móvil" accent */
+  & .footer-brand-accent {
+    color: var(--footer-accent);
+    font-style: normal;
+  }
+
   & .footer-tagline {
     max-width: 34ch;
-    margin-top: 20px;
+    margin: 20px 0 0;
     color: var(--footer-text);
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       max-width: 30ch;
     }
   }
 
   /* ========================================================================
-     Link columns: white heading, grey links, white on hover
+     4. Link columns: white title, grey links, white on hover
      ======================================================================== */
 
-  & .footer-column {
-    & :is(h1, h2, h3, h4, h5, h6) {
-      margin: 0 0 12px;
-      color: var(--footer-heading);
-      font-family: var(--body-font-family);
-      font-size: 16px;
-      font-weight: 700;
-      line-height: 1.3;
-    }
+  & .footer-column-title {
+    margin: 0 0 12px;
+    color: var(--footer-heading);
+    font-family: var(--body-font-family);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
 
-    & ul {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    & a:any-link {
-      color: var(--footer-link);
-      transition: color 0.15s ease;
-
-      &:hover {
-        color: var(--footer-link-hover);
-      }
-    }
-
-    @media (width >= 768px) {
-      & :is(h1, h2, h3, h4, h5, h6) {
-        font-size: 15px;
-      }
+    @container style(--tablet-desktop: on) {
+      font-size: 15px;
     }
   }
 
+  & .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .footer-link {
+    color: var(--footer-link);
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--footer-link-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--footer-heading);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+
+  & .footer-column-text {
+    margin: 0;
+  }
+
   /* ========================================================================
-     Bottom: divider, copyright and payment chips
+     5. Bottom: divider, copyright and payment chips
      ======================================================================== */
 
   & .footer-bottom {
@@ -175,7 +180,7 @@
     padding-top: 24px;
     border-top: 1px solid var(--footer-border);
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
@@ -184,6 +189,7 @@
   }
 
   & .footer-copyright {
+    margin: 0;
     color: var(--footer-text);
     font-size: 13px;
   }
@@ -196,20 +202,32 @@
     padding: 0;
     list-style: none;
 
-    & li {
-      padding: 3px 10px;
-      border-radius: 6px;
-      background: var(--footer-chip-background);
-      color: var(--footer-chip-text);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      line-height: 1.6;
-      text-transform: uppercase;
-    }
-
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       gap: 18px;
+    }
+  }
+
+  & .footer-payment {
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: var(--footer-chip-background);
+    color: var(--footer-chip-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    text-transform: uppercase;
+  }
+
+  /* links inside the tagline or the copyright: same colour as their text */
+  & .footer-inline-link {
+    color: currentcolor;
+    text-decoration: none;
+
+    &:focus-visible {
+      outline: 2px solid var(--footer-heading);
+      outline-offset: 2px;
+      border-radius: 2px;
     }
   }
 }
