@@ -1,80 +1,102 @@
 /*
  * NovaMóvil header.
- * Every rule lives inside .header-novamovil (added by header.js) so nothing
- * leaks to the rest of the site. Colours come from styles/colors.css
- * (--header-*); each part keeps its responsive rules right below it.
- * Resolutions by name (styles/foundations/breakpoints.css): mobile and tablet use the
- * hamburger menu, desktop the horizontal one. No resolution logic in header.js.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. header.js and scripts/brand.js add the classes.
+ *   - Every rule lives inside .header-novamovil, at most 2 levels deep:
+ *       .header-novamovil > & .part > its state (&.is-open, &:hover) or its resolution.
+ *   - Resolutions by name (styles/foundations/breakpoints.css): mobile and tablet use the
+ *     hamburger menu, desktop the horizontal one. Sizes are variables at the top, so a
+ *     resolution usually only changes a variable.
+ *   - Colours come from styles/colors.css (--header-*).
+ *
+ * Sections: 1 root & sizes · 2 bar · 3 brand · 4 menu · 5 tools · 6 cart · 7 search ·
+ *           8 hamburger · 9 page scroll lock
  */
 
-/* stylelint-disable no-descending-specificity */
-
 .header-novamovil {
-  /* enable smooth height animation to intrinsic size for the mobile menu */
-  interpolate-size: allow-keywords;
+  /* ========================================================================
+     1. Root & sizes (always fixed at the top, above everything; the <header>
+        keeps --nav-height so the page does not jump under it)
+     ======================================================================== */
 
-  /* always fixed at the top and above everything; the <header> element keeps its
-     --nav-height, so the page content does not jump under it */
+  --nav-padding-inline: 1rem;
+  --nav-gap: 1rem;
+  --nav-brand-font-size: 18px;
+  --nav-brand-gap: 0.6rem;
+  --nav-logo-size: 34px;
+  --nav-tools-gap: 0.25rem;
+  --nav-button-size: 40px;
+
+  /* smooth height animation to the intrinsic size of the mobile menu */
+  interpolate-size: allow-keywords;
   position: fixed;
   inset-block-start: 0;
   inset-inline: 0;
   z-index: var(--z-index-header);
   color: var(--header-text);
 
+  /* phones: tighter so brand + tools fit on one row */
+  @container style(--mobile: on) {
+    --nav-gap: 0.5rem;
+    --nav-brand-font-size: 16px;
+    --nav-brand-gap: 0.5rem;
+    --nav-logo-size: 30px;
+    --nav-button-size: 36px;
+  }
+
+  @container style(--desktop: on) {
+    --nav-padding-inline: 1.5rem;
+    --nav-gap: 2rem;
+    --nav-brand-font-size: 20px;
+    --nav-tools-gap: 0.5rem;
+  }
+
+  /* links of the header: no global link colours or underline (each one has its own :focus-visible) */
+  & .nav-brand-link,
+  & .nav-menu-link,
+  & .nav-tool {
+    color: inherit;
+    text-decoration: none;
+  }
+
   /* ========================================================================
-     Wrapper
+     2. Bar: background wrapper + grid (brand | tools, menu below on mobile)
      ======================================================================== */
 
-  /* the background sits on the nav wrapper so it grows with the open mobile menu */
+  /* the background sits on the wrapper so it grows with the open mobile menu */
   & .nav-wrapper {
     background: var(--header-background);
     box-shadow: 0 2px 12px var(--header-shadow);
   }
 
-  /* ========================================================================
-     Nav layout
-     ======================================================================== */
-
-  & nav {
+  & .nav-bar {
     box-sizing: border-box;
     display: grid;
     grid-template:
       'brand tools' var(--nav-height)
       'sections sections' 1fr / auto 1fr;
     align-items: center;
-    gap: 0 1rem;
+    gap: 0 var(--nav-gap);
     max-width: 1264px;
     height: var(--nav-height);
     margin: auto;
-    padding: 0 1rem;
+    padding: 0 var(--nav-padding-inline);
     font-family: var(--body-font-family);
 
-    &[aria-expanded='true'] {
+    /* mobile menu open: grows with its content, never taller than the screen */
+    &.is-open {
       height: auto;
       min-height: var(--nav-height);
-
-      /* the fixed header never grows beyond the screen: a long menu scrolls */
       max-block-size: 100dvh;
       overflow-y: auto;
     }
 
-    & p {
-      margin: 0;
-      line-height: 1;
-    }
-
-    /* phones: tighten so brand + tools fit on one row */
-    @container style(--mobile: on) {
-      gap: 0 0.5rem;
-    }
-
     @container style(--desktop: on) {
       grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
-      gap: 0 2rem;
-      padding: 0 1.5rem;
 
       /* a menu left open on mobile/tablet is ignored on desktop */
-      &[aria-expanded='true'] {
+      &.is-open {
         height: var(--nav-height);
         min-height: unset;
         max-block-size: none;
@@ -83,161 +105,82 @@
     }
   }
 
-  & a:any-link {
-    color: currentcolor;
-    text-decoration: none;
-  }
-
-  & :is(a, button):focus-visible {
-    outline: 2px solid var(--header-text);
-    outline-offset: 2px;
-  }
-
   /* ========================================================================
-     Brand: logo (image from the nav document or default icon) + wordmark
+     3. Brand: logo (authored image or default icon) + wordmark
      ======================================================================== */
 
   & .nav-brand {
     grid-area: brand;
     display: flex;
     align-items: center;
-    font-size: 18px;
+    font-size: var(--nav-brand-font-size);
     font-weight: 800;
     letter-spacing: -0.01em;
+  }
 
-    & a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
-      white-space: nowrap;
-    }
+  & .nav-brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nav-brand-gap);
+    white-space: nowrap;
 
-    /* authored image: keep its proportions, cap the height */
-    & picture.nav-brand-logo {
-      display: block;
-      flex: 0 0 auto;
-
-      & img {
-        display: block;
-        width: auto;
-        max-width: 180px;
-        height: 34px;
-        object-fit: contain;
-      }
-    }
-
-    /* default logo: gradient tile with the layers mark on top */
-    & .icon-logo {
-      position: relative;
-      display: block;
-      flex: 0 0 auto;
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      background: var(--header-logo-background);
-
-      &::after {
-        content: '';
-        position: absolute;
-        inset: 7px;
-        background-color: var(--header-logo-mark);
-        mask: url('../../icons/logo.svg') center / contain no-repeat;
-      }
-    }
-
-    /* the "Móvil" accent */
-    & em {
-      color: var(--header-accent);
-      font-style: normal;
-    }
-
-    @container style(--mobile: on) {
-      font-size: 16px;
-
-      & a {
-        gap: 0.5rem;
-      }
-
-      & .icon-logo {
-        width: 30px;
-        height: 30px;
-      }
-    }
-
-    @container style(--desktop: on) {
-      font-size: 20px;
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
     }
   }
 
+  & .nav-brand-logo {
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  /* authored image: keep its proportions, cap the height */
+  & .nav-brand-image {
+    display: block;
+    width: auto;
+    max-width: 180px;
+    height: 34px;
+    object-fit: contain;
+  }
+
+  /* default logo: gradient tile with the layers mark on top */
+  & .icon-logo {
+    position: relative;
+    width: var(--nav-logo-size);
+    height: var(--nav-logo-size);
+    border-radius: 10px;
+    background: var(--header-logo-background);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      background-color: var(--header-logo-mark);
+      mask: url('../../icons/logo.svg') center / contain no-repeat;
+    }
+  }
+
+  /* the "Móvil" accent */
+  & .nav-brand-accent {
+    color: var(--header-accent);
+    font-style: normal;
+  }
+
   /* ========================================================================
-     Sections: primary navigation
+     4. Menu: stacked list on mobile/tablet, centred row with underline on desktop
      ======================================================================== */
 
   & .nav-sections {
     grid-area: sections;
     display: none;
 
-    & ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* items may be plain text when the author has not linked them yet */
-    & li {
-      border-top: 1px solid var(--header-border);
-      padding: 0.9rem 0.25rem;
-      font-size: var(--body-font-size-s);
-      font-weight: 600;
-      color: var(--header-text);
-    }
-
-    & a {
-      display: block;
-    }
-
     @container style(--desktop: on) {
       display: block;
-
-      & ul {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2rem;
-      }
-
-      & li {
-        position: relative;
-        padding: 0.5rem 0;
-        border: 0;
-        color: var(--header-text-muted);
-        font-size: var(--body-font-size-xs);
-        transition: color 0.15s ease;
-
-        &:hover {
-          color: var(--header-text);
-        }
-
-        /* underline indicator on hover */
-        &:has(a)::after {
-          content: '';
-          position: absolute;
-          inset: auto 0 0;
-          height: 2px;
-          border-radius: 2px;
-          background: var(--header-accent);
-          transform: scaleX(0);
-          transition: transform 0.2s ease;
-        }
-
-        &:has(a):hover::after {
-          transform: scaleX(1);
-        }
-      }
     }
   }
 
-  & nav[aria-expanded='true'] .nav-sections {
+  & .nav-bar.is-open .nav-sections {
     display: block;
     padding: 0.5rem 0 1rem;
 
@@ -246,8 +189,68 @@
     }
   }
 
+  & .nav-menu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @container style(--desktop: on) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+  }
+
+  /* items may be plain text while the author has not linked them yet */
+  & .nav-menu-item {
+    padding: 0.9rem 0.25rem;
+    border-top: 1px solid var(--header-border);
+    color: var(--header-text);
+    font-size: var(--body-font-size-s);
+    font-weight: 600;
+
+    @container style(--desktop: on) {
+      position: relative;
+      padding: 0.5rem 0;
+      border: 0;
+      color: var(--header-text-muted);
+      font-size: var(--body-font-size-xs);
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: var(--header-text);
+      }
+
+      /* underline indicator on hover (linked items only) */
+      &.has-link::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--header-accent);
+        transform: scaleX(0);
+        transition: transform 0.2s ease;
+      }
+
+      &.has-link:hover::after {
+        transform: scaleX(1);
+      }
+    }
+  }
+
+  & .nav-menu-link {
+    display: block;
+
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
+    }
+  }
+
   /* ========================================================================
-     Tools: search, user, cart, hamburger
+     5. Tools: search, user, cart, hamburger
      ======================================================================== */
 
   & .nav-tools {
@@ -255,31 +258,33 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 0.25rem;
-
-    /* mono icons are painted with currentcolor via a mask so they follow the text colour */
-    & .icon {
-      display: block;
-      flex: 0 0 auto;
-      width: 22px;
-      height: 22px;
-      background-color: currentcolor;
-      mask: var(--icon) center / contain no-repeat;
-    }
-
-    @container style(--desktop: on) {
-      gap: 0.5rem;
-    }
+    gap: var(--nav-tools-gap);
   }
 
+  /* mono icons painted with currentcolor through a mask, so they follow the text colour */
+  & .nav-icon {
+    display: block;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    background-color: currentcolor;
+    mask: var(--icon) center / contain no-repeat;
+  }
+
+  & .icon-search { --icon: url('../../icons/search.svg'); }
+  & .icon-user { --icon: url('../../icons/user.svg'); }
+  & .icon-cart { --icon: url('../../icons/cart.svg'); }
+  & .icon-close { --icon: url('../../icons/close.svg'); }
+
+  /* square icon buttons: user, cart, search toggle, hamburger */
   & .nav-tool,
   & .nav-search-toggle,
-  & .nav-hamburger button {
+  & .nav-hamburger-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: var(--nav-button-size);
+    height: var(--nav-button-size);
     padding: 0;
     border: 0;
     border-radius: 10px;
@@ -291,19 +296,14 @@
       background: var(--header-surface-hover);
     }
 
-    @container style(--mobile: on) {
-      width: 36px;
-      height: 36px;
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
     }
   }
 
-  & .icon-search { --icon: url('../../icons/search.svg'); }
-  & .icon-user { --icon: url('../../icons/user.svg'); }
-  & .icon-cart { --icon: url('../../icons/cart.svg'); }
-  & .icon-close { --icon: url('../../icons/close.svg'); }
-
   /* ========================================================================
-     Cart: compact square with corner badge on mobile, pill on desktop
+     6. Cart: square with corner badge on mobile/tablet, pill on desktop
      ======================================================================== */
 
   & .nav-tool-cart {
@@ -312,7 +312,7 @@
     border: 1px solid var(--header-border);
     background: var(--header-surface);
 
-    & .icon {
+    & .nav-icon {
       width: 20px;
       height: 20px;
     }
@@ -347,24 +347,8 @@
   }
 
   /* ========================================================================
-     Search: magnifier toggle expands a field from right to left
+     7. Search: the magnifier expands a field from right to left (.is-open)
      ======================================================================== */
-
-  & .nav-search {
-    position: relative;
-    display: flex;
-    align-items: center;
-
-    &.is-open .nav-search-field {
-      width: min(320px, 60vw);
-      padding: 0 0.5rem 0 0.75rem;
-      opacity: 1;
-    }
-
-    &.is-open .nav-search-toggle {
-      display: none;
-    }
-  }
 
   & .nav-search-field {
     display: flex;
@@ -400,7 +384,7 @@
       color: var(--header-search-muted);
     }
 
-    /* hide native clear/decoration so only our X shows */
+    /* hide the native clear button so only ours shows */
     &::-webkit-search-cancel-button {
       appearance: none;
     }
@@ -424,14 +408,36 @@
       color: var(--header-search-text);
     }
 
-    & .icon {
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
+    }
+
+    & .nav-icon {
       width: 18px;
       height: 18px;
     }
   }
 
+  /* wrapper and open state (after its parts, so the state rules win) */
+  & .nav-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    &.is-open .nav-search-field {
+      width: min(320px, 60vw);
+      padding: 0 0.5rem 0 0.75rem;
+      opacity: 1;
+    }
+
+    &.is-open .nav-search-toggle {
+      display: none;
+    }
+  }
+
   /* ========================================================================
-     Hamburger (mobile only)
+     8. Hamburger (mobile and tablet)
      ======================================================================== */
 
   & .nav-hamburger {
@@ -442,37 +448,45 @@
     }
   }
 
-  & .nav-hamburger-icon,
-  & .nav-hamburger-icon::before,
-  & .nav-hamburger-icon::after {
+  & .nav-hamburger-icon {
+    position: relative;
     box-sizing: border-box;
     display: block;
-    position: relative;
     width: 20px;
     height: 2px;
     border-radius: 2px;
     background: currentcolor;
-  }
 
-  & .nav-hamburger-icon::before,
-  & .nav-hamburger-icon::after {
-    content: '';
-    position: absolute;
-    left: 0;
-  }
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      box-sizing: border-box;
+      display: block;
+      width: 20px;
+      height: 2px;
+      border-radius: 2px;
+      background: currentcolor;
+    }
 
-  & .nav-hamburger-icon::before {
-    top: -6px;
-  }
+    &::before {
+      top: -6px;
+    }
 
-  & .nav-hamburger-icon::after {
-    top: 6px;
+    &::after {
+      top: 6px;
+    }
   }
 }
 
-/* the page does not scroll behind the open mobile/tablet menu (no JS needed) */
+/* ==========================================================================
+   9. Page scroll lock: the page does not scroll behind the open mobile/tablet
+      menu (header.js toggles .has-header-menu-open on <body>)
+   ========================================================================== */
+
 @container style(--mobile-tablet: on) {
-  body:has(.header-novamovil nav[aria-expanded='true']) {
+  .has-header-menu-open {
     overflow-y: hidden;
   }
 }

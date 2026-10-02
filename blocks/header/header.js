@@ -21,7 +21,12 @@
  * styles/foundations/breakpoints.css (hamburger on mobile/tablet, horizontal menu on desktop,
  * page scroll locked while the mobile menu is open). JS only toggles aria-expanded.
  *
- * Output: header > div.header.header-novamovil > div.nav-wrapper > nav#nav
+ * Classes used by header.css (no tag selectors): nav-bar (+ is-open), nav-brand-*, nav-sections,
+ * nav-menu, nav-menu-item (+ has-link), nav-menu-link, nav-tools, nav-tool(-user|-cart),
+ * nav-tool-badge, nav-icon, nav-search(-field|-input|-clear|-toggle), nav-hamburger(-button|-icon),
+ * and has-header-menu-open on <body> while the mobile menu is open.
+ *
+ * Output: header > div.header.header-novamovil > div.nav-wrapper > nav#nav.nav-bar
  */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
@@ -52,7 +57,7 @@ function closeOnEscape(e) {
   if (nav.getAttribute('aria-expanded') === 'true') {
     // eslint-disable-next-line no-use-before-define
     toggleMenu(nav, false);
-    nav.querySelector('.nav-hamburger button').focus();
+    nav.querySelector('.nav-hamburger-button').focus();
   }
 }
 
@@ -63,8 +68,11 @@ function closeOnEscape(e) {
  */
 function toggleMenu(nav, forceExpanded = null) {
   const expanded = forceExpanded !== null ? !forceExpanded : nav.getAttribute('aria-expanded') === 'true';
-  const button = nav.querySelector('.nav-hamburger button');
+  const button = nav.querySelector('.nav-hamburger-button');
   nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  // the CSS styles the state classes; aria-expanded stays for assistive technology
+  nav.classList.toggle('is-open', !expanded);
+  document.body.classList.toggle('has-header-menu-open', !expanded);
   if (button) button.setAttribute('aria-label', expanded ? 'Abrir menú' : 'Cerrar menú');
 }
 
@@ -96,14 +104,14 @@ function buildSearch() {
   search.className = 'nav-search';
   search.innerHTML = `
     <form class="nav-search-field" role="search" action="/search">
-      <span class="nav-search-icon icon icon-search"></span>
+      <span class="nav-search-icon nav-icon icon icon-search"></span>
       <input class="nav-search-input" type="search" name="q" placeholder="Buscar productos..." aria-label="Buscar productos" autocomplete="off">
       <button class="nav-search-clear" type="button" aria-label="Cerrar búsqueda">
-        <span class="icon icon-close"></span>
+        <span class="nav-icon icon icon-close"></span>
       </button>
     </form>
     <button class="nav-search-toggle" type="button" aria-label="Buscar" aria-expanded="false">
-      <span class="icon icon-search"></span>
+      <span class="nav-icon icon icon-search"></span>
     </button>`;
 
   const toggle = search.querySelector('.nav-search-toggle');
@@ -138,7 +146,7 @@ function buildToolLink({
   link.className = `nav-tool nav-tool-${icon}`;
   link.href = href;
   link.setAttribute('aria-label', label);
-  link.innerHTML = `<span class="icon icon-${icon}"></span>`;
+  link.innerHTML = `<span class="nav-icon icon icon-${icon}"></span>`;
   if (badge) {
     const count = document.createElement('span');
     count.className = 'nav-tool-badge';
@@ -163,6 +171,7 @@ export default async function decorate(block) {
   block.textContent = '';
   const nav = document.createElement('nav');
   nav.id = 'nav';
+  nav.className = 'nav-bar';
   if (fragment) {
     while (fragment.firstElementChild) nav.append(fragment.firstElementChild);
   }
@@ -177,8 +186,17 @@ export default async function decorate(block) {
   const navBrand = nav.querySelector('.nav-brand');
   if (navBrand) navBrand.replaceChildren(buildBrand(navBrand, 'nav-brand'));
 
-  // sections: primary navigation links
+  // sections: primary navigation links, with class hooks (the CSS never styles tags)
   const navSections = nav.querySelector('.nav-sections');
+  if (navSections) {
+    navSections.querySelectorAll('ul').forEach((ul) => ul.classList.add('nav-menu'));
+    navSections.querySelectorAll('li').forEach((li) => {
+      li.classList.add('nav-menu-item');
+      // items may be plain text while the author has not linked them yet
+      if (li.querySelector('a')) li.classList.add('has-link');
+    });
+    navSections.querySelectorAll('a').forEach((a) => a.classList.add('nav-menu-link'));
+  }
 
   // read author-provided tool links (cuenta/carrito) from the tools section, else defaults
   const navTools = nav.querySelector('.nav-tools');
@@ -211,7 +229,7 @@ export default async function decorate(block) {
   // hamburger for mobile
   const hamburger = document.createElement('div');
   hamburger.classList.add('nav-hamburger');
-  hamburger.innerHTML = `<button type="button" aria-controls="nav" aria-label="Abrir menú" aria-expanded="false">
+  hamburger.innerHTML = `<button class="nav-hamburger-button" type="button" aria-controls="nav" aria-label="Abrir menú" aria-expanded="false">
       <span class="nav-hamburger-icon"></span>
     </button>`;
   hamburger.addEventListener('click', () => toggleMenu(nav));

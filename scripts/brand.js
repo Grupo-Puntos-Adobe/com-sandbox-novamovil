@@ -8,6 +8,9 @@
  *   buildBrand(source, prefix)      default export
  *     ├─ logo: authored <picture> → else authored :logo: icon → else default icon-logo span
  *     └─ buildBrandName(html, prefix) → wordmark, "Móvil" wrapped in <em> for the accent colour
+ *
+ * Classes it sets (prefix = 'nav-brand' | 'footer-brand'): {prefix}-link, {prefix}-logo,
+ * {prefix}-image (authored logo <img>), {prefix}-name, {prefix}-accent (the <em>).
  */
 
 // brand used when the authored document has no logo image / no brand text
@@ -31,6 +34,8 @@ function buildBrandName(html, prefix) {
     em.textContent = BRAND_ACCENT;
     name.replaceChildren(text.slice(0, -BRAND_ACCENT.length), em);
   }
+  // class hooks so the block CSS never styles tags: `${prefix}-accent`
+  name.querySelectorAll('em').forEach((em) => em.classList.add(`${prefix}-accent`));
   return name;
 }
 
@@ -61,6 +66,7 @@ export default function buildBrand(source, prefix) {
   if (picture) {
     picture.classList.add(`${prefix}-logo`);
     const img = picture.querySelector('img');
+    if (img) img.classList.add(`${prefix}-image`);
     if (img && !img.alt) img.alt = authoredName ? '' : BRAND_NAME;
     link.append(picture);
   } else {
