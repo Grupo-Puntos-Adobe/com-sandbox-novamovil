@@ -26,29 +26,19 @@
   }
 
   /* ========================================================================
-     List: one card per row on mobile, up to three equal cards from 768px
+     List (.card-grid): one card per row on mobile, three equal cards from 768px
      ======================================================================== */
 
   & .card-promotions-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    --card-grid-gap: 16px;
 
     & > li {
       display: flex;
     }
 
     @media (width >= 768px) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 20px;
-
-      /* scripts/block-utils.js: rows balanced when there are more than three */
-      &.is-balanced {
-        grid-template-columns: repeat(var(--balanced-columns), minmax(0, 1fr));
-      }
+      --card-grid-columns: 3;
+      --card-grid-gap: 20px;
     }
   }
 

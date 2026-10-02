@@ -321,6 +321,27 @@ main > .section:first-of-type {
   }
 }
 
+/*
+ * card grid: equal-size cards in even rows, pure CSS (shared by the card-* blocks).
+ * The list gets the .card-grid class and a block only changes these variables:
+ *   --card-grid-columns  number of columns (a number or auto-fill)   default 1
+ *   --card-grid-track    width of each column                        default minmax(0, 1fr)
+ *   --card-grid-gap      space between cards                         default 16px
+ * To change them by the space the block really has (not the viewport), the block root
+ * declares `container: card-grid / inline-size` and uses @container card-grid (…).
+ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--card-grid-columns, 1),
+    var(--card-grid-track, minmax(0, 1fr))
+  );
+  gap: var(--card-grid-gap, 16px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 /* section metadata */
 main .section.light,
 main .section.highlight {

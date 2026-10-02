@@ -22,7 +22,7 @@
  *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
  *   render(block, header, promotions)
  *     ├─ none → buildEmpty()
- *     └─ buildCard() per promotion (promoHref) + observeBalancedColumns() (block-utils.js)
+ *     └─ buildCard() per promotion (promoHref), inside ul.card-grid (card-promotions.css)
  *
  * Expected response:
  *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }
@@ -34,7 +34,7 @@ import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
-  readRawCell, alertOptions, safeHref, observeBalancedColumns, buildBlockHeader,
+  readRawCell, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -69,11 +69,6 @@ const FALLBACK_PROMOTIONS = [
 ];
 
 const SKELETON_COUNT = 3;
-// keep in sync with card-promotions.css (card width, gap and breakpoint)
-const CARD_MIN_WIDTH = 200;
-const CARD_GAP = 20;
-const MAX_COLUMNS = 3; // the design shows three promotions per row on desktop
-const multiColumn = window.matchMedia('(width >= 768px)');
 const DEFAULT_PROMO_LINK = '/promociones/{id}';
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const MESSAGES = {
@@ -177,7 +172,7 @@ function buildCard(promo) {
  * @returns {Element} ul hidden from assistive technology
  */
 function buildSkeleton() {
-  const list = el('ul', 'card-promotions-list');
+  const list = el('ul', 'card-promotions-list card-grid');
   list.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < SKELETON_COUNT; i += 1) list.append(el('li', 'card-promotions-skeleton'));
   return list;
@@ -213,19 +208,11 @@ function render(block, header, promotions) {
     block.replaceChildren(...content, buildEmpty());
     return;
   }
-  const list = el('ul', 'card-promotions-list');
+  const list = el('ul', 'card-promotions-list card-grid');
   const heading = header?.querySelector('h2');
   if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...promotions.map(buildCard));
   block.replaceChildren(...content, list);
-  // up to three equal cards per row filling the width; rows are balanced
-  observeBalancedColumns(list, {
-    minWidth: CARD_MIN_WIDTH,
-    gap: CARD_GAP,
-    query: multiColumn,
-    fillSingleRow: true,
-    maxColumns: MAX_COLUMNS,
-  });
 }
 
 /**

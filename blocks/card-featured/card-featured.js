@@ -21,7 +21,7 @@
  *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
  *   render(block, header, products)
  *     ├─ none → buildEmpty()
- *     └─ buildCard() per product + observeBalancedColumns() (scripts/block-utils.js)
+ *     └─ buildCard() per product, inside ul.card-grid (columns: card-featured.css)
  *          └─ buildMedia() · buildRating() · buildPrices() (formatPrice) · "Ver producto" link
  *
  * Expected response: { data: { products: [{ id, sku, brand, name, description, image, price,
@@ -33,7 +33,7 @@ import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
-  readRawCell, alertOptions, safeHref, observeBalancedColumns, buildBlockHeader,
+  readRawCell, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -113,11 +113,6 @@ const FALLBACK_PRODUCTS = [
 ];
 
 const SKELETON_COUNT = 4;
-// keep in sync with card-featured.css (card width, gap and breakpoint)
-const CARD_MIN_WIDTH = 220;
-const CARD_GAP = 20;
-const MAX_COLUMNS = 4; // the design shows four products per row on desktop
-const multiColumn = window.matchMedia('(width >= 600px)');
 const DEFAULT_PRODUCT_LINK = '/productos/{sku}';
 const DEFAULT_CURRENCY = 'MXN';
 const LOCALE = 'es-MX';
@@ -322,7 +317,7 @@ function buildCard(product) {
  * @returns {Element} ul hidden from assistive technology
  */
 function buildSkeleton() {
-  const list = el('ul', 'card-featured-list');
+  const list = el('ul', 'card-featured-list card-grid');
   list.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < SKELETON_COUNT; i += 1) list.append(el('li', 'card-featured-skeleton'));
   return list;
@@ -358,18 +353,10 @@ function render(block, header, products) {
     block.replaceChildren(...content, buildEmpty());
     return;
   }
-  const list = el('ul', 'card-featured-list');
+  const list = el('ul', 'card-featured-list card-grid');
   if (header?.querySelector('h2')) list.setAttribute('aria-label', header.querySelector('h2').textContent);
   list.append(...products.map(buildCard));
   block.replaceChildren(...content, list);
-  // up to four equal cards per row filling the width; rows are balanced (4 → 2 + 2, never 3 + 1)
-  observeBalancedColumns(list, {
-    minWidth: CARD_MIN_WIDTH,
-    gap: CARD_GAP,
-    query: multiColumn,
-    fillSingleRow: true,
-    maxColumns: MAX_COLUMNS,
-  });
 }
 
 /**

@@ -6,8 +6,8 @@
  *   alertOptions(config)               card-* → Alert Duration / Alert Color → showToast options
  *   safeHref(path)                     card-* → validates every link/image URL from service data
  *   buildBlockHeader(block, prefix)    card-* → Title (+ Link) rows → div.{prefix}-header
- *   balanceColumns(list, options)      used by observeBalancedColumns
- *   observeBalancedColumns(list, opts) card-* → keeps grid rows even (6 → 3 + 3) on resize
+ *
+ * Card columns are pure CSS: .card-grid in styles/styles.css (no JS measuring).
  */
 
 const DEFAULT_ALERT_SECONDS = 5;
@@ -108,55 +108,4 @@ export function buildBlockHeader(block, prefix) {
     header.append(cta);
   }
   return header;
-}
-
-/**
- * Keeps grid rows balanced: when the items do not fit in one row they are spread
- * evenly (6 → 3 + 3, 4 → 2 + 2 instead of 5 + 1 or 3 + 1) through the
- * --balanced-columns custom property and the .is-balanced class.
- * @param {Element} list Grid container
- * @param {Object} options
- * @param {number} options.minWidth Minimum item width in px
- * @param {number} options.gap Column gap in px
- * @param {MediaQueryList} [options.query] Only balance while this query matches
- * @param {boolean} [options.fillSingleRow=false] When everything fits in one row, still
- *   use as many columns as fit (items keep the width of a full row instead of the CSS default)
- * @param {number} [options.maxColumns=Infinity] Never more columns than this per row
- */
-export function balanceColumns(
-  list,
-  {
-    minWidth,
-    gap,
-    query,
-    fillSingleRow = false,
-    maxColumns: columnLimit = Infinity,
-  },
-) {
-  const count = list.children.length;
-  const fit = Math.floor((list.clientWidth + gap) / (minWidth + gap));
-  const maxColumns = Math.max(1, Math.min(fit, columnLimit));
-  let columns = null;
-  if (!query || query.matches) {
-    if (count > maxColumns) {
-      columns = Math.ceil(count / Math.ceil(count / maxColumns));
-    } else if (fillSingleRow) {
-      columns = maxColumns;
-    }
-  }
-  list.classList.toggle('is-balanced', columns !== null);
-  if (columns) {
-    list.style.setProperty('--balanced-columns', columns);
-  } else {
-    list.style.removeProperty('--balanced-columns');
-  }
-}
-
-/**
- * Balances the grid now and whenever its size changes.
- * @param {Element} list
- * @param {Object} options See balanceColumns
- */
-export function observeBalancedColumns(list, options) {
-  new ResizeObserver(() => balanceColumns(list, options)).observe(list);
 }

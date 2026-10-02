@@ -7,6 +7,8 @@
  */
 
 .card-categories {
+  /* the list columns follow the width of the block (styles/styles.css .card-grid) */
+  container: card-grid / inline-size;
   font-family: var(--body-font-family);
 
   /* ========================================================================
@@ -26,31 +28,27 @@
   }
 
   /* ========================================================================
-     List: one column on mobile, equal-size cards that wrap from 600px
+     List (.card-grid): one column on mobile, 3 + 3 from 600px, one row of
+     140px cards when all six fit
      ======================================================================== */
 
   & .card-categories-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 13px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    --card-grid-gap: 13px;
 
     & > li {
       display: flex;
     }
 
     @media (width >= 600px) {
-      /* all cards fit: fixed 140px equal cards, left-aligned as in the design */
-      grid-template-columns: repeat(auto-fill, 140px);
-      gap: 16px;
+      /* the six cards do not fit in one row: two even rows (3 + 3), cards stretch */
+      --card-grid-columns: 3;
+      --card-grid-gap: 16px;
+    }
 
-      /* they wrap: scripts/block-utils.js balances the rows (6 → 3 + 3) and the
-         cards stretch so no row is left half empty */
-      &.is-balanced {
-        grid-template-columns: repeat(var(--balanced-columns), minmax(0, 1fr));
-      }
+    /* all six fit (6 × 140px + 5 × 16px): fixed 140px cards, left-aligned as in the design */
+    @container card-grid (width >= 920px) {
+      --card-grid-columns: auto-fill;
+      --card-grid-track: 140px;
     }
   }
 

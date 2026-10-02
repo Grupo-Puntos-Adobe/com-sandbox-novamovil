@@ -20,7 +20,7 @@
  *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
  *   render(block, header, categories)
  *     ├─ none → buildEmpty()
- *     └─ buildCard() per category + observeBalancedColumns() (scripts/block-utils.js)
+ *     └─ buildCard() per category, inside ul.card-grid (columns: card-categories.css)
  *
  * Expected response: { data: { categories: [{ id, label, icon, path, color, active, order }] } }
  * Guide: documentation/02-integracion-endpoints.md
@@ -30,7 +30,7 @@ import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import {
-  readRawCell, alertOptions, safeHref, observeBalancedColumns, buildBlockHeader,
+  readRawCell, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -56,10 +56,6 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const SKELETON_COUNT = 6;
-// keep in sync with card-categories.css (card width, gap and breakpoint)
-const CARD_MIN_WIDTH = 140;
-const CARD_GAP = 16;
-const multiColumn = window.matchMedia('(width >= 600px)');
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const MESSAGES = {
   error: 'No pudimos cargar las categorías. Intenta de nuevo más tarde.',
@@ -134,7 +130,7 @@ function buildList(className) {
  * @returns {Element} ul hidden from assistive technology
  */
 function buildSkeleton() {
-  const list = buildList('card-categories-list card-categories-loading');
+  const list = buildList('card-categories-list card-categories-loading card-grid');
   list.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < SKELETON_COUNT; i += 1) {
     const li = document.createElement('li');
@@ -181,12 +177,10 @@ function render(block, header, categories) {
     block.replaceChildren(...content, buildEmpty());
     return;
   }
-  const list = buildList('card-categories-list');
+  const list = buildList('card-categories-list card-grid');
   list.setAttribute('aria-label', header?.querySelector('h2')?.textContent || MESSAGES.listLabel);
   list.append(...categories.map(buildCard));
   block.replaceChildren(...content, list);
-  // 6 cards that do not fit in one row become 3 + 3 and stretch; one row keeps 140px cards
-  observeBalancedColumns(list, { minWidth: CARD_MIN_WIDTH, gap: CARD_GAP, query: multiColumn });
 }
 
 /**
