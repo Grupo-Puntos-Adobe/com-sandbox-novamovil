@@ -1,0 +1,50 @@
+/*
+ * Breakpoints (foundations): the 3 screen sizes of the site, by name.
+ * Portable: copy the whole styles/foundations/ folder to any project and link this
+ * file before the rest of the CSS. How to use it: styles/foundations/README.md
+ *
+ *   mobile   < 768px
+ *   tablet   768px – 991px
+ *   desktop  ≥ 992px          (Ant Design md / lg)
+ *
+ * The two numbers live ONLY in the two @media below: change them here and every
+ * file that uses the names follows.
+ *
+ * Use in any CSS file (the value must be written as ": on"):
+ *   @container style(--mobile: on)          { … }   only mobile
+ *   @container style(--tablet: on)          { … }   only tablet
+ *   @container style(--desktop: on)         { … }   only desktop
+ *   @container style(--mobile-tablet: on)   { … }   mobile + tablet
+ *   @container style(--tablet-desktop: on)  { … }   tablet + desktop
+ *   @container style(--mobile-desktop: on)  { … }   mobile + desktop
+ */
+
+/* mobile (default) */
+:root {
+  --mobile: on;
+  --tablet: off;
+  --desktop: off;
+  --mobile-tablet: on;
+  --tablet-desktop: off;
+  --mobile-desktop: on;
+}
+
+/* tablet: from 768px */
+@media (width >= 768px) {
+  :root {
+    --mobile: off;
+    --tablet: on;
+    --tablet-desktop: on;
+    --mobile-desktop: off;
+  }
+}
+
+/* desktop: from 992px */
+@media (width >= 992px) {
+  :root {
+    --tablet: off;
+    --desktop: on;
+    --mobile-tablet: off;
+    --mobile-desktop: on;
+  }
+}
