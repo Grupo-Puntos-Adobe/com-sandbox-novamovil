@@ -26,19 +26,21 @@
   }
 
   /* ========================================================================
-     List (.card-grid): one card per row on mobile, three equal cards from 768px
+     List (.card-grid): one card per row on mobile; from 768px balanced rows
+     of up to three cards (4 = 2 + 2, 5 = 3 + 2)
      ======================================================================== */
 
   & .card-promotions-list {
     --card-grid-gap: 16px;
+    --card-grid-fill: 1;
 
     & > li {
       display: flex;
     }
 
     @media (width >= 768px) {
-      --card-grid-columns: 3;
       --card-grid-gap: 20px;
+      --card-grid-fit: 3;
     }
   }
 

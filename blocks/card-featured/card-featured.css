@@ -59,24 +59,28 @@
   }
 
   /* ========================================================================
-     List (.card-grid): one card per row on mobile, 2 + 2 from 600px, one row
-     of four when they fit
+     List (.card-grid): one card per row on mobile; from 600px balanced rows
+     of up to four cards (4 = 2 + 2, never 3 + 1)
      ======================================================================== */
 
   & .card-featured-list {
     --card-grid-gap: 20px;
+    --card-grid-fill: 1;
 
     /* every row as tall as the tallest card, so all cards stay symmetric */
     grid-auto-rows: 1fr;
 
     @media (width >= 600px) {
-      /* four cards do not fit in one row: two even rows (2 + 2), never 3 + 1 */
-      --card-grid-columns: 2;
+      --card-grid-fit: 2;
     }
 
-    /* four cards of at least 220px fit (4 × 220px + 3 × 20px): one row of four */
+    /* cards of at least 220px + 20px gap that fit: (width + 20) / 240, four at most */
+    @container card-grid (width >= 700px) {
+      --card-grid-fit: 3;
+    }
+
     @container card-grid (width >= 940px) {
-      --card-grid-columns: 4;
+      --card-grid-fit: 4;
     }
   }
 

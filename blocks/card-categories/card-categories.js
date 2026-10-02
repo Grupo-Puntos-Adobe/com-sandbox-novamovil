@@ -130,7 +130,7 @@ function buildList(className) {
  * @returns {Element} ul hidden from assistive technology
  */
 function buildSkeleton() {
-  const list = buildList('card-categories-list card-categories-loading card-grid');
+  const list = buildList('card-categories-list card-categories-loading card-grid card-grid-compact');
   list.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < SKELETON_COUNT; i += 1) {
     const li = document.createElement('li');
@@ -177,7 +177,7 @@ function render(block, header, categories) {
     block.replaceChildren(...content, buildEmpty());
     return;
   }
-  const list = buildList('card-categories-list card-grid');
+  const list = buildList('card-categories-list card-grid card-grid-compact');
   list.setAttribute('aria-label', header?.querySelector('h2')?.textContent || MESSAGES.listLabel);
   list.append(...categories.map(buildCard));
   block.replaceChildren(...content, list);

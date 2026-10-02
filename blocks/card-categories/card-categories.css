@@ -28,27 +28,39 @@
   }
 
   /* ========================================================================
-     List (.card-grid): one column on mobile, 3 + 3 from 600px, one row of
-     140px cards when all six fit
+     List (.card-grid.card-grid-compact): one column on mobile; from 600px
+     balanced rows of stretched cards, or one row of 140px cards when all fit
      ======================================================================== */
 
   & .card-categories-list {
     --card-grid-gap: 13px;
+    --card-grid-fill: 1;
 
     & > li {
       display: flex;
     }
 
     @media (width >= 600px) {
-      /* the six cards do not fit in one row: two even rows (3 + 3), cards stretch */
-      --card-grid-columns: 3;
       --card-grid-gap: 16px;
+      --card-grid-fit: 3;
+      --card-grid-min: 140px;
     }
 
-    /* all six fit (6 × 140px + 5 × 16px): fixed 140px cards, left-aligned as in the design */
+    /* 140px cards + 16px gap that fit: (width + 16) / 156 */
+    @container card-grid (width >= 608px) {
+      --card-grid-fit: 4;
+    }
+
+    @container card-grid (width >= 764px) {
+      --card-grid-fit: 5;
+    }
+
     @container card-grid (width >= 920px) {
-      --card-grid-columns: auto-fill;
-      --card-grid-track: 140px;
+      --card-grid-fit: 6;
+    }
+
+    @container card-grid (width >= 1076px) {
+      --card-grid-fit: 7;
     }
   }
 
