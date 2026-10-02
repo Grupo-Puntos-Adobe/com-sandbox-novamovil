@@ -2,7 +2,7 @@
  * NovaMóvil header.
  *
  * Rules of this file (keep them when you edit it):
- *   - Only classes, never tag selectors. header.js and scripts/brand.js add the classes.
+ *   - Only classes, never tag selectors. header.js adds the classes.
  *   - Every rule lives inside .header-novamovil, at most 2 levels deep:
  *       .header-novamovil > & .part > its state (&.is-open, &:hover) or its resolution.
  *   - Resolutions by name (styles/foundations/breakpoints.css): mobile and tablet use the

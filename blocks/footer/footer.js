@@ -11,7 +11,7 @@
  * Flow:
  *   decorate(block)
  *     ├─ loadFragment(footerPath)                blocks/fragment/fragment.js
- *     ├─ section 1 → buildBrandColumn(items)     → buildBrand() scripts/brand.js
+ *     ├─ section 1 → buildBrandColumn(items)     → buildBrand()  (brand functions in this file)
  *     ├─ section 2 → buildLinkColumns(items)
  *     └─ section 3 → buildBottom(items)
  *     (sectionContent() extracts the authored elements of each section)
@@ -20,7 +20,78 @@
  */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
-import buildBrand from '../../scripts/brand.js';
+
+/* --------------------------------------------------------------------------
+ * Brand (logo + wordmark as one home link). The same code lives in
+ * blocks/header/header.js: if you change the brand, change it in both blocks.
+ * -------------------------------------------------------------------------- */
+
+// brand used when the authored document has no logo image / no brand text
+const BRAND_NAME = 'NovaMóvil';
+const BRAND_ACCENT = 'Móvil';
+
+/**
+ * Builds the wordmark. Keeps the authored markup (incl. <em>); if the author
+ * did not emphasise anything, the trailing "Móvil" gets the accent colour.
+ * @param {string} html Authored wordmark markup, or empty for the default
+ * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
+ * @returns {Element} the `${prefix}-name` span
+ */
+function buildBrandName(html, prefix) {
+  const name = document.createElement('span');
+  name.className = `${prefix}-name`;
+  name.innerHTML = html || BRAND_NAME;
+  if (!name.querySelector('em') && name.textContent.trim().endsWith(BRAND_ACCENT)) {
+    const text = name.textContent.trim();
+    const em = document.createElement('em');
+    em.textContent = BRAND_ACCENT;
+    name.replaceChildren(text.slice(0, -BRAND_ACCENT.length), em);
+  }
+  // class hooks so the block CSS never styles tags: `${prefix}-accent`
+  name.querySelectorAll('em').forEach((em) => em.classList.add(`${prefix}-accent`));
+  return name;
+}
+
+/**
+ * Builds the brand as a single home link from the authored markup.
+ * - logo: the authored image; else the authored :logo: icon; else the default icon
+ * - wordmark: the authored text; else "NovaMóvil" (omitted when an image stands alone)
+ * The default logo is painted by CSS from the colour tokens, so its <img> is dropped.
+ * @param {Element} source Element holding the authored logo/wordmark (consumed)
+ * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
+ * @returns {Element} the `${prefix}-link` anchor
+ */
+function buildBrand(source, prefix) {
+  const authoredLink = source.querySelector('a');
+  const picture = source.querySelector('picture');
+  const icon = source.querySelector('.icon');
+  [picture, icon].forEach((el) => el?.remove());
+
+  // authored wordmark: first link/paragraph that still has letters once the logo is removed
+  const textSource = [authoredLink, ...source.querySelectorAll('p')]
+    .find((el) => el && /\p{L}/u.test(el.textContent));
+  const authoredName = textSource ? textSource.innerHTML.trim() : '';
+
+  const link = document.createElement('a');
+  link.className = `${prefix}-link`;
+  link.href = authoredLink ? authoredLink.getAttribute('href') : '/';
+
+  if (picture) {
+    picture.classList.add(`${prefix}-logo`);
+    const img = picture.querySelector('img');
+    if (img) img.classList.add(`${prefix}-image`);
+    if (img && !img.alt) img.alt = authoredName ? '' : BRAND_NAME;
+    link.append(picture);
+  } else {
+    const logo = icon || document.createElement('span');
+    logo.className = `icon icon-logo ${prefix}-logo`;
+    logo.replaceChildren();
+    link.append(logo);
+  }
+
+  if (authoredName || !picture) link.append(buildBrandName(authoredName, prefix));
+  return link;
+}
 
 // true when the element has any letter (tells a text brand from a lone logo image)
 const hasLetters = (el) => /\p{L}/u.test(el.textContent);
