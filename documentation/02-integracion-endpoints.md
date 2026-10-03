@@ -266,14 +266,13 @@ import MESSAGES from '../../scripts/messages.js';            // mensajes genéri
 import { readRawCell, alertOptions, safeHref, … } from '../../scripts/block-utils.js';
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
-const SKELETON_COUNT = 6;            // tarjetas grises si no hay fila Skeleton Count
+const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
 
 function readSettings(block) {       // todo lo que viene de la tabla, con sus defaults
   const text = (key) => readRawCell(block, key).text;
   return {
     endpoint: …,                                       // fila Endpoint, tal cual
     alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
-    skeletonCount: …,                                  // Skeleton Count (1-24) o SKELETON_COUNT
     messages: {
       errorResponseMessage: text('error response message')   // fila de la tabla…
         || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
@@ -308,7 +307,7 @@ export default function decorate(block) {
   }
   // esqueleto mientras carga; la petición NO bloquea el resto de la página
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton(settings.skeletonCount)].filter(Boolean));
+  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
   loadFromService(block, header, settings);                    // sin await, a propósito
 }
 ```

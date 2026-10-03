@@ -6,14 +6,14 @@
  *
  * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
  * Alert Color, Error Response Message, Empty Elements Title, Empty Elements Description,
- * Elements List Accessible Name, Skeleton Count.
- * Texts missing in the table come from scripts/messages.js (generic messages);
- * Skeleton Count missing or invalid uses SKELETON_COUNT below.
+ * Elements List Accessible Name.
+ * Texts missing in the table come from scripts/messages.js (generic messages).
+ * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
- *     ├─ readSettings(block)             endpoint, alert, messages, skeleton count
+ *     ├─ readSettings(block)             endpoint, alert, messages
  *     │    └─ readRawCell / alertOptions scripts/block-utils.js · MESSAGES scripts/messages.js
  *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → render(normalize(FALLBACK_CATEGORIES))
@@ -63,28 +63,24 @@ const FALLBACK_CATEGORIES = [
   },
 ];
 
-// placeholder cards while the service answers, unless the table has a Skeleton Count row
-const SKELETON_COUNT = 6;
-const MAX_SKELETON_COUNT = 24;
+// grey placeholder cards painted while the service answers
+const SKELETON_ELEMENTS = 6;
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const EMPTY_ICON = '🗂️';
 
 /**
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
- * @returns {{endpoint: string, alert: Object, skeletonCount: number,
+ * @returns {{endpoint: string, alert: Object,
  *   messages: {errorResponseMessage: string, emptyElementsTitle: string,
  *     emptyElementsDescription: string, elementsListAccessibleName: string}}}
  */
 function readSettings(block) {
   const text = (key) => readRawCell(block, key).text;
   const endpointCell = readRawCell(block, 'endpoint');
-  const count = Number(text('skeleton count'));
   return {
     endpoint: endpointCell.href || endpointCell.text,
     alert: alertOptions(readBlockConfig(block)),
-    skeletonCount: Number.isInteger(count) && count >= 1 && count <= MAX_SKELETON_COUNT
-      ? count : SKELETON_COUNT,
     messages: {
       errorResponseMessage: text('error response message') || MESSAGES.errorResponseMessage,
       emptyElementsTitle: text('empty elements title') || MESSAGES.emptyElementsTitle,
@@ -155,13 +151,12 @@ function buildCard(category) {
 
 /**
  * Grey placeholder cards shown while the service answers (avoids layout shift).
- * @param {number} count Skeleton Count row or SKELETON_COUNT
  * @returns {Element} div hidden from assistive technology
  */
-function buildSkeleton(count) {
+function buildSkeleton() {
   const list = el('div', 'card-categories-list');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < count; i += 1) list.append(el('div', 'card-categories-skeleton'));
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(el('div', 'card-categories-skeleton'));
   return list;
 }
 
@@ -244,6 +239,6 @@ export default function decorate(block) {
 
   // skeleton keeps the layout stable; the request does not block the following sections
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton(settings.skeletonCount)].filter(Boolean));
+  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
   loadFromService(block, header, settings);
 }

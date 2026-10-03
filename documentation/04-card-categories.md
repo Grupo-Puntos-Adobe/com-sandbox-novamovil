@@ -17,7 +17,6 @@ interno del bloque. Todas las filas son opcionales.
 | Empty Elements Title | Por ahora no hay categorías disponibles |
 | Empty Elements Description | Vuelve pronto para descubrir nuestras novedades. |
 | Elements List Accessible Name | Categorías |
-| Skeleton Count | *(vacío = 6)* |
 
 ## De dónde sale cada texto
 
@@ -29,7 +28,6 @@ interno del bloque. Todas las filas son opcionales.
 | `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
 | `Empty Elements Title` / `Empty Elements Description` | Aviso cuando no hay categorías que mostrar | `scripts/messages.js` → `emptyElementsTitle` / `emptyElementsDescription` |
 | `Elements List Accessible Name` | Nombre de la lista para lectores de pantalla | El `Title`, o `scripts/messages.js` → `elementsListAccessibleName` |
-| `Skeleton Count` | Tarjetas grises mientras carga (entero de 1 a 24) | `SKELETON_COUNT = 6` en `card-categories.js` |
 
 `scripts/messages.js` tiene los **mensajes genéricos** de todo el sitio ("No pudimos cargar la
 información…"). Lo específico de cada bloque va en su tabla.
@@ -51,6 +49,6 @@ tarjeta sube 4 px.
   global `[role='heading']` de `styles/styles.css` (el bloque no define `font-family`).
 - Lista: `div.card-categories-list[role=list]` con un `div.card-categories-card[role=listitem]` por
   categoría; dentro, el enlace `a.card-categories-item` (icono + nombre).
-- Carga: `div.card-categories-skeleton` × Skeleton Count. Vacío o error: `div.card-categories-empty`.
+- Carga: `div.card-categories-skeleton` × `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
 
 Código: `blocks/card-categories/card-categories.js` y `blocks/card-categories/card-categories.css`.
