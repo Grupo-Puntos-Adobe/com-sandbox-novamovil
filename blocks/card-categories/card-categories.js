@@ -32,8 +32,10 @@
  *     ├─ none → buildEmptyListMessage()
  *     └─ div.card-categories-list[role=list] > buildCategoryCard() per category
  *
- * Columns come from the grid (styles/foundations/grid.css), not from card-categories.css: the
- * list (and the skeleton) is a row (row row-gutter-16 row-gutter-y-16) and each card a column
+ * Columns come from the grid (styles/foundations/grid.css), not from card-categories.css. The grid
+ * is always container > row > col: div.card-categories-grid.container-fluid (no side padding: the
+ * section already has it) > the list (and the skeleton) as a row (row row-gutter-16
+ * row-gutter-y-16) > each card a column
  * (col-24 col-md-8 col-lg-4: 1 per row on mobile, 3 on tablet, 6 on desktop).
  *
  * Markup is all divs except each card's link (<a>). Classes used by card-categories.css:
@@ -167,7 +169,7 @@ function buildCategoryCard(category) {
 /**
  * Grey placeholder cards shown while the service answers (avoids layout shift); same grid
  * columns as the real cards.
- * @returns {Element} div hidden from assistive technology
+ * @returns {Element} div.card-categories-grid.container-fluid > row, hidden from screen readers
  */
 function buildCategoriesSkeleton() {
   const list = createElementWithClass('div', 'card-categories-list row row-gutter-16 row-gutter-y-16');
@@ -177,7 +179,9 @@ function buildCategoriesSkeleton() {
     cell.append(createElementWithClass('div', 'card-categories-skeleton'));
     list.append(cell);
   }
-  return list;
+  const grid = createElementWithClass('div', 'card-categories-grid container-fluid');
+  grid.append(list);
+  return grid;
 }
 
 /**
@@ -224,7 +228,9 @@ function renderCategories(block, header, categories, settings) {
   const heading = header?.querySelector('.card-categories-heading');
   if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...categories.map(buildCategoryCard));
-  block.replaceChildren(...content, list);
+  const grid = createElementWithClass('div', 'card-categories-grid container-fluid');
+  grid.append(list);
+  block.replaceChildren(...content, grid);
 }
 
 /**

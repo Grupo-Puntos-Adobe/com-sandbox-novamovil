@@ -40,8 +40,10 @@
  *          └─ buildProductMedia() · buildProductName() · buildProductRating()
  *             · buildProductPrices() (formatPrice) · buildProductButton()
  *
- * Columns come from the grid (styles/foundations/grid.css), not from card-featured.css: the
- * list (and the skeleton) is a row (row row-gutter-16 row-gutter-y-16) and each product cell a
+ * Columns come from the grid (styles/foundations/grid.css), not from card-featured.css. The grid
+ * is always container > row > col: div.card-featured-grid.container-fluid (no side padding: the
+ * section already has it) > the list (and the skeleton) as a row (row row-gutter-16
+ * row-gutter-y-16) > each product cell a
  * column (col-24 col-md-12 col-lg-6: 1 per row on mobile, 2 on tablet, 4 on desktop).
  *
  * Markup is all divs except the product image (<img>) and the links (<a>). Classes used by
@@ -389,7 +391,7 @@ function buildProductCard(product, settings) {
 /**
  * Grey placeholder cards shown while the service answers (avoids layout shift); same grid
  * columns as the real cards.
- * @returns {Element} div hidden from assistive technology
+ * @returns {Element} div.card-featured-grid.container-fluid > row, hidden from screen readers
  */
 function buildProductsSkeleton() {
   const list = createElementWithClass('div', 'card-featured-list row row-gutter-16 row-gutter-y-16');
@@ -399,7 +401,9 @@ function buildProductsSkeleton() {
     cell.append(createElementWithClass('div', 'card-featured-skeleton'));
     list.append(cell);
   }
-  return list;
+  const grid = createElementWithClass('div', 'card-featured-grid container-fluid');
+  grid.append(list);
+  return grid;
 }
 
 /**
@@ -446,7 +450,9 @@ function renderProducts(block, header, products, settings) {
   const heading = header?.querySelector('.card-featured-heading');
   if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...products.map((product) => buildProductCard(product, settings)));
-  block.replaceChildren(...content, list);
+  const grid = createElementWithClass('div', 'card-featured-grid container-fluid');
+  grid.append(list);
+  block.replaceChildren(...content, grid);
 }
 
 /**

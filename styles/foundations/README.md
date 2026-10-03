@@ -171,15 +171,23 @@ Por eso conviene escribir mobile-first.
 
 Solo CSS. Necesita `breakpoints.css` enlazado antes. Clases en minúsculas.
 
-### Estructura
+### Estructura (siempre)
+
+Para usar columnas **siempre** van los tres niveles, en este orden:
+**`container` (o `container-fluid`) → `row` → `col`**. También dentro de una columna: si adentro
+quieres otra fila, lleva su propio `container-fluid`.
 
 ```html
-<div class="container">
+<div class="container">              <!-- o container-fluid -->
   <div class="row">
     <div class="col">…</div>
   </div>
 </div>
 ```
+
+- `container`: cuando el elemento que lo contiene **no** tiene margen lateral propio.
+- `container-fluid`: cuando ya lo tiene (por ejemplo, dentro de una sección de la página que ya
+  tiene padding) o cuando quieres todo el ancho.
 
 | Clase | Qué hace |
 |---|---|
@@ -253,10 +261,14 @@ Cada tamaño aplica desde su resolución hacia arriba, hasta que otro lo cambie.
 <div class="row row-nowrap">…</div>
 <div class="row row-nowrap row-md-wrap">…</div>
 
-<!-- fila dentro de una columna: tiene su propio gutter (empieza en 0) -->
-<div class="row row-gutter-24">
-  <div class="col-12">
-    <div class="row row-gutter-8"><div class="col-12">…</div><div class="col-12">…</div></div>
+<!-- fila dentro de una columna: con su propio container-fluid y su propio gutter (empieza en 0) -->
+<div class="container">
+  <div class="row row-gutter-24">
+    <div class="col-12">
+      <div class="container-fluid">
+        <div class="row row-gutter-8"><div class="col-12">…</div><div class="col-12">…</div></div>
+      </div>
+    </div>
   </div>
 </div>
 ```
@@ -267,8 +279,8 @@ Cada columna lleva la mitad del espacio a cada lado y la `row` lo compensa con m
 así la primera y la última columna quedan alineadas con el borde del `container`. El vertical es
 `row-gap`. Sin clase de gutter las columnas van pegadas.
 
-> Con gutter, una `row` fuera de un `container` sobresale la mitad del gutter por cada lado.
-> Ponla dentro de `container` (o dale padding al elemento que la contiene).
+> Por eso la `row` siempre va dentro de `container` o `container-fluid`: con gutter, la fila
+> sobresale la mitad del gutter por cada lado y el container es lo que la contiene.
 
 ### Cambiar el padding del container
 

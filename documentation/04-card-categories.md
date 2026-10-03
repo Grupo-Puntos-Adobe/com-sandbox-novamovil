@@ -80,6 +80,9 @@ tarjeta sube 4 px.
 
 - Título: `div.card-categories-heading` con `role="heading" aria-level="2"`; su fuente viene de la regla
   global `[role='heading']` de `styles/styles.css` (el bloque no define `font-family`).
+- Grid: `div.card-categories-grid.container-fluid` > lista (`row`) > cada tarjeta (`col`). La estructura del grid
+  siempre es container > row > col; va `container-fluid` (sin padding) porque la sección ya tiene
+  margen lateral.
 - Lista: `div.card-categories-list.row.row-gutter-16.row-gutter-y-16[role=list]` con `aria-label`
   igual al texto del título (los lectores de pantalla la anuncian como "Categorías, lista"; sin
   `Title` no lleva nombre), con un `div.card-categories-card.col-24.col-md-8.col-lg-4[role=listitem]`

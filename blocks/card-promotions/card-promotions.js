@@ -34,8 +34,10 @@
  *     ├─ none → buildEmptyListMessage()
  *     └─ div.card-promotions-list[role=list] > buildPromotionCard() per promotion
  *
- * Columns come from the grid (styles/foundations/grid.css), not from card-promotions.css: the
- * list (and the skeleton) is a row (row row-gutter-16 row-gutter-y-16) and each card a column
+ * Columns come from the grid (styles/foundations/grid.css), not from card-promotions.css. The grid
+ * is always container > row > col: div.card-promotions-grid.container-fluid (no side padding: the
+ * section already has it) > the list (and the skeleton) as a row (row row-gutter-16
+ * row-gutter-y-16) > each card a column
  * (col-24 col-md-8: 1 per row on mobile, 3 on tablet and desktop).
  *
  * Markup is all divs except each card's link (<a>, a div when it has no link) and photo
@@ -216,7 +218,7 @@ function buildPromotionCard(promo) {
 /**
  * Grey placeholder cards shown while the service answers (avoids layout shift); same grid
  * columns as the real cards.
- * @returns {Element} div hidden from assistive technology
+ * @returns {Element} div.card-promotions-grid.container-fluid > row, hidden from screen readers
  */
 function buildPromotionsSkeleton() {
   const list = createElementWithClass('div', 'card-promotions-list row row-gutter-16 row-gutter-y-16');
@@ -226,7 +228,9 @@ function buildPromotionsSkeleton() {
     cell.append(createElementWithClass('div', 'card-promotions-skeleton'));
     list.append(cell);
   }
-  return list;
+  const grid = createElementWithClass('div', 'card-promotions-grid container-fluid');
+  grid.append(list);
+  return grid;
 }
 
 /**
@@ -273,7 +277,9 @@ function renderPromotions(block, header, promotions, settings) {
   const heading = header?.querySelector('.card-promotions-heading');
   if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...promotions.map(buildPromotionCard));
-  block.replaceChildren(...content, list);
+  const grid = createElementWithClass('div', 'card-promotions-grid container-fluid');
+  grid.append(list);
+  block.replaceChildren(...content, grid);
 }
 
 /**

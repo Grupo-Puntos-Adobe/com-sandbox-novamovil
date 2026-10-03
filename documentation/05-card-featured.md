@@ -90,6 +90,9 @@ quieta.
 
 - Título: `div.card-featured-heading` con `role="heading" aria-level="2"`; a su lado,
   `a.card-featured-link` ("Ver todos").
+- Grid: `div.card-featured-grid.container-fluid` > lista (`row`) > cada tarjeta (`col`). La estructura del grid
+  siempre es container > row > col; va `container-fluid` (sin padding) porque la sección ya tiene
+  margen lateral.
 - Lista: `div.card-featured-list.row.row-gutter-16.row-gutter-y-16[role=list]` con `aria-label`
   igual al texto del título (sin `Title` no lleva nombre), con una celda
   `div.card-featured-cell.col-24.col-md-12.col-lg-6[role=listitem]` por producto y, dentro, la

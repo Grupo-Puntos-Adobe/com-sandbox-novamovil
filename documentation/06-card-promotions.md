@@ -80,6 +80,9 @@ mouse la tarjeta sube 4 px (solo si tiene enlace).
 ## HTML que genera (todo con `div`)
 
 - Título: `div.card-promotions-heading` con `role="heading" aria-level="2"`.
+- Grid: `div.card-promotions-grid.container-fluid` > lista (`row`) > cada tarjeta (`col`). La estructura del grid
+  siempre es container > row > col; va `container-fluid` (sin padding) porque la sección ya tiene
+  margen lateral.
 - Lista: `div.card-promotions-list.row.row-gutter-16.row-gutter-y-16[role=list]` con `aria-label`
   igual al texto del título (sin `Title` no lleva nombre), con un
   `div.card-promotions-card.col-24.col-md-8[role=listitem]` por promoción;
