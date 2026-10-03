@@ -80,11 +80,15 @@ export function safeHref(path) {
  * Optional section header owned by the block, from its Title (and Link) rows, so the
  * block's main class wraps title + content (Styles/Classname then apply around both).
  * Markup: div.{prefix}-header > h2.{prefix}-heading + a.{prefix}-link
+ * With { asDiv: true } the heading is div.{prefix}-heading[role=heading][aria-level=2]
+ * (the block CSS then sets its font, as the global h2 styles no longer apply).
  * @param {Element} block
  * @param {string} prefix Block class, e.g. 'card-featured'
+ * @param {Object} [options]
+ * @param {boolean} [options.asDiv=false] Build the heading as a div instead of an h2
  * @returns {Element|null} the header, or null when there is no title nor link
  */
-export function buildBlockHeader(block, prefix) {
+export function buildBlockHeader(block, prefix, { asDiv = false } = {}) {
   const title = readRawCell(block, 'title').text;
   const link = readRawCell(block, 'link');
   const href = link.text ? safeHref(link.href) : null;
@@ -95,8 +99,12 @@ export function buildBlockHeader(block, prefix) {
   const header = document.createElement('div');
   header.className = `${prefix}-header`;
   if (title) {
-    const heading = document.createElement('h2');
+    const heading = document.createElement(asDiv ? 'div' : 'h2');
     heading.className = `${prefix}-heading`;
+    if (asDiv) {
+      heading.setAttribute('role', 'heading');
+      heading.setAttribute('aria-level', '2');
+    }
     heading.textContent = title;
     header.append(heading);
   }

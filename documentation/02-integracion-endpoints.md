@@ -255,47 +255,60 @@ header fijo:
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
-Los tres bloques siguen el mismo patrón. Ejemplo real de `card-categories`:
+Los tres bloques siguen el mismo patrón. Ejemplo real de `card-categories`, que además lee
+sus textos de la tabla (con `scripts/messages.js` como respaldo, ver `04-card-categories.md`):
 
 ```js
 import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
+import MESSAGES from '../../scripts/messages.js';            // mensajes genéricos
 import { readRawCell, alertOptions, safeHref, … } from '../../scripts/block-utils.js';
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
+const SKELETON_COUNT = 6;            // tarjetas grises si no hay fila Skeleton Count
 
-async function loadFromService(block, header, endpoint, alert) {
+function readSettings(block) {       // todo lo que viene de la tabla, con sus defaults
+  const text = (key) => readRawCell(block, key).text;
+  return {
+    endpoint: …,                                       // fila Endpoint, tal cual
+    alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
+    skeletonCount: …,                                  // Skeleton Count (1-24) o SKELETON_COUNT
+    messages: {
+      error: text('error message') || MESSAGES.error,  // fila de la tabla o mensaje genérico
+      …
+    },
+  };
+}
+
+async function loadFromService(block, header, settings) {
   try {
-    const response = await get(endpoint);
+    const response = await get(settings.endpoint);
     const categories = response?.data?.categories;
     if (!Array.isArray(categories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    render(block, header, normalize(categories));   // lista vacía → mensaje "no hay elementos"
+    render(block, header, normalize(categories), settings);   // lista vacía → mensaje vacío
   } catch (error) {
-    console.error('[card-categories] Could not load categories from', endpoint, error);
-    showToast(MESSAGES.error, alert);               // alerta flotante
-    render(block, header, []);                      // mensaje "no hay elementos"
+    console.error('[card-categories] Could not load categories from', settings.endpoint, error);
+    showToast(settings.messages.error, settings.alert);       // alerta flotante
+    render(block, header, [], settings);                      // mensaje vacío
   }
 }
 
 export default function decorate(block) {
   applyBlockOptions(block);
-  const config = readBlockConfig(block);
-  const cell = readRawCell(block, 'endpoint');
-  const endpoint = cell.href || cell.text;
-  const alert = alertOptions(config);
-  const header = buildBlockHeader(block, 'card-categories');
+  const settings = readSettings(block);
+  const header = buildBlockHeader(block, 'card-categories', { asDiv: true });
 
-  if (!endpoint) {                                  // sin endpoint → JSON interno
-    render(block, header, normalize(FALLBACK_CATEGORIES));
+  if (!settings.endpoint) {                                    // sin endpoint → JSON interno
+    render(block, header, normalize(FALLBACK_CATEGORIES), settings);
     return;
   }
   // esqueleto mientras carga; la petición NO bloquea el resto de la página
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, endpoint, alert);  // sin await, a propósito
+  block.replaceChildren(...[header, buildSkeleton(settings.skeletonCount)].filter(Boolean));
+  loadFromService(block, header, settings);                    // sin await, a propósito
 }
 ```
 

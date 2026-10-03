@@ -4,31 +4,38 @@
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
  * "Card Categories" table.
  *
- * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration, Alert Color.
+ * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
+ * Alert Color, Error Message, Empty Title, Empty Text, List Label, Skeleton Count.
+ * Texts missing in the table come from scripts/messages.js (generic messages);
+ * Skeleton Count missing or invalid uses SKELETON_COUNT below.
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
- *     ├─ readBlockConfig(block)          scripts/aem.js → alert-duration, alert-color
- *     ├─ readRawCell(block, 'endpoint')  scripts/block-utils.js → endpoint exactly as authored
- *     ├─ alertOptions(config)            scripts/block-utils.js → { duration, variant }
- *     ├─ buildBlockHeader(block, …)      scripts/block-utils.js → h2 from the Title row
+ *     ├─ readSettings(block)             endpoint, alert, messages, skeleton count
+ *     │    └─ readRawCell / alertOptions scripts/block-utils.js · MESSAGES scripts/messages.js
+ *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → render(normalize(FALLBACK_CATEGORIES))
  *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
  *                         ├─ get(endpoint)   scripts/api/http-client.js
  *                         ├─ ok    → render(normalize(data.categories))
- *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
- *   render(block, header, categories)
+ *                         └─ error → console.error + showToast(messages.error) + render([])
+ *   render(block, header, categories, settings)
  *     ├─ none → buildEmpty()
- *     └─ buildCard() per category, inside ul.card-grid (columns: card-categories.css)
+ *     └─ div.card-categories-list[role=list] > buildCard() per category (columns: CSS)
+ *
+ * Markup is all divs except each card's link (<a>). Classes used by card-categories.css:
+ * card-categories-header, -heading, -list, -card, -item, -icon, -label, -skeleton,
+ * -empty, -empty-icon, -empty-title, -empty-text.
  *
  * Expected response: { data: { categories: [{ id, label, icon, path, color, active, order }] } }
- * Guide: documentation/02-integracion-endpoints.md
+ * Guides: documentation/02-integracion-endpoints.md, documentation/04-card-categories.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
+import MESSAGES from '../../scripts/messages.js';
 import {
   readRawCell, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
@@ -55,14 +62,35 @@ const FALLBACK_CATEGORIES = [
   },
 ];
 
+// placeholder cards while the service answers, unless the table has a Skeleton Count row
 const SKELETON_COUNT = 6;
+const MAX_SKELETON_COUNT = 24;
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-const MESSAGES = {
-  error: 'No pudimos cargar las categorías. Intenta de nuevo más tarde.',
-  emptyTitle: 'Por ahora no hay categorías disponibles',
-  emptyText: 'Vuelve pronto para descubrir nuestras novedades.',
-  listLabel: 'Categorías',
-};
+const EMPTY_ICON = '🗂️';
+
+/**
+ * Everything the block reads from its table, with the defaults applied.
+ * @param {Element} block
+ * @returns {{endpoint: string, alert: Object, skeletonCount: number,
+ *   messages: {error: string, emptyTitle: string, emptyText: string, listLabel: string}}}
+ */
+function readSettings(block) {
+  const text = (key) => readRawCell(block, key).text;
+  const endpointCell = readRawCell(block, 'endpoint');
+  const count = Number(text('skeleton count'));
+  return {
+    endpoint: endpointCell.href || endpointCell.text,
+    alert: alertOptions(readBlockConfig(block)),
+    skeletonCount: Number.isInteger(count) && count >= 1 && count <= MAX_SKELETON_COUNT
+      ? count : SKELETON_COUNT,
+    messages: {
+      error: text('error message') || MESSAGES.error,
+      emptyTitle: text('empty title') || MESSAGES.emptyTitle,
+      emptyText: text('empty text') || MESSAGES.emptyText,
+      listLabel: text('list label') || text('title') || MESSAGES.listLabel,
+    },
+  };
+}
 
 /**
  * Keeps active categories with a label and a valid link, without duplicates, by `order`.
@@ -90,77 +118,64 @@ function normalize(list) {
 }
 
 /**
- * One category card; service data is only ever set as text.
- * @param {Object} category Normalised category
- * @returns {Element} li
+ * createElement shortcut; content is always set as text (never HTML).
+ * @param {string} tag
+ * @param {string} className
+ * @param {string} [content]
+ * @returns {Element}
  */
-function buildCard(category) {
-  const li = document.createElement('li');
-  const link = document.createElement('a');
-  link.className = 'card-categories-item';
-  link.href = category.href;
-  if (category.color) link.style.setProperty('--card-categories-item-color', category.color);
-
-  const icon = document.createElement('span');
-  icon.className = 'card-categories-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = category.icon;
-
-  const label = document.createElement('span');
-  label.className = 'card-categories-label';
-  label.textContent = category.label;
-
-  link.append(icon, label);
-  li.append(link);
-  return li;
+function el(tag, className, content) {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (content !== undefined) node.textContent = content;
+  return node;
 }
 
 /**
- * @param {string} className
- * @returns {Element} empty ul
+ * One category card; service data is only ever set as text.
+ * @param {Object} category Normalised category
+ * @returns {Element} div.card-categories-card[role=listitem]
  */
-function buildList(className) {
-  const list = document.createElement('ul');
-  list.className = className;
-  return list;
+function buildCard(category) {
+  const card = el('div', 'card-categories-card');
+  card.setAttribute('role', 'listitem');
+  const link = el('a', 'card-categories-item');
+  link.href = category.href;
+  if (category.color) link.style.setProperty('--card-categories-item-color', category.color);
+  const icon = el('span', 'card-categories-icon', category.icon);
+  icon.setAttribute('aria-hidden', 'true');
+  link.append(icon, el('span', 'card-categories-label', category.label));
+  card.append(link);
+  return card;
 }
 
 /**
  * Grey placeholder cards shown while the service answers (avoids layout shift).
- * @returns {Element} ul hidden from assistive technology
+ * @param {number} count Skeleton Count row or SKELETON_COUNT
+ * @returns {Element} div hidden from assistive technology
  */
-function buildSkeleton() {
-  const list = buildList('card-categories-list card-categories-loading card-grid card-grid-compact');
+function buildSkeleton(count) {
+  const list = el('div', 'card-categories-list');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < SKELETON_COUNT; i += 1) {
-    const li = document.createElement('li');
-    li.className = 'card-categories-skeleton';
-    list.append(li);
-  }
+  for (let i = 0; i < count; i += 1) list.append(el('div', 'card-categories-skeleton'));
   return list;
 }
 
 /**
  * "No categories" message: empty list or service error.
+ * @param {Object} messages Empty Title / Empty Text (table or scripts/messages.js)
  * @returns {Element} div[role=status]
  */
-function buildEmpty() {
-  const empty = document.createElement('div');
-  empty.className = 'card-categories-empty';
+function buildEmpty(messages) {
+  const empty = el('div', 'card-categories-empty');
   empty.setAttribute('role', 'status');
-
-  const icon = document.createElement('span');
-  icon.className = 'card-categories-empty-icon';
+  const icon = el('div', 'card-categories-empty-icon', EMPTY_ICON);
   icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = '🗂️';
-  const title = document.createElement('p');
-  title.className = 'card-categories-empty-title';
-  title.textContent = MESSAGES.emptyTitle;
-  const text = document.createElement('p');
-  text.className = 'card-categories-empty-text';
-  text.textContent = MESSAGES.emptyText;
-
-  empty.append(icon, title, text);
+  empty.append(
+    icon,
+    el('div', 'card-categories-empty-title', messages.emptyTitle),
+    el('div', 'card-categories-empty-text', messages.emptyText),
+  );
   return empty;
 }
 
@@ -169,16 +184,18 @@ function buildEmpty() {
  * @param {Element} block
  * @param {Element|null} header Optional title (Title row)
  * @param {Object[]} categories Normalised categories
+ * @param {Object} settings readSettings() result
  */
-function render(block, header, categories) {
+function render(block, header, categories, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!categories.length) {
-    block.replaceChildren(...content, buildEmpty());
+    block.replaceChildren(...content, buildEmpty(settings.messages));
     return;
   }
-  const list = buildList('card-categories-list card-grid card-grid-compact');
-  list.setAttribute('aria-label', header?.querySelector('h2')?.textContent || MESSAGES.listLabel);
+  const list = el('div', 'card-categories-list');
+  list.setAttribute('role', 'list');
+  list.setAttribute('aria-label', settings.messages.listLabel);
   list.append(...categories.map(buildCard));
   block.replaceChildren(...content, list);
 }
@@ -188,47 +205,41 @@ function render(block, header, categories) {
  * the empty message.
  * @param {Element} block
  * @param {Element|null} header
- * @param {string} endpoint Full URL or path relative to API_BASE_URL
- * @param {{duration: number, variant: string}} alert showToast options
+ * @param {Object} settings readSettings() result
  */
-async function loadFromService(block, header, endpoint, alert) {
+async function loadFromService(block, header, settings) {
   try {
-    const response = await get(endpoint);
+    const response = await get(settings.endpoint);
     const categories = response?.data?.categories;
     if (!Array.isArray(categories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    render(block, header, normalize(categories));
+    render(block, header, normalize(categories), settings);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[card-categories] Could not load categories from', endpoint, error);
-    showToast(MESSAGES.error, alert);
-    render(block, header, []);
+    console.error('[card-categories] Could not load categories from', settings.endpoint, error);
+    showToast(settings.messages.error, settings.alert);
+    render(block, header, [], settings);
   }
 }
 
 /**
  * Card Categories: category cards fed by a service (Endpoint row) or by the internal JSON.
  * The block name gives the main .card-categories class that scopes every style.
- * Optional rows: Title, Alert Duration (seconds, 0 = until closed), Alert Color
- * (error | warning | info | success, or a hex colour).
  * @param {Element} block The card-categories block element
  */
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
-  const config = readBlockConfig(block);
-  const cell = readRawCell(block, 'endpoint');
-  const endpoint = cell.href || cell.text;
-  const alert = alertOptions(config);
-  const header = buildBlockHeader(block, 'card-categories');
+  const settings = readSettings(block);
+  const header = buildBlockHeader(block, 'card-categories', { asDiv: true });
 
-  if (!endpoint) {
-    render(block, header, normalize(FALLBACK_CATEGORIES));
+  if (!settings.endpoint) {
+    render(block, header, normalize(FALLBACK_CATEGORIES), settings);
     return;
   }
 
   // skeleton keeps the layout stable; the request does not block the following sections
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, endpoint, alert);
+  block.replaceChildren(...[header, buildSkeleton(settings.skeletonCount)].filter(Boolean));
+  loadFromService(block, header, settings);
 }

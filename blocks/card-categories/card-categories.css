@@ -1,71 +1,81 @@
 /*
  * NovaMóvil category cards (block "Card Categories").
- * Every rule lives inside .card-categories; colours come from styles/colors.css
- * (--card-categories-*). Each card's hover colour comes from the service data
- * through --card-categories-item-color. Each part keeps its responsive rules below it.
- * Breakpoint: 600px (one full-width card per row below, auto-wrapping row from 600px).
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. card-categories.js builds the block with divs
+ *     and adds the classes.
+ *   - Every rule lives inside .card-categories, at most 2 levels deep:
+ *       .card-categories > & .part > its state (&:hover, &:focus-visible) or its resolution.
+ *   - Sizes are written directly in px where they apply (only relative units such as %
+ *     or fr stay); each part keeps its resolutions right below it
+ *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 3 on tablet and a
+ *     row of 140px cards on desktop.
+ *   - The only variables are colours (styles/colors.css, --card-categories-*, plus
+ *     --card-categories-item-color that each category brings from the service) and the
+ *     site fonts.
+ *
+ * Sections: 1 root · 2 header · 3 list · 4 card · 5 loading skeleton · 6 empty state
  */
 
 .card-categories {
-  /* the list columns follow the width of the block (styles/styles.css .card-grid) */
-  container: card-grid / inline-size;
+  /* ========================================================================
+     1. Root
+     ======================================================================== */
+
   font-family: var(--body-font-family);
 
   /* ========================================================================
-     Header: section title (Title row), ~32px above the cards as in the design
+     2. Header: section title (Title row)
      ======================================================================== */
 
   & .card-categories-header {
     margin-block-end: 20px;
 
-    @media (width >= 600px) {
+    @container style(--tablet-desktop: on) {
       margin-block-end: 24px;
     }
   }
 
   & .card-categories-heading {
     margin: 0;
+    color: var(--heading-color);
+    font-family: var(--heading-font-family);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    scroll-margin: 40px;
+
+    @container style(--desktop: on) {
+      font-size: 28px;
+      line-height: 35px;
+    }
   }
 
   /* ========================================================================
-     List (.card-grid.card-grid-compact): one column on mobile; from 600px
-     balanced rows of stretched cards, or one row of 140px cards when all fit
+     3. List: 1 per row on mobile, 3 equal cards on tablet, 140px cards on desktop
      ======================================================================== */
 
   & .card-categories-list {
-    --card-grid-gap: 13px;
-    --card-grid-fill: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 13px;
 
-    & > li {
-      display: flex;
+    @container style(--tablet-desktop: on) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
     }
 
-    @media (width >= 600px) {
-      --card-grid-gap: 16px;
-      --card-grid-fit: 3;
-      --card-grid-min: 140px;
-    }
-
-    /* 140px cards + 16px gap that fit: (width + 16) / 156 */
-    @container card-grid (width >= 608px) {
-      --card-grid-fit: 4;
-    }
-
-    @container card-grid (width >= 764px) {
-      --card-grid-fit: 5;
-    }
-
-    @container card-grid (width >= 920px) {
-      --card-grid-fit: 6;
-    }
-
-    @container card-grid (width >= 1076px) {
-      --card-grid-fit: 7;
+    @container style(--desktop: on) {
+      grid-template-columns: repeat(6, 140px);
     }
   }
 
+  & .card-categories-card {
+    display: flex;
+  }
+
   /* ========================================================================
-     Card: white surface, icon + label centred
+     4. Card: white surface, icon + label centred; hover in the category colour
      ======================================================================== */
 
   & .card-categories-item {
@@ -88,7 +98,7 @@
     text-decoration: none;
     cursor: pointer;
 
-    /* identity transform so hover does not create a new stacking context */
+    /* identity translate so hover does not create a new stacking context */
     translate: 0 0;
     transition: translate 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 
@@ -114,7 +124,7 @@
       }
     }
 
-    @media (width >= 600px) {
+    @container style(--tablet-desktop: on) {
       block-size: 126px;
     }
   }
@@ -131,7 +141,7 @@
   }
 
   /* ========================================================================
-     Loading skeleton: same size as the cards, gentle shine
+     5. Loading skeleton: same size as the cards, gentle shine
      ======================================================================== */
 
   & .card-categories-skeleton {
@@ -150,13 +160,13 @@
       animation: none;
     }
 
-    @media (width >= 600px) {
+    @container style(--tablet-desktop: on) {
       block-size: 126px;
     }
   }
 
   /* ========================================================================
-     Empty state
+     6. Empty state (empty list or service error)
      ======================================================================== */
 
   & .card-categories-empty {
@@ -170,11 +180,7 @@
     background: var(--card-categories-surface);
     text-align: center;
 
-    & p {
-      margin: 0;
-    }
-
-    @media (width >= 600px) {
+    @container style(--tablet-desktop: on) {
       padding: 40px 24px;
     }
   }
