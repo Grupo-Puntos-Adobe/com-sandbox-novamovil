@@ -24,7 +24,6 @@
   background: var(--toast-background);
   box-shadow: 0 12px 32px var(--toast-shadow);
   color: var(--toast-text);
-  font-family: var(--body-font-family);
   font-size: 14px;
   line-height: 1.45;
   opacity: 0;

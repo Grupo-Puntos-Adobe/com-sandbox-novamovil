@@ -13,10 +13,10 @@ interno del bloque. Todas las filas son opcionales.
 | Endpoint | https://…/api/v1/home/categories |
 | Alert Duration | 5 |
 | Alert Color | error |
-| Error Message | No pudimos cargar las categorías. Intenta de nuevo más tarde. |
-| Empty Title | Por ahora no hay categorías disponibles |
-| Empty Text | Vuelve pronto para descubrir nuestras novedades. |
-| List Label | Categorías |
+| Error Response Message | No pudimos cargar las categorías. Intenta de nuevo más tarde. |
+| Empty Elements Title | Por ahora no hay categorías disponibles |
+| Empty Elements Description | Vuelve pronto para descubrir nuestras novedades. |
+| Elements List Accessible Name | Categorías |
 | Skeleton Count | *(vacío = 6)* |
 
 ## De dónde sale cada texto
@@ -26,9 +26,9 @@ interno del bloque. Todas las filas son opcionales.
 | `Title` | Título de la sección | No se muestra título |
 | `Endpoint` | URL del servicio | Se usan las 6 categorías del JSON interno |
 | `Alert Duration` / `Alert Color` | Duración (segundos) y color de la alerta de error | 5 s, `error` |
-| `Error Message` | Texto de la alerta cuando falla el servicio | `scripts/messages.js` → `error` |
-| `Empty Title` / `Empty Text` | Mensaje cuando no hay categorías | `scripts/messages.js` → `emptyTitle` / `emptyText` |
-| `List Label` | Nombre de la lista para lectores de pantalla | El `Title`, o `scripts/messages.js` → `listLabel` |
+| `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
+| `Empty Elements Title` / `Empty Elements Description` | Aviso cuando no hay categorías que mostrar | `scripts/messages.js` → `emptyElementsTitle` / `emptyElementsDescription` |
+| `Elements List Accessible Name` | Nombre de la lista para lectores de pantalla | El `Title`, o `scripts/messages.js` → `elementsListAccessibleName` |
 | `Skeleton Count` | Tarjetas grises mientras carga (entero de 1 a 24) | `SKELETON_COUNT = 6` en `card-categories.js` |
 
 `scripts/messages.js` tiene los **mensajes genéricos** de todo el sitio ("No pudimos cargar la
@@ -47,7 +47,8 @@ tarjeta sube 4 px.
 
 ## HTML que genera (todo con `div`)
 
-- Título: `div.card-categories-heading` con `role="heading" aria-level="2"`.
+- Título: `div.card-categories-heading` con `role="heading" aria-level="2"`; su fuente viene de la regla
+  global `[role='heading']` de `styles/styles.css` (el bloque no define `font-family`).
 - Lista: `div.card-categories-list[role=list]` con un `div.card-categories-card[role=listitem]` por
   categoría; dentro, el enlace `a.card-categories-item` (icono + nombre).
 - Carga: `div.card-categories-skeleton` × Skeleton Count. Vacío o error: `div.card-categories-empty`.

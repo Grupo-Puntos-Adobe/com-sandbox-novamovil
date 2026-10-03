@@ -60,7 +60,6 @@
     height: var(--nav-height);
     margin: auto;
     padding: 0 16px;
-    font-family: var(--body-font-family);
 
     /* mobile menu open: grows with its content, never taller than the screen */
     &.is-open {
@@ -391,7 +390,6 @@
     border: 0;
     background: transparent;
     color: var(--header-search-text);
-    font-family: inherit;
     font-size: var(--body-font-size-xs);
     outline: none;
 

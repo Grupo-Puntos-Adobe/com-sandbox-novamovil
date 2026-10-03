@@ -8,7 +8,6 @@
 .card-featured {
   /* the list columns follow the width of the block (styles/styles.css .card-grid) */
   container: card-grid / inline-size;
-  font-family: var(--body-font-family);
 
   /* ========================================================================
      Header: section title + "Ver todos"
@@ -208,7 +207,6 @@
     overflow: hidden;
     margin: 2px 0 0;
     color: var(--card-featured-name);
-    font-family: var(--body-font-family);
     font-size: 17px;
     font-weight: 600;
     line-height: 1.35;

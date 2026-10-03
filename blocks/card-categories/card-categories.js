@@ -5,7 +5,8 @@
  * "Card Categories" table.
  *
  * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
- * Alert Color, Error Message, Empty Title, Empty Text, List Label, Skeleton Count.
+ * Alert Color, Error Response Message, Empty Elements Title, Empty Elements Description,
+ * Elements List Accessible Name, Skeleton Count.
  * Texts missing in the table come from scripts/messages.js (generic messages);
  * Skeleton Count missing or invalid uses SKELETON_COUNT below.
  *
@@ -19,7 +20,7 @@
  *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
  *                         ├─ get(endpoint)   scripts/api/http-client.js
  *                         ├─ ok    → render(normalize(data.categories))
- *                         └─ error → console.error + showToast(messages.error) + render([])
+ *                         └─ error → console.error + showToast(errorResponseMessage) + render([])
  *   render(block, header, categories, settings)
  *     ├─ none → buildEmpty()
  *     └─ div.card-categories-list[role=list] > buildCard() per category (columns: CSS)
@@ -72,7 +73,8 @@ const EMPTY_ICON = '🗂️';
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
  * @returns {{endpoint: string, alert: Object, skeletonCount: number,
- *   messages: {error: string, emptyTitle: string, emptyText: string, listLabel: string}}}
+ *   messages: {errorResponseMessage: string, emptyElementsTitle: string,
+ *     emptyElementsDescription: string, elementsListAccessibleName: string}}}
  */
 function readSettings(block) {
   const text = (key) => readRawCell(block, key).text;
@@ -84,10 +86,12 @@ function readSettings(block) {
     skeletonCount: Number.isInteger(count) && count >= 1 && count <= MAX_SKELETON_COUNT
       ? count : SKELETON_COUNT,
     messages: {
-      error: text('error message') || MESSAGES.error,
-      emptyTitle: text('empty title') || MESSAGES.emptyTitle,
-      emptyText: text('empty text') || MESSAGES.emptyText,
-      listLabel: text('list label') || text('title') || MESSAGES.listLabel,
+      errorResponseMessage: text('error response message') || MESSAGES.errorResponseMessage,
+      emptyElementsTitle: text('empty elements title') || MESSAGES.emptyElementsTitle,
+      emptyElementsDescription: text('empty elements description')
+        || MESSAGES.emptyElementsDescription,
+      elementsListAccessibleName: text('elements list accessible name') || text('title')
+        || MESSAGES.elementsListAccessibleName,
     },
   };
 }
@@ -163,7 +167,7 @@ function buildSkeleton(count) {
 
 /**
  * "No categories" message: empty list or service error.
- * @param {Object} messages Empty Title / Empty Text (table or scripts/messages.js)
+ * @param {Object} messages Empty Elements Title / Description (table or scripts/messages.js)
  * @returns {Element} div[role=status]
  */
 function buildEmpty(messages) {
@@ -173,8 +177,8 @@ function buildEmpty(messages) {
   icon.setAttribute('aria-hidden', 'true');
   empty.append(
     icon,
-    el('div', 'card-categories-empty-title', messages.emptyTitle),
-    el('div', 'card-categories-empty-text', messages.emptyText),
+    el('div', 'card-categories-empty-title', messages.emptyElementsTitle),
+    el('div', 'card-categories-empty-text', messages.emptyElementsDescription),
   );
   return empty;
 }
@@ -195,7 +199,7 @@ function render(block, header, categories, settings) {
   }
   const list = el('div', 'card-categories-list');
   list.setAttribute('role', 'list');
-  list.setAttribute('aria-label', settings.messages.listLabel);
+  list.setAttribute('aria-label', settings.messages.elementsListAccessibleName);
   list.append(...categories.map(buildCard));
   block.replaceChildren(...content, list);
 }
@@ -218,7 +222,7 @@ async function loadFromService(block, header, settings) {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
-    showToast(settings.messages.error, settings.alert);
+    showToast(settings.messages.errorResponseMessage, settings.alert);
     render(block, header, [], settings);
   }
 }

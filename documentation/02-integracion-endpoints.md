@@ -275,7 +275,8 @@ function readSettings(block) {       // todo lo que viene de la tabla, con sus d
     alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
     skeletonCount: …,                                  // Skeleton Count (1-24) o SKELETON_COUNT
     messages: {
-      error: text('error message') || MESSAGES.error,  // fila de la tabla o mensaje genérico
+      errorResponseMessage: text('error response message')   // fila de la tabla…
+        || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
       …
     },
   };
@@ -291,7 +292,7 @@ async function loadFromService(block, header, settings) {
     render(block, header, normalize(categories), settings);   // lista vacía → mensaje vacío
   } catch (error) {
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
-    showToast(settings.messages.error, settings.alert);       // alerta flotante
+    showToast(settings.messages.errorResponseMessage, settings.alert);  // alerta flotante
     render(block, header, [], settings);                      // mensaje vacío
   }
 }

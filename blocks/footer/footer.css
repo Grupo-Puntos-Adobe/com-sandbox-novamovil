@@ -9,8 +9,8 @@
  *     vw / dvh stay, because they depend on the screen); each part keeps its resolutions right
  *     below it (styles/foundations/breakpoints.css: one column on mobile, brand + three
  *     link columns from tablet up).
- *   - The only variables are colours (styles/colors.css, --footer-*) and the site font
- *     (--body-font-family).
+ *   - The only variables are colours (styles/colors.css, --footer-*). Fonts come from
+ *     styles.css (body and headings).
  *
  * Sections: 1 root · 2 container & grid · 3 brand · 4 link columns · 5 bottom
  */
@@ -22,7 +22,6 @@
 
   background: var(--footer-background);
   color: var(--footer-text);
-  font-family: var(--body-font-family);
   font-size: 14px;
   line-height: 1.6;
 
@@ -130,7 +129,6 @@
   & .footer-column-title {
     margin: 0 0 12px;
     color: var(--footer-heading);
-    font-family: var(--body-font-family);
     font-size: 16px;
     font-weight: 700;
     line-height: 1.3;

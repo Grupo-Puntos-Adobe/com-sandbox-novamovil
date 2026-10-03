@@ -10,8 +10,8 @@
  *     vw or fr stay, because they depend on the space available); each part keeps its
  *     resolutions right below it (styles/foundations/breakpoints.css: one column without
  *     image on mobile and tablet, text + image on desktop).
- *   - The only variables are colours (styles/colors.css: palette + --hero-novamovil-*)
- *     and the site fonts (--body-font-family, --heading-font-family).
+ *   - The only variables are colours (styles/colors.css: palette + --hero-novamovil-*).
+ *     Fonts come from styles.css (body, and [role='heading'] for the title).
  *
  * Sections: 1 root & decorative circles · 2 container · 3 tag · 4 title ·
  *           5 description · 6 buttons · 7 stats · 8 image
@@ -34,7 +34,6 @@
   isolation: isolate;
   background: var(--hero-novamovil-background);
   color: var(--color-white);
-  font-family: var(--body-font-family);
 
   &::before,
   &::after {
@@ -135,7 +134,6 @@
     max-width: 272px;
     margin: 20px 0 0;
     color: var(--color-white);
-    font-family: var(--heading-font-family);
     font-size: 32px;
     font-weight: 800;
     letter-spacing: -0.64px;
@@ -201,7 +199,6 @@
     border: 1px solid transparent;
     border-radius: 10px;
     color: var(--color-white);
-    font-family: inherit;
     font-size: 14px;
     font-weight: 700;
     line-height: 1;

@@ -11,21 +11,15 @@
  *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 3 on tablet and a
  *     row of 140px cards on desktop.
  *   - The only variables are colours (styles/colors.css, --card-categories-*, plus
- *     --card-categories-item-color that each category brings from the service) and the
- *     site fonts.
+ *     --card-categories-item-color that each category brings from the service). Fonts
+ *     come from styles.css (body, and [role='heading'] for the title).
  *
- * Sections: 1 root · 2 header · 3 list · 4 card · 5 loading skeleton · 6 empty state
+ * Sections: 1 header · 2 list · 3 card · 4 loading skeleton · 5 empty state
  */
 
 .card-categories {
   /* ========================================================================
-     1. Root
-     ======================================================================== */
-
-  font-family: var(--body-font-family);
-
-  /* ========================================================================
-     2. Header: section title (Title row)
+     1. Header: section title (Title row)
      ======================================================================== */
 
   & .card-categories-header {
@@ -39,7 +33,6 @@
   & .card-categories-heading {
     margin: 0;
     color: var(--heading-color);
-    font-family: var(--heading-font-family);
     font-size: 24px;
     font-weight: 700;
     line-height: 30px;
@@ -52,7 +45,7 @@
   }
 
   /* ========================================================================
-     3. List: 1 per row on mobile, 3 equal cards on tablet, 140px cards on desktop
+     2. List: 1 per row on mobile, 3 equal cards on tablet, 140px cards on desktop
      ======================================================================== */
 
   & .card-categories-list {
@@ -75,7 +68,7 @@
   }
 
   /* ========================================================================
-     4. Card: white surface, icon + label centred; hover in the category colour
+     3. Card: white surface, icon + label centred; hover in the category colour
      ======================================================================== */
 
   & .card-categories-item {
@@ -141,7 +134,7 @@
   }
 
   /* ========================================================================
-     5. Loading skeleton: same size as the cards, gentle shine
+     4. Loading skeleton: same size as the cards, gentle shine
      ======================================================================== */
 
   & .card-categories-skeleton {
@@ -166,7 +159,7 @@
   }
 
   /* ========================================================================
-     6. Empty state (empty list or service error)
+     5. Empty state (empty list or service error)
      ======================================================================== */
 
   & .card-categories-empty {

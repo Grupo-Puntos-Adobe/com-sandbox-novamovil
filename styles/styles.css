@@ -117,6 +117,12 @@ h6 {
   scroll-margin: 40px;
 }
 
+/* headings built with divs (role="heading", e.g. the hero and block titles) use the
+   same font as h1-h6; blocks never set font-family themselves */
+[role='heading'] {
+  font-family: var(--heading-font-family);
+}
+
 h1 { font-size: var(--heading-font-size-xxl); }
 h2 { font-size: var(--heading-font-size-xl); }
 h3 { font-size: var(--heading-font-size-l); }
