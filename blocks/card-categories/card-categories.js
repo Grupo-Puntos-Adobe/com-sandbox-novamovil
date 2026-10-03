@@ -46,7 +46,8 @@ import {
   readRawCell, readRowText, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
-// used when the document has no Endpoint row
+// used when the document has no Endpoint row; [] or null (no data) → the empty message
+// directly, without alert
 const FALLBACK_CATEGORIES = [
   {
     id: 'CAT-001', label: 'Celulares', icon: '📱', path: '/celulares', color: '#1a4fd8', active: true, order: 1,

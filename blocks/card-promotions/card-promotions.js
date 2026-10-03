@@ -51,7 +51,8 @@ import {
   readRawCell, readRowText, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
-// used when the document has no Endpoint row
+// used when the document has no Endpoint row; [] or null (no data) → the empty message
+// directly, without alert
 const FALLBACK_PROMOTIONS = [
   {
     id: 'PROMO-001',

@@ -49,7 +49,7 @@ foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es *
 
 | Fila | Para qué | Por defecto |
 |---|---|---|
-| `Endpoint` | URL del servicio | Sin fila: los 4 productos del JSON interno |
+| `Endpoint` | URL del servicio | Sin fila: los 4 productos del JSON interno del bloque; si ese JSON está vacío (`[]`) o sin datos (`null`), el aviso de lista vacía directo, sin alerta |
 | `Alert Duration` / `Alert Color` | Duración (segundos) y color de la alerta de error | 5 s, `error` |
 | `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
 
@@ -71,6 +71,15 @@ Los textos que solo oyen los lectores de pantalla ("Precio", "Precio anterior", 
 Todas las filas miden lo que la tarjeta más alta, y el botón queda pegado abajo. Si la tarjeta tiene
 enlace, toda ella es clicable (abre el producto) y al pasar el mouse sube 4 px; sin enlace se queda
 quieta.
+
+## Cuándo sale el aviso de lista vacía
+
+| Caso | Qué se ve |
+|---|---|
+| Sin `Endpoint` y el JSON interno tiene productos | Las tarjetas del JSON interno |
+| Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
+| El servicio responde la lista vacía (o sin productos activas) | Aviso de lista vacía, sin alerta |
+| El servicio falla, no responde o la respuesta no trae la lista | Alerta (`Error Response Message`) + aviso de lista vacía |
 
 ## HTML que genera (todo con `div`)
 

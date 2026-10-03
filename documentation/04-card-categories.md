@@ -41,7 +41,7 @@ foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es *
 
 | Fila | Para qué | Por defecto |
 |---|---|---|
-| `Endpoint` | URL del servicio | Sin fila: las 6 categorías del JSON interno |
+| `Endpoint` | URL del servicio | Sin fila: las 6 categorías del JSON interno del bloque; si ese JSON está vacío (`[]`) o sin datos (`null`), el aviso de lista vacía directo, sin alerta |
 | `Alert Duration` / `Alert Color` | Duración (segundos) y color de la alerta de error | 5 s, `error` |
 | `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
 
@@ -61,6 +61,15 @@ Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos"
 
 Al pasar el mouse, el borde y la sombra toman el `color` de cada categoría (del servicio) y la
 tarjeta sube 4 px.
+
+## Cuándo sale el aviso de lista vacía
+
+| Caso | Qué se ve |
+|---|---|
+| Sin `Endpoint` y el JSON interno tiene categorías | Las tarjetas del JSON interno |
+| Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
+| El servicio responde la lista vacía (o sin categorías activas) | Aviso de lista vacía, sin alerta |
+| El servicio falla, no responde o la respuesta no trae la lista | Alerta (`Error Response Message`) + aviso de lista vacía |
 
 ## HTML que genera (todo con `div`)
 
