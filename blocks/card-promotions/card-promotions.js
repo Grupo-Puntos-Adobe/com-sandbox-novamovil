@@ -22,7 +22,7 @@
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
  *     ├─ readPromotionsSettings(block)             endpoint, promo link, alert, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
- *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
+ *     ├─ buildSectionTitle(block, prefix) scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → renderPromotions(normalizePromotions(FALLBACK_PROMOTIONS))
  *     └─ endpoint    → buildPromotionsSkeleton() + loadPromotionsFromService()
  *                       (not awaited: the page keeps loading)
@@ -56,7 +56,7 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES from '../../scripts/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildBlockHeader,
+  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
@@ -314,7 +314,7 @@ async function loadPromotionsFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readPromotionsSettings(block);
-  const header = buildBlockHeader(block, 'card-promotions', { asDiv: true });
+  const header = buildSectionTitle(block, 'card-promotions');
 
   if (!settings.endpoint) {
     const validPromotions = normalizePromotions(FALLBACK_PROMOTIONS, settings.linkTemplate);

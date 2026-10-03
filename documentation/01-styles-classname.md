@@ -63,7 +63,7 @@ Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloq
 | `blocks/card-categories/card-categories.js` | 🆕 nuevo | Igual |
 | `blocks/card-featured/card-featured.js` | 🆕 nuevo | Igual |
 | `blocks/card-promotions/card-promotions.js` | 🆕 nuevo | Igual |
-| `scripts/block-utils.js` | 🆕 nuevo | `buildBlockHeader`: mete el título **dentro** del bloque para que los estilos lo rodeen |
+| `scripts/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
 | `content-drive/index.docx` | 🆕 nuevo | Cada tabla trae las filas `Styles` y `Classname` vacías, listas para usar |
 | 🔒 `migration-work/docx_builder.py` | local | `Doc.options()` genera esas dos filas vacías en cada tabla |
 | `scripts/scripts.js` | 📦 template | **Sin cambios.** Ver sección 9 (historia) |
@@ -84,7 +84,7 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 3. 🆕 decorate(block) del bloque
       ├─ 🆕 applyBlockOptions(block)   ← PRIMERA línea: lee, aplica y QUITA Styles/Classname
       ├─    readBlockConfig(block)      ← ya no ve esas filas
-      ├─    buildBlockHeader(block, …)  ← título dentro del bloque
+      ├─    buildSectionTitle(block, …) ← título dentro del bloque
       └─    pinta tarjetas / hero
 ```
 
@@ -200,7 +200,8 @@ export default function applyBlockOptions(block) {
 
 Antes, el título ("Categorías", "Productos destacados") era contenido suelto **fuera** de la tabla,
 y los estilos quedaban **entre el título y las tarjetas**. Ahora cada bloque lee una fila `Title`
-(y `Link` en destacados) y la pinta dentro con `buildBlockHeader` de `scripts/block-utils.js`:
+y la pinta dentro con `buildSectionTitle` de `scripts/block-utils.js` (destacados agrega su botón
+`Link`, "Ver todos", con su propia función `buildViewAllLink`):
 
 ```
 Antes:  section > [h2 Categorías] + [div.card-categories ← estilos aquí]
@@ -248,7 +249,7 @@ export default function decorate(block) {
 }
 ```
 
-Si el bloque tiene título, usar `buildBlockHeader(block, '<nuevo-bloque>')` de
+Si el bloque tiene título, usar `buildSectionTitle(block, '<nuevo-bloque>')` de
 `scripts/block-utils.js` para que quede dentro del bloque.
 
 En el documento (`docx_builder.py` → `Doc.options()`), poner las filas vacías justo después del nombre:
@@ -277,7 +278,7 @@ propiedades inventadas o valores inválidos.
 | Commit | Qué pasó |
 |---|---|
 | `dc91d2b` | Primera versión: se llamaba **para todos los bloques** desde `decorateMain` en 📦 `scripts/scripts.js` |
-| `b6495eb` | El título pasa a estar dentro del bloque (`buildBlockHeader`) y se agrega `flow-root` para los márgenes |
+| `b6495eb` | El título pasa a estar dentro del bloque (`buildBlockHeader`, hoy `buildSectionTitle`) y se agrega `flow-root` para los márgenes |
 | `5e0f0b5` | **Solo bloques NovaMóvil:** se quita la llamada de `scripts/scripts.js` (vuelve a quedar **idéntico al template**) y cada bloque NovaMóvil la llama en la primera línea de su `decorate` |
 
 Por qué se cambió: así los bloques del template (`cards`, `columns`, `hero`…) quedan intactos, y

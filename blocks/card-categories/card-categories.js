@@ -20,7 +20,7 @@
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
  *     ├─ readCategoriesSettings(block)             endpoint, alert, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
- *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
+ *     ├─ buildSectionTitle(block, prefix) scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → renderCategories(normalizeCategories(FALLBACK_CATEGORIES))
  *     └─ endpoint    → buildCategoriesSkeleton() + loadCategoriesFromService()
  *                       (not awaited: the page keeps loading)
@@ -52,7 +52,7 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES from '../../scripts/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildBlockHeader,
+  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
@@ -265,7 +265,7 @@ async function loadCategoriesFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readCategoriesSettings(block);
-  const header = buildBlockHeader(block, 'card-categories', { asDiv: true });
+  const header = buildSectionTitle(block, 'card-categories');
 
   if (!settings.endpoint) {
     renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);

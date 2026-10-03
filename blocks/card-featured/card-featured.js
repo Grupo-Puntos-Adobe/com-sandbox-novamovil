@@ -26,8 +26,8 @@
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
  *     ├─ readFeaturedSettings(block)             endpoint, product link, alert, title, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
- *     ├─ buildProductsHeader(block)      buildBlockHeader() (scripts/block-utils.js) → title +
- *     │                                  "Ver todos", placed in the grid
+ *     ├─ buildProductsHeader(block)      title: buildSectionTitle() (scripts/block-utils.js)
+ *     │                                  + "Ver todos": buildViewAllLink(), placed in the grid
  *     ├─ no endpoint → renderProducts(normalizeProducts(FALLBACK_PRODUCTS))
  *     └─ endpoint    → buildProductsSkeleton() + loadProductsFromService()
  *                       (not awaited: the page keeps loading)
@@ -69,7 +69,7 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildBlockHeader, formatPrice,
+  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle, formatPrice,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
@@ -442,7 +442,7 @@ function buildEmptyListMessage(messages) {
 /**
  * Renders the header and the cards, or the empty message when there is nothing to show.
  * @param {Element} block
- * @param {Element|null} header Title / Link rows (buildBlockHeader)
+ * @param {Element|null} header Title / Link rows (buildProductsHeader)
  * @param {Object[]} products Normalised products
  * @param {Object} settings readFeaturedSettings() result
  */
@@ -488,18 +488,33 @@ async function loadProductsFromService(block, header, settings) {
 }
 
 /**
- * Section header from the Title and Link rows (buildBlockHeader), laid out with the grid:
- * the title fills the row and "Ver todos" is as wide as its text; without a title the
- * button stays on the right (row-end).
+ * "Ver todos" button from the Link row (text and link of the cell). No default: without a
+ * Link row with a valid link there is no button.
+ * @param {Element} block
+ * @returns {Element|null} a.card-featured-link
+ */
+function buildViewAllLink(block) {
+  const cell = readTableCell(block, 'link');
+  const href = cell.text ? getSafeHref(cell.href) : null;
+  if (!href) return null;
+  const link = createElementWithClass('a', 'card-featured-link', cell.text);
+  link.href = href;
+  return link;
+}
+
+/**
+ * Section header: the title (buildSectionTitle, Title row) and "Ver todos" (Link row), laid
+ * out with the grid: the title fills the row and the button is as wide as its text; without
+ * a title the button stays on the right (row-end).
  * @param {Element} block
  * @returns {Element|null} div.card-featured-header > div.card-featured-header-grid.container-fluid
  *   > row > col (title) + col-auto (link); null when there is no title nor link
  */
 function buildProductsHeader(block) {
-  const header = buildBlockHeader(block, 'card-featured', { asDiv: true, withLink: true });
-  if (!header) return null;
-  const heading = header.querySelector('.card-featured-heading');
-  const link = header.querySelector('.card-featured-link');
+  const heading = buildSectionTitle(block, 'card-featured')?.querySelector('.card-featured-heading');
+  const link = buildViewAllLink(block);
+  if (!heading && !link) return null;
+  const header = createElementWithClass('div', 'card-featured-header');
   const row = createElementWithClass('div', `card-featured-header-row row row-middle row-gutter-16${heading ? '' : ' row-end'}`);
   if (heading) {
     const titleColumn = createElementWithClass('div', 'card-featured-header-title col');

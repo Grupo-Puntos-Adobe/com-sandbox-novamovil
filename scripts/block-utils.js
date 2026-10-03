@@ -10,8 +10,8 @@
  *     Alert Duration / Alert Color → showToast options       card-*
  *   getSafeHref(path)
  *     only same-site paths and http(s) URLs, else null       card-* (service links, images)
- *   buildBlockHeader(block, prefix, options)
- *     Title row (+ Link row) → div.{prefix}-header           card-*
+ *   buildSectionTitle(block, prefix)
+ *     Title row → div.{prefix}-header > section title        card-* (any block with a Title)
  *   formatPrice(value, currency)
  *     $19,999 with LOCALE / CURRENCY of messages.js          card-featured (any price)
  *
@@ -103,46 +103,27 @@ export function getSafeHref(path) {
 }
 
 /**
- * Optional section header owned by the block, from its Title (and Link) rows, so the
- * block's main class wraps title + content (Styles/Classname then apply around both).
- * Markup: div.{prefix}-header > h2.{prefix}-heading + a.{prefix}-link
- * With { asDiv: true } the heading is div.{prefix}-heading[role=heading][aria-level=2]
- * (the block CSS then sets its size; the font comes from the global [role='heading']).
+ * Section title from the block's Title row, inside the block (so Styles / Classname wrap
+ * title + content). No default: without text in the Title row there is no title.
+ * Markup: div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]
+ * (the block CSS sets its size; the font comes from the global [role='heading']).
  * @param {Element} block
- * @param {string} prefix Block class, e.g. 'card-featured'
- * @param {Object} [options]
- * Title and Link have no default: a missing or empty row paints nothing.
- * @param {boolean} [options.asDiv=false] Build the heading as a div instead of an h2
- * @param {boolean} [options.withLink=false] Also read the Link row (a.{prefix}-link)
- * @returns {Element|null} the header, or null when there is no title nor link
+ * @param {string} prefix Block class, e.g. 'card-categories'
+ * @returns {Element|null} div.{prefix}-header, or null without title
  */
-export function buildBlockHeader(block, prefix, { asDiv = false, withLink = false } = {}) {
+export function buildSectionTitle(block, prefix) {
   const title = readTableCell(block, 'title').text;
-  const link = withLink ? readTableCell(block, 'link') : { text: '', href: '' };
-  const href = link.text ? getSafeHref(link.href) : null;
-  if (!title && !href) {
-    return null;
-  }
+  if (!title) return null;
+
+  const heading = document.createElement('div');
+  heading.className = `${prefix}-heading`;
+  heading.setAttribute('role', 'heading');
+  heading.setAttribute('aria-level', '2');
+  heading.textContent = title;
 
   const header = document.createElement('div');
   header.className = `${prefix}-header`;
-  if (title) {
-    const heading = document.createElement(asDiv ? 'div' : 'h2');
-    heading.className = `${prefix}-heading`;
-    if (asDiv) {
-      heading.setAttribute('role', 'heading');
-      heading.setAttribute('aria-level', '2');
-    }
-    heading.textContent = title;
-    header.append(heading);
-  }
-  if (href) {
-    const cta = document.createElement('a');
-    cta.className = `${prefix}-link`;
-    cta.href = href;
-    cta.textContent = link.text;
-    header.append(cta);
-  }
+  header.append(heading);
   return header;
 }
 

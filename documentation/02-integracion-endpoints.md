@@ -254,7 +254,7 @@ header fijo:
 | `getAlertOptions(config)` | Convierte las filas `Alert Duration` (segundos) y `Alert Color` en `{ duration, variant }` para `showToast`. Por defecto 5 s y `error` |
 | `getSafeHref(path)` | Los enlaces que vienen del servicio solo se aceptan si son rutas del sitio o `http(s)`. Bloquea `javascript:` y similares |
 | `formatPrice(value, currency)` | Devuelve el precio ya formateado (`$19,999`, sin decimales) con `LOCALE` y `CURRENCY` de `scripts/messages.js`; si la moneda no es válida usa `CURRENCY`. Hoy lo usa `card-featured`; cualquier bloque con precios debe usarlo |
-| `buildBlockHeader(block, prefijo, opciones)` | Arma el título de la sección desde la fila `Title` (y el botón `Link` con `withLink`); sin texto no pinta nada |
+| `buildSectionTitle(block, prefijo)` | Arma el título de la sección desde la fila `Title` (`div.{prefijo}-header` con el título); sin texto no pinta nada. Sirve para cualquier bloque con fila `Title` |
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
@@ -307,7 +307,7 @@ export default function decorate(block) {
   applyBlockOptions(block);
   const settings = readCategoriesSettings(block);
   // Title sin valor por defecto: si no viene en la tabla no hay título
-  const header = buildBlockHeader(block, 'card-categories', { asDiv: true }); // featured: withLink
+  const header = buildSectionTitle(block, 'card-categories');
 
   if (!settings.endpoint) {                                     // sin endpoint → JSON interno
     renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);
