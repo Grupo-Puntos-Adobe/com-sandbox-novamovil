@@ -96,5 +96,3 @@ quieta.
   Vacío o error: `div.card-featured-empty`.
 
 Código: `blocks/card-featured/card-featured.js` y `blocks/card-featured/card-featured.css`.
-Lo que comparte con los otros bloques (leer la tabla, esqueleto, lista, aviso vacío, servicio,
-formatos) está en `scripts/block-utils.js` (ver `02-integracion-endpoints.md`, paso 6).

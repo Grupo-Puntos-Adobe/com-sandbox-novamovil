@@ -81,5 +81,3 @@ tarjeta sube 4 px.
 - Carga: `div.card-categories-skeleton` × `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
 
 Código: `blocks/card-categories/card-categories.js` y `blocks/card-categories/card-categories.css`.
-Lo que comparte con los otros bloques (leer la tabla, esqueleto, lista, aviso vacío, servicio,
-formatos) está en `scripts/block-utils.js` (ver `02-integracion-endpoints.md`, paso 6).

@@ -5,8 +5,8 @@
  *
  * showToast('No pudimos cargar las categorías', { duration: 5000, variant: 'error' });
  *
- * Called by: loadServiceList() in scripts/block-utils.js (error path of card-categories,
- * card-featured and card-promotions), with the options built by alertOptions().
+ * Called by: loadFromService() of card-categories, card-featured and card-promotions
+ * (error path), with the options built by alertOptions() in scripts/block-utils.js.
  *
  * Flow:
  *   showToast(message, options)

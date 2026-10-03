@@ -83,5 +83,3 @@ mouse la tarjeta sube 4 px (solo si tiene enlace).
   `card-promotions.js`). Vacío o error: `div.card-promotions-empty`.
 
 Código: `blocks/card-promotions/card-promotions.js` y `blocks/card-promotions/card-promotions.css`.
-Lo que comparte con los otros bloques (leer la tabla, esqueleto, lista, aviso vacío, servicio,
-formatos) está en `scripts/block-utils.js` (ver `02-integracion-endpoints.md`, paso 6).

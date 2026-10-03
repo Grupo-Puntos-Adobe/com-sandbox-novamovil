@@ -12,25 +12,29 @@
  *   - Title, Link, Button Text and Product Link have no default: without text in the
  *     table that part is not painted. Without Button Text the product name is the link;
  *     without Product Link (and no path from the service) the card has no link.
- *   - Empty List Title / Description / Icon and Image Error Message: row missing →
- *     default (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty →
- *     not painted.
+ *   - Empty List Title / Description / Icon and Image Error Message (readRowText): row
+ *     missing → default (scripts/messages.js, EMPTY_LIST_ICON below); row present but
+ *     empty → not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
- * Prices use formatPrice / formatNumber (LOCALE and CURRENCY of scripts/messages.js).
+ * Prices use LOCALE and CURRENCY from scripts/messages.js.
  * The list is named by the Title through aria-labelledby.
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
- * Flow (shared helpers in scripts/block-utils.js):
+ * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)          scripts/block-options.js → Styles / Classname rows
- *     ├─ readSettings(block)               readServiceSettings() + Product Link, Button Text,
- *     │                                    Image Error Message
- *     ├─ buildBlockHeader(…, withLink)     div[role=heading] + "Ver todos"
- *     ├─ no endpoint → show(FALLBACK_PRODUCTS)
- *     └─ endpoint    → renderSkeleton() + loadServiceList('products') → show(list)
- *                       (not awaited: the page keeps loading; on error alert + [])
- *   show(list) → renderCards(normalize(list).map(buildCard))   none → empty message
- *     buildCard → buildMedia() · buildName() · buildRating() · buildPrices() · buildLink()
+ *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
+ *     ├─ readSettings(block)             endpoint, product link, alert, title, messages
+ *     │    └─ readRawCell / readRowText / alertOptions   scripts/block-utils.js
+ *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] + "Ver todos"
+ *     ├─ no endpoint → render(normalize(FALLBACK_PRODUCTS))
+ *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
+ *                         ├─ get(endpoint)   scripts/api/http-client.js
+ *                         ├─ ok    → render(normalize(data.products))
+ *                         └─ error → console.error + showToast(errorResponseMessage) + render([])
+ *   render(block, header, products, settings)
+ *     ├─ none → buildEmpty()
+ *     └─ div.card-featured-list[role=list] > buildCard() per product (columns: CSS)
+ *          └─ buildMedia() · buildRating() · buildPrices() (formatPrice) · buildLink()
  *
  * Markup is all divs except the product image (<img>) and the links (<a>). Classes used by
  * card-featured.css: card-featured-header, -heading, -link, -list, -item, -media, -image,
@@ -42,15 +46,14 @@
  *   oldPrice, promo, currency, rating, reviews, badge, active, path? }] } }
  * Guides: documentation/02-integracion-endpoints.md, documentation/05-card-featured.md
  */
+import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/block-options.js';
-import MESSAGES from '../../scripts/messages.js';
+import { get } from '../../scripts/api/http-client.js';
+import { showToast } from '../../scripts/toast.js';
+import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/messages.js';
 import {
-  readRawCell, readRowText, readServiceSettings, buildBlockHeader, renderSkeleton,
-  renderCards, loadServiceList, activeItems, uniqueById, linkFromTemplate, safeHref, toText,
-  toNumber, formatPrice, formatNumber, el,
+  readRawCell, readRowText, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
-
-const PREFIX = 'card-featured';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
 // directly, without alert
@@ -133,8 +136,6 @@ const FALLBACK_PRODUCTS = [
 const SKELETON_ELEMENTS = 4;
 // icon of the "no featured products" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '📦';
-// placeholders allowed in the Product Link row
-const LINK_KEYS = ['sku', 'productId', 'id'];
 // texts only read by screen readers (not authored)
 const LABELS = {
   price: 'Precio',
@@ -142,59 +143,126 @@ const LABELS = {
   rating: (rating, reviews) => `Calificación ${rating} de 5${reviews}`,
   reviews: (count) => `, ${count} reseñas`,
 };
+let headingCount = 0;
+
+// service values → trimmed string ('' if not a string) / number (null if not numeric)
+const text = (value) => (typeof value === 'string' ? value.trim() : '');
+const number = (value) => (value === null || value === '' || !Number.isFinite(Number(value))
+  ? null : Number(value));
 
 /**
- * Everything the block reads from its table: the rows shared by every service block plus
- * its own ones.
+ * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
- * @returns {Object} readServiceSettings() + linkTemplate, buttonText and
- *   messages.imageErrorMessage
+ * @returns {{endpoint: string, linkTemplate: string, buttonText: string, alert: Object,
+ *   messages: {errorResponseMessage: string, emptyListTitle: string,
+ *     emptyListDescription: string, emptyListIcon: string, imageErrorMessage: string}}}
  */
 function readSettings(block) {
-  const settings = readServiceSettings(block, EMPTY_LIST_ICON);
+  const cell = (key) => readRawCell(block, key).text;
+  const endpointCell = readRawCell(block, 'endpoint');
   return {
-    ...settings,
-    linkTemplate: readRawCell(block, 'product link').text,
-    buttonText: readRawCell(block, 'button text').text,
+    endpoint: endpointCell.href || endpointCell.text,
+    linkTemplate: cell('product link'),
+    buttonText: cell('button text'),
+    alert: alertOptions(readBlockConfig(block)),
     messages: {
-      ...settings.messages,
+      errorResponseMessage: cell('error response message') || MESSAGES.errorResponseMessage,
+      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
+      emptyListDescription: readRowText(
+        block,
+        'empty list description',
+        MESSAGES.emptyListDescription,
+      ),
+      emptyListIcon: readRowText(block, 'empty list icon', EMPTY_LIST_ICON),
       imageErrorMessage: readRowText(block, 'image error message', MESSAGES.imageErrorMessage),
     },
   };
 }
 
 /**
+ * Formats a price in LOCALE without decimals ($19,999); an unknown currency code falls
+ * back to CURRENCY (both from scripts/messages.js).
+ * @param {number} value
+ * @param {string} currency ISO 4217 code, e.g. 'MXN'
+ * @returns {string}
+ */
+function formatPrice(value, currency) {
+  try {
+    return new Intl.NumberFormat(LOCALE, { style: 'currency', currency, maximumFractionDigits: 0 })
+      .format(value);
+  } catch {
+    return new Intl.NumberFormat(LOCALE, {
+      style: 'currency', currency: CURRENCY, maximumFractionDigits: 0,
+    }).format(value);
+  }
+}
+
+/**
+ * Builds the product link from the item's own path/url or the authored template,
+ * e.g. "/productos/{sku}" (placeholders: {sku}, {productId}, {id}).
+ * @param {Object} item Raw product
+ * @param {string} template Product Link row ('' when the table has none)
+ * @returns {string|null} null without template or when a placeholder could not be filled
+ */
+function productHref(item, template) {
+  const own = safeHref(item.path || item.url);
+  if (own) return own;
+  if (!template) return null;
+  const filled = template.replace(/\{(sku|productId|id)\}/g, (match, key) => encodeURIComponent(String(item[key] ?? '').toLowerCase()));
+  return /\{|\/\/?$/.test(filled) ? null : safeHref(filled);
+}
+
+/**
  * Active products with a name and a price, without duplicates (href null = no link).
  * Validates every field (URLs with safeHref, currency code, rating 0-5, oldPrice > price).
- * @param {*} list Raw products (service or fallback); not a list gives []
- * @param {string} linkTemplate Product Link row
+ * @param {Object[]} list Raw products (service or fallback)
+ * @param {string} linkTemplate
  * @returns {Object[]}
  */
 function normalize(list, linkTemplate) {
-  return uniqueById(activeItems(list)
+  const seen = new Set();
+  return (Array.isArray(list) ? list : [])
+    .filter((item) => item && item.active !== false)
     .map((item) => {
-      const price = toNumber(item.price);
-      const oldPrice = toNumber(item.oldPrice);
-      const rating = toNumber(item.rating);
-      const reviews = toNumber(item.reviews);
+      const price = number(item.price);
+      const oldPrice = number(item.oldPrice);
+      const rating = number(item.rating);
+      const reviews = number(item.reviews);
       return {
         id: String(item.id ?? item.productId ?? item.sku ?? ''),
-        brand: toText(item.brand),
-        name: toText(item.name) || toText(item.model),
-        description: toText(item.description),
+        brand: text(item.brand),
+        name: text(item.name) || text(item.model),
+        description: text(item.description),
         image: safeHref(item.image),
         price,
         oldPrice: oldPrice !== null && price !== null && oldPrice > price ? oldPrice : null,
-        // no valid code → undefined, so formatPrice uses CURRENCY (scripts/messages.js)
-        currency: /^[A-Z]{3}$/.test(toText(item.currency)) ? toText(item.currency) : undefined,
-        promo: toText(item.promo),
-        badge: toText(item.badge),
+        currency: /^[A-Z]{3}$/.test(text(item.currency)) ? text(item.currency) : CURRENCY,
+        promo: text(item.promo),
+        badge: text(item.badge),
         rating: rating === null ? null : Math.min(5, Math.max(0, rating)),
         reviews: reviews === null ? null : Math.max(0, Math.round(reviews)),
-        href: linkFromTemplate(item, linkTemplate, LINK_KEYS),
+        href: productHref(item, linkTemplate),
       };
     })
-    .filter((item) => item.name && item.price !== null));
+    .filter((item) => {
+      if (!item.name || item.price === null || seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+}
+
+/**
+ * createElement shortcut; content is always set as text (never HTML).
+ * @param {string} tag
+ * @param {string} className
+ * @param {string} [content]
+ * @returns {Element}
+ */
+function el(tag, className, content) {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (content !== undefined) node.textContent = content;
+  return node;
 }
 
 /**
@@ -239,7 +307,7 @@ function buildMedia(product, imageErrorMessage) {
  */
 function buildRating(product) {
   if (product.rating === null) return null;
-  const count = product.reviews === null ? '' : formatNumber(product.reviews);
+  const count = product.reviews === null ? '' : new Intl.NumberFormat(LOCALE).format(product.reviews);
   const rating = el('div', 'card-featured-rating');
   rating.setAttribute('role', 'img');
   rating.setAttribute('aria-label', LABELS.rating(product.rating, count && LABELS.reviews(count)));
@@ -329,6 +397,91 @@ function buildCard(product, settings) {
 }
 
 /**
+ * Grey placeholder cards shown while the service answers (avoids layout shift).
+ * @returns {Element} div hidden from assistive technology
+ */
+function buildSkeleton() {
+  const list = el('div', 'card-featured-list');
+  list.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(el('div', 'card-featured-skeleton'));
+  return list;
+}
+
+/**
+ * "No featured products" message: empty list or service error.
+ * @param {Object} messages Empty List Title / Description (table or scripts/messages.js)
+ *   and Empty List Icon (table or EMPTY_LIST_ICON)
+ * @returns {Element} div[role=status]
+ */
+function buildEmpty(messages) {
+  const empty = el('div', 'card-featured-empty');
+  empty.setAttribute('role', 'status');
+  // each part only when it has text (an authored empty row leaves it out)
+  if (messages.emptyListIcon) {
+    const icon = el('div', 'card-featured-empty-icon', messages.emptyListIcon);
+    icon.setAttribute('aria-hidden', 'true');
+    empty.append(icon);
+  }
+  if (messages.emptyListTitle) {
+    empty.append(el('div', 'card-featured-empty-title', messages.emptyListTitle));
+  }
+  if (messages.emptyListDescription) {
+    empty.append(el('div', 'card-featured-empty-text', messages.emptyListDescription));
+  }
+  return empty;
+}
+
+/**
+ * Renders the header and the cards, or the empty message when there is nothing to show.
+ * @param {Element} block
+ * @param {Element|null} header Title / Link rows (buildBlockHeader)
+ * @param {Object[]} products Normalised products
+ * @param {Object} settings readSettings() result
+ */
+function render(block, header, products, settings) {
+  block.removeAttribute('aria-busy');
+  const content = [header].filter(Boolean);
+  if (!products.length) {
+    block.replaceChildren(...content, buildEmpty(settings.messages));
+    return;
+  }
+  const list = el('div', 'card-featured-list');
+  list.setAttribute('role', 'list');
+  // screen readers name the list with the visible title ("Productos destacados, lista")
+  const heading = header?.querySelector('.card-featured-heading');
+  if (heading) {
+    headingCount += 1;
+    heading.id = heading.id || `card-featured-heading-${headingCount}`;
+    list.setAttribute('aria-labelledby', heading.id);
+  }
+  list.append(...products.map((product) => buildCard(product, settings)));
+  block.replaceChildren(...content, list);
+}
+
+/**
+ * Loads products from the service; on any error logs it, shows a floating alert and
+ * the empty message.
+ * @param {Element} block
+ * @param {Element|null} header
+ * @param {Object} settings readSettings() result
+ */
+async function loadFromService(block, header, settings) {
+  try {
+    const response = await get(settings.endpoint);
+    const products = response?.data?.products;
+    if (!Array.isArray(products)) {
+      throw new Error('Unexpected response: data.products is not a list');
+    }
+    render(block, header, normalize(products, settings.linkTemplate), settings);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[card-featured] Could not load featured products from', settings.endpoint, error);
+    showToast(settings.messages.errorResponseMessage, settings.alert);
+    render(block, header, [], settings);
+  }
+}
+
+/**
  * Card Featured: featured product cards fed by a service (Endpoint row) or the internal JSON.
  * The block name gives the main .card-featured class that scopes every style.
  * @param {Element} block The card-featured block element
@@ -336,25 +489,15 @@ function buildCard(product, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readSettings(block);
-  const header = buildBlockHeader(block, PREFIX, { asDiv: true, withLink: true });
-  const show = (list) => renderCards(
-    block,
-    PREFIX,
-    header,
-    normalize(list, settings.linkTemplate).map((product) => buildCard(product, settings)),
-    settings.messages,
-  );
+  const header = buildBlockHeader(block, 'card-featured', { asDiv: true, withLink: true });
 
   if (!settings.endpoint) {
-    show(FALLBACK_PRODUCTS);
+    render(block, header, normalize(FALLBACK_PRODUCTS, settings.linkTemplate), settings);
     return;
   }
 
   // skeleton keeps the layout stable; the request does not block the following sections
-  renderSkeleton(block, PREFIX, header, SKELETON_ELEMENTS);
-  loadServiceList(settings.endpoint, 'products', {
-    source: PREFIX,
-    errorMessage: settings.messages.errorResponseMessage,
-    alert: settings.alert,
-  }).then(show);
+  block.setAttribute('aria-busy', 'true');
+  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
+  loadFromService(block, header, settings);
 }
