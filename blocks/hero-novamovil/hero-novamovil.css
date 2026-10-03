@@ -1,32 +1,40 @@
 /*
  * NovaMóvil hero (block "Hero Novamovil"; the original "hero" block is untouched).
- * Every rule lives inside .hero-novamovil so nothing leaks to the rest of the
- * site. Colours come from styles/colors.css: palette variables directly, plus
- * --hero-novamovil-* for hero-specific values. Each part keeps its responsive
- * rules right below it.
- * Breakpoint: 900px (single column and no image below).
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. hero-novamovil.js adds the classes (and replaces
+ *     the global .button classes of the links with hero-button-*).
+ *   - Every rule lives inside .hero-novamovil, at most 2 levels deep:
+ *       .hero-novamovil > & .part > its state (&:hover, &:focus-visible) or its resolution.
+ *   - Sizes are written directly in px where they apply (only relative units such as %,
+ *     vw or fr stay, because they depend on the space available); each part keeps its
+ *     resolutions right below it (styles/foundations/breakpoints.css: one column without
+ *     image on mobile and tablet, text + image on desktop).
+ *   - The only variables are colours (styles/colors.css: palette + --hero-novamovil-*)
+ *     and the site fonts (--body-font-family, --heading-font-family).
+ *
+ * Sections: 1 root & decorative circles · 2 container · 3 eyebrow · 4 title ·
+ *           5 description · 6 buttons · 7 stats · 8 image
  */
 
-/*
- * Only exception outside .hero-novamovil: let the section wrapper that holds
- * the hero span the full width (the site wrapper caps content at 1200px).
- */
-main .section > .hero-novamovil-wrapper {
+/* only rule outside .hero-novamovil: the section wrapper of the hero spans the full
+   width (the site wrapper caps content at 1200px) */
+.section > .hero-novamovil-wrapper {
   max-width: none;
   padding: 0;
 }
 
 .hero-novamovil {
+  /* ========================================================================
+     1. Root & decorative circles
+     ======================================================================== */
+
   position: relative;
   overflow: hidden;
   isolation: isolate;
   background: var(--hero-novamovil-background);
   color: var(--color-white);
   font-family: var(--body-font-family);
-
-  /* ========================================================================
-     Decorative circles
-     ======================================================================== */
 
   &::before,
   &::after {
@@ -45,7 +53,7 @@ main .section > .hero-novamovil-wrapper {
     width: 280px;
     height: 280px;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       top: -20px;
       right: -20px;
       width: 340px;
@@ -60,7 +68,7 @@ main .section > .hero-novamovil-wrapper {
     width: 240px;
     height: 240px;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       bottom: -90px;
       width: 300px;
       height: 300px;
@@ -68,7 +76,7 @@ main .section > .hero-novamovil-wrapper {
   }
 
   /* ========================================================================
-     Container: one column on mobile, text + image from 900px
+     2. Container: one column on mobile/tablet, text + image on desktop
      ======================================================================== */
 
   & .hero-inner {
@@ -81,7 +89,7 @@ main .section > .hero-novamovil-wrapper {
     margin: auto;
     padding: 64px 20px;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       grid-template-columns: 1fr 1fr;
       padding: 80px 24px 84px;
     }
@@ -92,7 +100,7 @@ main .section > .hero-novamovil-wrapper {
   }
 
   /* ========================================================================
-     Eyebrow: pill with a cian dot
+     3. Eyebrow: pill with a cian dot
      ======================================================================== */
 
   & .hero-eyebrow {
@@ -120,22 +128,23 @@ main .section > .hero-novamovil-wrapper {
   }
 
   /* ========================================================================
-     Title and highlighted word
+     4. Title and highlighted word (max-width keeps the design's three lines)
      ======================================================================== */
 
   & .hero-title {
-    /* keeps the design's three-line break at any font size */
-    max-width: 8.5em;
+    max-width: 272px;
     margin: 20px 0 0;
     color: var(--color-white);
     font-family: var(--heading-font-family);
     font-size: 32px;
     font-weight: 800;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.64px;
     line-height: 1.1;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
+      max-width: 476px;
       font-size: 56px;
+      letter-spacing: -1.12px;
     }
   }
 
@@ -147,7 +156,7 @@ main .section > .hero-novamovil-wrapper {
   }
 
   /* ========================================================================
-     Description
+     5. Description
      ======================================================================== */
 
   & .hero-description {
@@ -157,14 +166,14 @@ main .section > .hero-novamovil-wrapper {
     font-size: 16px;
     line-height: 1.65;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       font-size: 17px;
       line-height: 1.7;
     }
   }
 
   /* ========================================================================
-     Actions: primary (gradient) and secondary (translucent) buttons
+     6. Buttons: primary (gradient) and secondary (translucent)
      ======================================================================== */
 
   & .hero-actions {
@@ -173,70 +182,73 @@ main .section > .hero-novamovil-wrapper {
     gap: 10px;
     margin-top: 28px;
 
-    & p {
-      margin: 0;
-    }
-
-    & a:any-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-sizing: border-box;
-      height: 46px;
-      padding: 0 24px;
-      border: 1px solid transparent;
-      border-radius: 10px;
-      color: var(--color-white);
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-
-      &:hover {
-        transform: translateY(-1px);
-      }
-
-      &:focus-visible {
-        outline: 2px solid var(--color-white);
-        outline-offset: 2px;
-      }
-
-      @media (width >= 900px) {
-        height: 52px;
-        padding: 0 28px;
-        font-size: 15px;
-      }
-    }
-
-    /* first button, or the one authored in bold */
-    & a:any-link:is(.primary, .accent),
-    & p:first-child a:any-link:not(.secondary) {
-      /* border-box: paint the gradient under the transparent border too, otherwise
-         the repeating gradient shows a cian line along the left edge */
-      background: var(--gradient-brand) border-box;
-      box-shadow: 0 8px 24px var(--hero-novamovil-button-glow);
-    }
-
-    & a:any-link.secondary,
-    & p:not(:first-child) a:any-link:not(.primary, .accent) {
-      border-color: var(--hero-novamovil-button-secondary-border);
-      background: var(--hero-novamovil-button-secondary-background);
-
-      &:hover {
-        background: var(--hero-novamovil-button-secondary-hover);
-      }
-    }
-
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       gap: 12px;
       margin-top: 32px;
     }
   }
 
+  & .hero-action {
+    margin: 0;
+  }
+
+  & .hero-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    max-width: 100%;
+    height: 46px;
+    margin: 0;
+    padding: 0 24px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: var(--color-white);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-white);
+      outline-offset: 2px;
+    }
+
+    @container style(--desktop: on) {
+      height: 52px;
+      padding: 0 28px;
+      font-size: 15px;
+    }
+  }
+
+  /* border-box: paint the gradient under the transparent border too, otherwise the
+     repeating gradient shows a cian line along the left edge */
+  & .hero-button-primary {
+    background: var(--gradient-brand) border-box;
+    box-shadow: 0 8px 24px var(--hero-novamovil-button-glow);
+  }
+
+  & .hero-button-secondary {
+    border-color: var(--hero-novamovil-button-secondary-border);
+    background: var(--hero-novamovil-button-secondary-background);
+
+    &:hover {
+      background: var(--hero-novamovil-button-secondary-hover);
+    }
+  }
+
   /* ========================================================================
-     Stats
+     7. Stats
      ======================================================================== */
 
   & .hero-stats {
@@ -247,7 +259,7 @@ main .section > .hero-novamovil-wrapper {
     padding: 0;
     list-style: none;
 
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       margin-top: 40px;
     }
   }
@@ -272,24 +284,13 @@ main .section > .hero-novamovil-wrapper {
   }
 
   /* ========================================================================
-     Media: hidden on mobile, rounded card with shadow from 900px
+     8. Image: hidden on mobile/tablet, rounded card with shadow on desktop
      ======================================================================== */
 
   & .hero-media {
     display: none;
 
-    & picture,
-    & img {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    & img {
-      object-fit: cover;
-    }
-
-    @media (width >= 900px) {
+    @container style(--desktop: on) {
       display: block;
       justify-self: center;
       width: min(100%, 380px);
@@ -299,5 +300,18 @@ main .section > .hero-novamovil-wrapper {
       background: var(--color-gray-900);
       box-shadow: 0 30px 60px var(--hero-novamovil-media-shadow);
     }
+  }
+
+  & .hero-picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  & .hero-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
