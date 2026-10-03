@@ -113,8 +113,9 @@ export function applyAuthorClasses(element, names) {
  */
 export default function applyBlockOptions(block) {
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
-    const [keyCell, valueCell] = row.children;
-    if (!keyCell || !valueCell || row.children.length !== 2) {
+    const [keyCell, valueCell, ...extraCells] = row.children;
+    // name | value; extra cells are allowed only if empty (tables with 3+ columns)
+    if (!keyCell || !valueCell || extraCells.some((cell) => cell.textContent.trim())) {
       return;
     }
     const key = keyCell.textContent.trim().toLowerCase();

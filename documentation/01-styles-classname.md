@@ -166,8 +166,10 @@ export function applyAuthorClasses(element, names) {
 ```js
 export default function applyBlockOptions(block) {
   [...block.querySelectorAll(':scope > div')].forEach((row) => {   // cada fila de la tabla
-    const [keyCell, valueCell] = row.children;
-    if (!keyCell || !valueCell || row.children.length !== 2) return; // solo filas de 2 celdas
+    const [keyCell, valueCell, ...extraCells] = row.children;
+    // nombre | valor; se aceptan más celdas solo si están vacías (tablas de 3+ columnas,
+    // como el hero con sus filas Stat N)
+    if (!keyCell || !valueCell || extraCells.some((cell) => cell.textContent.trim())) return;
     const key = keyCell.textContent.trim().toLowerCase();
     if (STYLE_KEYS.includes(key)) {
       applyAuthorStyles(block, valueCell.textContent);

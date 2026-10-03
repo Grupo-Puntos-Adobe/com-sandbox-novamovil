@@ -1,24 +1,32 @@
 /*
- * Hero Novamovil block: text column (eyebrow, title, description, buttons, stats) + image.
+ * Hero Novamovil block: eyebrow, title, description, buttons, stats + image.
  *
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
  * "Hero Novamovil" table. It is the first section, so it is loaded eagerly (LCP).
  *
- * Authoring: one row with two cells (text | image) in any order, plus the optional
- * Styles / Classname rows.
+ * Authoring: one row per element, every row optional and in any order:
+ *   | Styles / Classname | …                          (scripts/block-options.js)
+ *   | Eyebrow            | Lanzamiento exclusivo 2026 |
+ *   | Title              | El futuro de la *conectividad* está aquí |   (italic = highlight)
+ *   | Description        | Los mejores smartphones…   |
+ *   | Button 1           | [Ver celulares](/celulares) |   (Button 1 = primary)
+ *   | Button 2           | [Ver planes](/planes)      |   (Button 2, 3… = secondary)
+ *   | Stat 1             | 4.9M+ | Usuarios activos   |   (value | label)
+ *   | Image              | picture                    |
+ * The page always shows them in the design order, whatever the order of the rows.
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)   scripts/block-options.js → Styles / Classname rows
- *     ├─ finds the media cell (picture) and the content cell (text)
- *     ├─ buildContent(items)        → div.hero-content
- *     │    ├─ isButtonParagraph()   link-only paragraphs → grouped in div.hero-actions
- *     │    │    └─ decorateButton()  p.hero-action > a.hero-button(-primary|-secondary)
- *     │    └─ decorateStat(li)      "<strong>4.9M+</strong> Usuarios" → value + label
- *     └─ div.hero-media             picture with loading=eager + fetchpriority=high
+ *     ├─ readRows(block)            { 'eyebrow': [cells], 'button 1': [cells], … }
+ *     ├─ buildText()                eyebrow, description · buildTitle() (role=heading, level 1)
+ *     ├─ buildButtons()             numbered "Button N" rows → a.hero-button
+ *     ├─ buildStats()               numbered "Stat N" rows → div.hero-stat (role=listitem)
+ *     └─ buildMedia()               picture with loading=eager + fetchpriority=high
  *
- * Classes used by hero-novamovil.css (no tag selectors): hero-inner, hero-content,
- * hero-eyebrow, hero-title, hero-highlight, hero-description, hero-actions, hero-action,
+ * Everything is a <div> except the buttons (<a>, they are links) and the image
+ * (<picture>/<img>, optimised by AEM). Classes used by hero-novamovil.css: hero-inner,
+ * hero-content, hero-eyebrow, hero-title, hero-highlight, hero-description, hero-actions,
  * hero-button(-primary|-secondary), hero-stats, hero-stat(-value|-label), hero-media,
  * hero-picture, hero-image.
  *
@@ -26,133 +34,179 @@
  */
 import applyBlockOptions from '../../scripts/block-options.js';
 
-const HEADING = 'h1, h2, h3, h4, h5, h6';
-
 /**
- * A paragraph that only holds one link (buttonised by decorateButtons in scripts.js).
- * @param {Element} el
- * @returns {boolean}
+ * Reads the authored rows by their name (first cell, case-insensitive).
+ * @param {Element} block
+ * @returns {Object<string, Element[]>} row name → value cells
  */
-function isButtonParagraph(el) {
-  if (el.tagName !== 'P') return false;
-  if (el.classList.contains('button-wrapper')) return true;
-  const link = el.querySelector('a');
-  return !!link && el.textContent.trim() === link.textContent.trim();
-}
-
-/**
- * Turns "<strong>4.9M+</strong> Usuarios activos" into value + label.
- * @param {Element} li A stats list item
- */
-function decorateStat(li) {
-  const strong = li.querySelector('strong');
-  const text = li.textContent.trim();
-  const valueText = strong ? strong.textContent.trim() : text.split(/\s+/)[0];
-  const labelText = text.slice(text.indexOf(valueText) + valueText.length).trim();
-
-  const value = document.createElement('span');
-  value.className = 'hero-stat-value';
-  value.textContent = valueText;
-  const label = document.createElement('span');
-  label.className = 'hero-stat-label';
-  label.textContent = labelText;
-
-  li.className = 'hero-stat';
-  li.replaceChildren(value, label);
-}
-
-/**
- * The hero owns its buttons: the global .button / .primary / .secondary classes
- * (decorateButtons + styles.css) are replaced by hero classes, so hero-novamovil.css
- * styles them with plain class selectors.
- * Primary = authored in bold (.primary / .accent) or the first button unless it is italic.
- * @param {Element} paragraph Link-only paragraph
- * @param {boolean} isFirst First button of the hero
- */
-function decorateButton(paragraph, isFirst) {
-  const link = paragraph.querySelector('a');
-  const primary = link.matches('.primary, .accent') || (isFirst && !link.matches('.secondary'));
-  paragraph.className = 'hero-action';
-  link.className = `hero-button ${primary ? 'hero-button-primary' : 'hero-button-secondary'}`;
-}
-
-/**
- * Builds the text column: eyebrow, title (with highlighted <em>), description,
- * actions and stats, keeping the authored order.
- * @param {Element[]} items Authored elements of the content cell
- * @returns {Element} the .hero-content column
- */
-function buildContent(items) {
-  const content = document.createElement('div');
-  content.className = 'hero-content';
-  const headingIndex = items.findIndex((el) => el.matches(HEADING));
-  let actions;
-
-  items.forEach((el, i) => {
-    if (el.matches(HEADING)) {
-      el.classList.add('hero-title');
-      el.querySelectorAll('em').forEach((em) => em.classList.add('hero-highlight'));
-      content.append(el);
-    } else if (el.matches('ul, ol')) {
-      el.classList.add('hero-stats');
-      [...el.children].forEach(decorateStat);
-      content.append(el);
-    } else if (isButtonParagraph(el)) {
-      if (!actions) {
-        actions = document.createElement('div');
-        actions.className = 'hero-actions';
-        content.append(actions);
-      }
-      decorateButton(el, !actions.children.length);
-      actions.append(el);
-    } else if (i < headingIndex) {
-      el.classList.add('hero-eyebrow');
-      content.append(el);
-    } else {
-      el.classList.add('hero-description');
-      content.append(el);
-    }
+function readRows(block) {
+  const rows = {};
+  [...block.children].forEach((row) => {
+    const [keyCell, ...cells] = row.children;
+    const key = keyCell?.textContent.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (key) rows[key] = cells;
   });
-  return content;
+  return rows;
 }
 
 /**
- * Hero Novamovil: text column + product image. The block name gives the main
- * .hero-novamovil class that scopes every style.
- * Cells are found by content (picture vs text), so their order does not matter.
+ * Rows named "<name> <number>" (Button 1, Stat 2…), sorted by their number.
+ * @param {Object<string, Element[]>} rows
+ * @param {string} name 'button' | 'stat'
+ * @returns {Element[][]} value cells of each row
+ */
+function numberedRows(rows, name) {
+  const pattern = new RegExp(`^${name} ?(\\d+)$`);
+  return Object.keys(rows)
+    .map((key) => ({ key, number: Number(key.match(pattern)?.[1]) }))
+    .filter(({ number }) => Number.isFinite(number))
+    .sort((a, b) => a.number - b.number)
+    .map(({ key }) => rows[key]);
+}
+
+/**
+ * Moves the authored content of a cell into a new div, without paragraph tags:
+ * one paragraph is unwrapped, several become one div each.
+ * @param {Element} cell Authored cell
+ * @param {string} className
+ * @returns {Element|null} null when the cell is empty
+ */
+function buildText(cell, className) {
+  if (!cell || !cell.textContent.trim()) return null;
+  const div = document.createElement('div');
+  div.className = className;
+  const paragraphs = [...cell.children].filter((el) => el.tagName === 'P');
+  if (paragraphs.length > 1) {
+    paragraphs.forEach((p) => {
+      const line = document.createElement('div');
+      line.append(...p.childNodes);
+      div.append(line);
+    });
+  } else {
+    div.append(...(paragraphs[0] || cell).childNodes);
+  }
+  return div;
+}
+
+/**
+ * Title: a div announced as the page's main heading; the italic word becomes the
+ * gradient highlight.
+ * @param {Element} cell Authored Title cell
+ * @returns {Element|null}
+ */
+function buildTitle(cell) {
+  const title = buildText(cell, 'hero-title');
+  if (!title) return null;
+  title.setAttribute('role', 'heading');
+  title.setAttribute('aria-level', '1');
+  title.querySelectorAll('em, i').forEach((em) => {
+    const highlight = document.createElement('span');
+    highlight.className = 'hero-highlight';
+    highlight.append(...em.childNodes);
+    em.replaceWith(highlight);
+  });
+  return title;
+}
+
+/**
+ * "Button N" rows → links: Button 1 is the primary (gradient), the rest secondary.
+ * Authored bold/italic and the global .button classes are not used.
+ * @param {Element[][]} buttonRows Value cells of each Button row, in order
+ * @returns {Element|null} div.hero-actions
+ */
+function buildButtons(buttonRows) {
+  const links = buttonRows.map(([cell]) => cell?.querySelector('a')).filter(Boolean);
+  if (!links.length) return null;
+  const actions = document.createElement('div');
+  actions.className = 'hero-actions';
+  links.forEach((authored, i) => {
+    const link = document.createElement('a');
+    link.className = `hero-button ${i === 0 ? 'hero-button-primary' : 'hero-button-secondary'}`;
+    link.href = authored.getAttribute('href');
+    if (authored.title) link.title = authored.title;
+    link.textContent = authored.textContent.trim();
+    actions.append(link);
+  });
+  return actions;
+}
+
+/**
+ * "Stat N" rows (value | label) → a list of stats built with divs.
+ * @param {Element[][]} statRows Value cells of each Stat row, in order
+ * @returns {Element|null} div.hero-stats
+ */
+function buildStats(statRows) {
+  const items = statRows.filter(([value]) => value?.textContent.trim());
+  if (!items.length) return null;
+  const stats = document.createElement('div');
+  stats.className = 'hero-stats';
+  stats.setAttribute('role', 'list');
+  items.forEach(([valueCell, labelCell]) => {
+    const stat = document.createElement('div');
+    stat.className = 'hero-stat';
+    stat.setAttribute('role', 'listitem');
+    const value = document.createElement('div');
+    value.className = 'hero-stat-value';
+    value.textContent = valueCell.textContent.trim();
+    stat.append(value);
+    if (labelCell?.textContent.trim()) {
+      const label = document.createElement('div');
+      label.className = 'hero-stat-label';
+      label.textContent = labelCell.textContent.trim();
+      stat.append(label);
+    }
+    stats.append(stat);
+  });
+  return stats;
+}
+
+/**
+ * Image row → div.hero-media (hidden on mobile/tablet by the CSS).
+ * @param {Element[]} [imageCells]
+ * @returns {Element|null}
+ */
+function buildMedia(imageCells) {
+  const picture = imageCells?.map((cell) => cell.querySelector('picture')).find(Boolean);
+  if (!picture) return null;
+  picture.classList.add('hero-picture');
+  const img = picture.querySelector('img');
+  if (img) {
+    img.classList.add('hero-image');
+    // largest element above the fold on desktop
+    img.loading = 'eager';
+    img.fetchPriority = 'high';
+  }
+  const media = document.createElement('div');
+  media.className = 'hero-media';
+  media.append(picture);
+  return media;
+}
+
+/**
+ * Hero Novamovil. The block name gives the main .hero-novamovil class that scopes
+ * every style.
  * @param {Element} block The hero-novamovil block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the cells
-  const cells = [...block.querySelectorAll(':scope > div > div')];
-  const mediaCell = cells.find((c) => c.querySelector('picture') && !c.querySelector(HEADING));
-  const contentCell = cells.find((c) => c !== mediaCell && c.textContent.trim());
+  applyBlockOptions(block); // optional Styles / Classname rows, before reading the rows
+  const rows = readRows(block);
 
-  // a picture authored inside the text cell is moved to the media column
-  const picture = mediaCell?.querySelector('picture') || contentCell?.querySelector('picture');
-  const pictureParagraph = picture?.closest('p');
-  if (pictureParagraph && contentCell?.contains(pictureParagraph)) pictureParagraph.remove();
+  const content = document.createElement('div');
+  content.className = 'hero-content';
+  content.append(...[
+    buildText(rows.eyebrow?.[0], 'hero-eyebrow'),
+    buildTitle(rows.title?.[0]),
+    buildText(rows.description?.[0], 'hero-description'),
+    buildButtons(numberedRows(rows, 'button')),
+    buildStats(numberedRows(rows, 'stat')),
+  ].filter(Boolean));
 
   const inner = document.createElement('div');
   inner.className = 'hero-inner';
-  if (contentCell) inner.append(buildContent([...contentCell.children]));
-
-  if (picture) {
-    const media = document.createElement('div');
-    media.className = 'hero-media';
-    picture.classList.add('hero-picture');
-    const img = picture.querySelector('img');
-    if (img) {
-      img.classList.add('hero-image');
-      // largest element above the fold on desktop
-      img.loading = 'eager';
-      img.fetchPriority = 'high';
-    }
-    media.append(picture);
-    inner.append(media);
-  } else {
-    block.classList.add('no-media');
-  }
+  inner.append(content);
+  const media = buildMedia(rows.image);
+  if (media) inner.append(media);
+  else block.classList.add('no-media');
 
   block.replaceChildren(inner);
 }

@@ -2,8 +2,8 @@
  * NovaMóvil hero (block "Hero Novamovil"; the original "hero" block is untouched).
  *
  * Rules of this file (keep them when you edit it):
- *   - Only classes, never tag selectors. hero-novamovil.js adds the classes (and replaces
- *     the global .button classes of the links with hero-button-*).
+ *   - Only classes, never tag selectors. hero-novamovil.js builds the hero with divs (one
+ *     authored row per element) and adds the classes.
  *   - Every rule lives inside .hero-novamovil, at most 2 levels deep:
  *       .hero-novamovil > & .part > its state (&:hover, &:focus-visible) or its resolution.
  *   - Sizes are written directly in px where they apply (only relative units such as %,
@@ -186,10 +186,6 @@
       gap: 12px;
       margin-top: 32px;
     }
-  }
-
-  & .hero-action {
-    margin: 0;
   }
 
   & .hero-button {
