@@ -75,9 +75,12 @@ tarjeta sube 4 px.
 
 - Título: `div.card-categories-heading` con `role="heading" aria-level="2"`; su fuente viene de la regla
   global `[role='heading']` de `styles/styles.css` (el bloque no define `font-family`).
-- Lista: `div.card-categories-list[role=list]`, con `aria-labelledby` apuntando al título (los lectores de
-  pantalla la anuncian como "Categorías, lista"; sin `Title` no lleva nombre), con un `div.card-categories-card[role=listitem]` por
-  categoría; dentro, el enlace `a.card-categories-item` (icono + nombre).
+- Lista: `div.card-categories-list[role=list]` con `aria-label` igual al texto del título (los lectores
+  de pantalla la anuncian como "Categorías, lista"; sin `Title` no lleva nombre), con un
+  `div.card-categories-card[role=listitem]` por categoría; dentro, el enlace `a.card-categories-item`
+  (icono + nombre).
+- Tamaños: todos están en `card-categories.css`; el JS no define ningún tamaño (el color de cada
+  categoría sí llega del servicio, en `--card-categories-item-color`).
 - Carga: `div.card-categories-skeleton` × `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
 
 Código: `blocks/card-categories/card-categories.js` y `blocks/card-categories/card-categories.css`.

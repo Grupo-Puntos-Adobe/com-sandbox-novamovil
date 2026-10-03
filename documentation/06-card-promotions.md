@@ -75,11 +75,14 @@ mouse la tarjeta sube 4 px (solo si tiene enlace).
 ## HTML que genera (todo con `div`)
 
 - Título: `div.card-promotions-heading` con `role="heading" aria-level="2"`.
-- Lista: `div.card-promotions-list[role=list]`, con `aria-labelledby` apuntando al título (sin
+- Lista: `div.card-promotions-list[role=list]` con `aria-label` igual al texto del título (sin
   `Title` no lleva nombre), con un `div.card-promotions-card[role=listitem]` por promoción;
   dentro, el enlace `a.card-promotions-item` (un `div` si la promoción no tiene enlace) con la
   foto decorativa (`img.card-promotions-image`), el título (`-title`) y el texto (`-sub`).
 - Carga: `div.card-promotions-skeleton` × `SKELETON_ELEMENTS` (3, constante en
   `card-promotions.js`). Vacío o error: `div.card-promotions-empty`.
+- Tamaños: todos están en `card-promotions.css`. La foto no lleva `width`/`height` en el JS: cubre
+  toda la tarjeta (168 px de alto en móvil, 200 px desde tablet). El color de cada promoción sí
+  llega del servicio, en `--card-promotions-item-color`.
 
 Código: `blocks/card-promotions/card-promotions.js` y `blocks/card-promotions/card-promotions.css`.

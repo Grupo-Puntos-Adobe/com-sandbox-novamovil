@@ -271,15 +271,16 @@ import { readTableCell, readRowTextOrDefault, getAlertOptions, … } from '../..
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
 const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
+const EMPTY_LIST_ICON = '🗂️';        // icono del aviso vacío si la tabla no trae Empty List Icon
 
-function readCategoriesSettings(block) {       // todo lo que viene de la tabla, con sus defaults
+function readCategoriesSettings(block) {   // todo lo que viene de la tabla, con sus defaults
   const readCellText = (key) => readTableCell(block, key).text;
   return {
-    endpoint: …,                                       // fila Endpoint, tal cual
-    alert: getAlertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
+    endpoint: …,                                      // fila Endpoint, tal cual
+    alert: getAlertOptions(readBlockConfig(block)),   // Alert Duration / Alert Color
     messages: {
-      errorResponseMessage: readCellText('error response message')   // fila de la tabla…
-        || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
+      errorResponseMessage: readCellText('error response message')  // fila de la tabla…
+        || MESSAGES.errorResponseMessage,                           // …o mensaje genérico
       emptyListTitle: readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle),
       …
     },
@@ -293,11 +294,12 @@ async function loadCategoriesFromService(block, header, settings) {
     if (!Array.isArray(categories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    renderCategories(block, header, normalizeCategories(categories), settings);   // lista vacía → mensaje vacío
+    // lista vacía → aviso de lista vacía
+    renderCategories(block, header, normalizeCategories(categories), settings);
   } catch (error) {
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
-    showToast(settings.messages.errorResponseMessage, settings.alert);  // alerta flotante
-    renderCategories(block, header, [], settings);                      // mensaje vacío
+    showToast(settings.messages.errorResponseMessage, settings.alert);   // alerta flotante
+    renderCategories(block, header, [], settings);                       // aviso de lista vacía
   }
 }
 
@@ -307,14 +309,14 @@ export default function decorate(block) {
   // Title sin valor por defecto: si no viene en la tabla no hay título
   const header = buildBlockHeader(block, 'card-categories', { asDiv: true }); // featured: withLink
 
-  if (!settings.endpoint) {                                    // sin endpoint → JSON interno
+  if (!settings.endpoint) {                                     // sin endpoint → JSON interno
     renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);
     return;
   }
   // esqueleto mientras carga; la petición NO bloquea el resto de la página
   block.setAttribute('aria-busy', 'true');
   block.replaceChildren(...[header, buildCategoriesSkeleton()].filter(Boolean));
-  loadCategoriesFromService(block, header, settings);                    // sin await, a propósito
+  loadCategoriesFromService(block, header, settings);           // sin await, a propósito
 }
 ```
 
@@ -324,7 +326,12 @@ Detalles importantes:
 - **Esqueleto**: tarjetas grises del mismo tamaño que las reales, para que la página no brinque (CLS).
 - **`normalizeCategories()`** (en los otros bloques `normalizeProducts()` / `normalizePromotions()`): filtra `active: false`, exige los campos mínimos, quita duplicados por `id`,
   ordena por `order` y valida colores (`#hex`) y enlaces (`getSafeHref`).
-- **Pintado seguro**: todo con `createElement` + `textContent`, **nunca `innerHTML`** con datos del servicio.
+- **Pintado seguro**: todo con `createElementWithClass()` / `createElement` + `textContent`,
+  **nunca `innerHTML`** con datos del servicio.
+- **Tamaños solo en CSS**: el JS no pone `width`, `height` ni porcentajes. Del servicio solo pasan al
+  CSS datos (el color de cada tarjeta, la calificación de 0 a 5) y el CSS del bloque decide cómo se ven.
+- **Lista con nombre**: la lista lleva `aria-label` con el texto del `Title` ("Categorías, lista"); sin
+  título no lleva nombre.
 
 | Bloque | Campo que lee de la respuesta | Enlace de cada tarjeta |
 |---|---|---|

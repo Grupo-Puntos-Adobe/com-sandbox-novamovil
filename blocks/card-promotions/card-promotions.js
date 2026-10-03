@@ -14,7 +14,7 @@
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
  *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
- * The list is named by the Title through aria-labelledby.
+ * The list is named by the Title (aria-label with the title text).
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
@@ -90,7 +90,6 @@ const SKELETON_ELEMENTS = 3;
 // icon of the "no promotions" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🏷️';
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-let promotionsHeadingCount = 0;
 
 // service value → trimmed string ('' if not a string)
 const toTrimmedText = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -197,8 +196,6 @@ function buildPromotionCard(promo) {
     img.alt = ''; // decorative: the title and text describe the promotion
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.width = 400;
-    img.height = 220;
     img.addEventListener('error', () => img.remove(), { once: true });
     link.append(img);
   }
@@ -265,11 +262,7 @@ function renderPromotions(block, header, promotions, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Promociones, lista, 3 elementos")
   const heading = header?.querySelector('.card-promotions-heading');
-  if (heading) {
-    promotionsHeadingCount += 1;
-    heading.id = heading.id || `card-promotions-heading-${promotionsHeadingCount}`;
-    list.setAttribute('aria-labelledby', heading.id);
-  }
+  if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...promotions.map(buildPromotionCard));
   block.replaceChildren(...content, list);
 }

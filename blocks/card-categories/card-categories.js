@@ -12,7 +12,7 @@
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
  *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
- * The list is named by the Title through aria-labelledby.
+ * The list is named by the Title (aria-label with the title text).
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
@@ -76,7 +76,6 @@ const SKELETON_ELEMENTS = 6;
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 // icon of the "no categories" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🗂️';
-let categoriesHeadingCount = 0;
 
 /**
  * Everything the block reads from its table, with the defaults applied.
@@ -214,11 +213,7 @@ function renderCategories(block, header, categories, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Categorías, lista, 6 elementos")
   const heading = header?.querySelector('.card-categories-heading');
-  if (heading) {
-    categoriesHeadingCount += 1;
-    heading.id = heading.id || `card-categories-heading-${categoriesHeadingCount}`;
-    list.setAttribute('aria-labelledby', heading.id);
-  }
+  if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...categories.map(buildCategoryCard));
   block.replaceChildren(...content, list);
 }

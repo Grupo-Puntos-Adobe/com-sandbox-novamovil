@@ -85,7 +85,7 @@ quieta.
 
 - Título: `div.card-featured-heading` con `role="heading" aria-level="2"`; a su lado,
   `a.card-featured-link` ("Ver todos").
-- Lista: `div.card-featured-list[role=list]`, con `aria-labelledby` apuntando al título (sin
+- Lista: `div.card-featured-list[role=list]` con `aria-label` igual al texto del título (sin
   `Title` no lleva nombre), con un `div.card-featured-item[role=listitem]` por producto.
 - Tarjeta: `div.card-featured-media` (`img.card-featured-image`, etiquetas `-badge` y `-promo`) y
   `div.card-featured-body` con marca (`-brand`), nombre (`-name`, `role="heading" aria-level="3"`),
@@ -94,5 +94,9 @@ quieta.
   `a.card-featured-name-link` dentro del nombre (sin `Button Text`).
 - Carga: `div.card-featured-skeleton` × `SKELETON_ELEMENTS` (4, constante en `card-featured.js`).
   Vacío o error: `div.card-featured-empty`.
+- Tamaños: todos están en `card-featured.css`. La foto no lleva `width`/`height` en el JS (mide
+  168 px de alto en móvil y 200 px desde tablet, por CSS). Las estrellas: el JS solo pasa la
+  calificación del servicio (0 a 5) en `--card-featured-rating` y el CSS calcula cuánto se
+  rellena (4.6 → 92 %).
 
 Código: `blocks/card-featured/card-featured.js` y `blocks/card-featured/card-featured.css`.

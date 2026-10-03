@@ -11,7 +11,8 @@
  *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 2 on tablet and
  *     4 on desktop.
  *   - The only variables are colours (styles/colors.css, --card-featured-*) plus
- *     --card-featured-rating, the star fill that each product brings from the service.
+ *     --card-featured-rating, the rating (0-5) that each product brings from the service
+ *     (the star fill is worked out here, not in JS).
  *     Fonts come from styles.css (body, and [role='heading'] for the titles).
  *
  * Sections: 1 header · 2 list · 3 card · 4 media · 5 body · 6 loading skeleton · 7 empty state
@@ -256,12 +257,12 @@
     margin-block-start: 6px;
   }
 
-  /* five stars filled up to the rating percentage */
+  /* five stars filled up to the rating: 4.6 of 5 → 92% gold */
   & .card-featured-stars {
     background: linear-gradient(
       90deg,
-      var(--card-featured-star) var(--card-featured-rating, 0%),
-      var(--card-featured-star-empty) var(--card-featured-rating, 0%)
+      var(--card-featured-star) calc(var(--card-featured-rating, 0) / 5 * 100%),
+      var(--card-featured-star-empty) calc(var(--card-featured-rating, 0) / 5 * 100%)
     );
     background-clip: text;
     color: transparent;

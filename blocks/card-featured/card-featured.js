@@ -18,7 +18,7 @@
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * Prices use formatPrice (scripts/block-utils.js) with LOCALE and CURRENCY from
  * scripts/messages.js.
- * The list is named by the Title through aria-labelledby.
+ * The list is named by the Title (aria-label with the title text).
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
@@ -147,7 +147,6 @@ const LABELS = {
   rating: (rating, reviews) => `Calificación ${rating} de 5${reviews}`,
   reviews: (count) => `, ${count} reseñas`,
 };
-let productsHeadingCount = 0;
 
 // service values → trimmed string ('' if not a string) / number (null if not numeric)
 const toTrimmedText = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -273,8 +272,6 @@ function buildProductMedia(product, imageErrorMessage) {
     img.alt = product.description || `${product.brand} ${product.name}`.trim();
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.width = 400;
-    img.height = 400;
     img.addEventListener('error', fallback, { once: true });
     media.append(img);
   } else {
@@ -298,7 +295,8 @@ function buildProductRating(product) {
   rating.setAttribute('role', 'img');
   rating.setAttribute('aria-label', LABELS.rating(product.rating, count && LABELS.reviews(count)));
   const stars = createElementWithClass('span', 'card-featured-stars', '★★★★★');
-  stars.style.setProperty('--card-featured-rating', `${(product.rating / 5) * 100}%`);
+  // only the value (0-5); card-featured.css turns it into the fill
+  stars.style.setProperty('--card-featured-rating', String(product.rating));
   rating.append(stars);
   if (count) rating.append(createElementWithClass('span', 'card-featured-reviews', `(${count})`));
   return rating;
@@ -435,11 +433,7 @@ function renderProducts(block, header, products, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Productos destacados, lista")
   const heading = header?.querySelector('.card-featured-heading');
-  if (heading) {
-    productsHeadingCount += 1;
-    heading.id = heading.id || `card-featured-heading-${productsHeadingCount}`;
-    list.setAttribute('aria-labelledby', heading.id);
-  }
+  if (heading) list.setAttribute('aria-label', heading.textContent);
   list.append(...products.map((product) => buildProductCard(product, settings)));
   block.replaceChildren(...content, list);
 }
