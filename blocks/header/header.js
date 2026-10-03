@@ -43,14 +43,14 @@ const BRAND_ACCENT = 'Móvil';
 /**
  * Builds the wordmark. Keeps the authored markup (incl. <em>); if the author
  * did not emphasise anything, the trailing "Móvil" gets the accent colour.
- * @param {string} html Authored wordmark markup, or empty for the default
+ * @param {string} authoredName Authored wordmark markup, or empty for the default
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-name` span
  */
-function buildBrandWordmark(html, prefix) {
+function buildBrandWordmark(authoredName, prefix) {
   const name = document.createElement('span');
   name.className = `${prefix}-name`;
-  name.innerHTML = html || BRAND_NAME;
+  name.innerHTML = authoredName || BRAND_NAME;
   if (!name.querySelector('em') && name.textContent.trim().endsWith(BRAND_ACCENT)) {
     const text = name.textContent.trim();
     const em = document.createElement('em');
@@ -67,18 +67,18 @@ function buildBrandWordmark(html, prefix) {
  * - logo: the authored image; else the authored :logo: icon; else the default icon
  * - wordmark: the authored text; else "NovaMóvil" (omitted when an image stands alone)
  * The default logo is painted by CSS from the colour tokens, so its <img> is dropped.
- * @param {Element} source Element holding the authored logo/wordmark (consumed)
+ * @param {Element} brandSource Element holding the authored logo/wordmark (consumed)
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-link` anchor
  */
-function buildBrandLink(source, prefix) {
-  const authoredLink = source.querySelector('a');
-  const picture = source.querySelector('picture');
-  const icon = source.querySelector('.icon');
+function buildBrandLink(brandSource, prefix) {
+  const authoredLink = brandSource.querySelector('a');
+  const picture = brandSource.querySelector('picture');
+  const icon = brandSource.querySelector('.icon');
   [picture, icon].forEach((element) => element?.remove());
 
   // authored wordmark: first link/paragraph that still has letters once the logo is removed
-  const textSource = [authoredLink, ...source.querySelectorAll('p')]
+  const textSource = [authoredLink, ...brandSource.querySelectorAll('p')]
     .find((element) => element && /\p{L}/u.test(element.textContent));
   const authoredName = textSource ? textSource.innerHTML.trim() : '';
 
@@ -248,14 +248,14 @@ export default async function decorate(block) {
   }
 
   const classes = ['brand', 'sections', 'tools'];
-  classes.forEach((c, i) => {
-    const section = nav.children[i];
-    if (section) section.classList.add(`nav-${c}`);
+  classes.forEach((name, index) => {
+    const section = nav.children[index];
+    if (section) section.classList.add(`nav-${name}`);
   });
 
   // brand: logo + wordmark as one link, ensure it points home
-  const navBrand = nav.querySelector('.nav-brand');
-  if (navBrand) navBrand.replaceChildren(buildBrandLink(navBrand, 'nav-brand'));
+  const brandSource = nav.querySelector('.nav-brand');
+  if (brandSource) brandSource.replaceChildren(buildBrandLink(brandSource, 'nav-brand'));
 
   // sections: primary navigation links, with class hooks (the CSS never styles tags)
   const navSections = nav.querySelector('.nav-sections');

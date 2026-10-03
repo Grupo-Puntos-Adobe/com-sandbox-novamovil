@@ -77,9 +77,9 @@ function buildHeroText(cell, className) {
   div.className = className;
   const paragraphs = [...cell.children].filter((element) => element.tagName === 'P');
   if (paragraphs.length > 1) {
-    paragraphs.forEach((p) => {
+    paragraphs.forEach((paragraph) => {
       const line = document.createElement('div');
-      line.append(...p.childNodes);
+      line.append(...paragraph.childNodes);
       div.append(line);
     });
   } else {
@@ -119,9 +119,9 @@ function buildHeroButtons(buttonRows) {
   if (!links.length) return null;
   const actions = document.createElement('div');
   actions.className = 'hero-actions';
-  links.forEach((authored, i) => {
+  links.forEach((authored, index) => {
     const link = document.createElement('a');
-    link.className = `hero-button ${i === 0 ? 'hero-button-primary' : 'hero-button-secondary'}`;
+    link.className = `hero-button ${index === 0 ? 'hero-button-primary' : 'hero-button-secondary'}`;
     link.href = authored.getAttribute('href');
     if (authored.title) link.title = authored.title;
     link.textContent = authored.textContent.trim();

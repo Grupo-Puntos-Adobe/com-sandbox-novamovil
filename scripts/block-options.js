@@ -56,12 +56,12 @@ const STYLE_SEPARATOR = /[;\n]/;
 const CLASS_SEPARATOR = /[\s,;]+/;
 
 /**
- * Applies "property: value; property: value" to the element; invalid or unsafe
+ * Applies "property: value; property: value" to the block; invalid or unsafe
  * declarations are skipped.
- * @param {HTMLElement} element
+ * @param {Element} block
  * @param {string} declarations
  */
-export function applyAuthorStyles(element, declarations) {
+export function applyAuthorStyles(block, declarations) {
   String(declarations || '')
     .split(STYLE_SEPARATOR) // ✅ VALIDOS: ";"  "\n"
     .map((declaration) => declaration.trim())
@@ -79,13 +79,13 @@ export function applyAuthorStyles(element, declarations) {
       const important = /!important$/i.test(value);
       value = value.replace(/\s*!important$/i, '');
 
-      element.style.setProperty(property, value, important ? 'important' : '');
+      block.style.setProperty(property, value, important ? 'important' : '');
       // unitless numbers are invalid for lengths: retry as px (padding-left: 20 → 20px)
       if (
-        !element.style.getPropertyValue(property)
+        !block.style.getPropertyValue(property)
         && BARE_NUMBER.test(value)
       ) {
-        element.style.setProperty(
+        block.style.setProperty(
           property,
           `${value}px`,
           important ? 'important' : '',
@@ -95,21 +95,21 @@ export function applyAuthorStyles(element, declarations) {
 }
 
 /**
- * Adds "name other-name" / "name, other-name" as classes on the element.
- * @param {HTMLElement} element
+ * Adds "name other-name" / "name, other-name" as classes on the block.
+ * @param {Element} block
  * @param {string} names
  */
-export function applyAuthorClasses(element, names) {
+export function applyAuthorClasses(block, names) {
   String(names || '')
     .split(CLASS_SEPARATOR) // ✅ VALIDOS: espacio  tab  "\n"  ","  ";"
     .map((name) => name.trim())
     .filter((name) => CLASS_NAME.test(name))
-    .forEach((name) => element.classList.add(name));
+    .forEach((name) => block.classList.add(name));
 }
 
 /**
  * Reads, applies and removes the optional Styles / Classname rows of a block.
- * @param {HTMLElement} block A decorated block (div.block)
+ * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
   [...block.querySelectorAll(':scope > div')].forEach((row) => {

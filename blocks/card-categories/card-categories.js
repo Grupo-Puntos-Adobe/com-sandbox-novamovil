@@ -112,12 +112,12 @@ function readCategoriesSettings(block) {
 
 /**
  * Keeps active categories with a label and a valid link, without duplicates, by `order`.
- * @param {Object[]} list Raw categories (service or fallback)
- * @returns {Object[]}
+ * @param {Object[]} rawCategories Categories as they come (service or fallback)
+ * @returns {Object[]} the normalised categories
  */
-function normalizeCategories(list) {
+function normalizeCategories(rawCategories) {
   const seen = new Set();
-  return (Array.isArray(list) ? list : [])
+  return (Array.isArray(rawCategories) ? rawCategories : [])
     .filter((item) => item && item.active !== false)
     .map((item) => ({
       id: String(item.id ?? item.label ?? ''),
@@ -244,11 +244,12 @@ function renderCategories(block, header, categories, settings) {
 async function loadCategoriesFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
-    const categories = response?.data?.categories;
-    if (!Array.isArray(categories)) {
+    const rawCategories = response?.data?.categories;
+    if (!Array.isArray(rawCategories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    renderCategories(block, header, normalizeCategories(categories), settings);
+    const categories = normalizeCategories(rawCategories);
+    renderCategories(block, header, categories, settings);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
@@ -268,7 +269,8 @@ export default function decorate(block) {
   const header = buildSectionTitle(block, 'card-categories');
 
   if (!settings.endpoint) {
-    renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);
+    const categories = normalizeCategories(FALLBACK_CATEGORIES);
+    renderCategories(block, header, categories, settings);
     return;
   }
 

@@ -199,27 +199,27 @@ function readFeaturedSettings(block) {
  * Builds the product link from the item's own path/url or the authored template,
  * e.g. "/productos/{sku}" (placeholders: {sku}, {productId}, {id}).
  * @param {Object} item Raw product
- * @param {string} template Product Link row ('' when the table has none)
+ * @param {string} linkTemplate Product Link row ('' when the table has none)
  * @returns {string|null} null without template or when a placeholder could not be filled
  */
-function buildProductHref(item, template) {
+function buildProductHref(item, linkTemplate) {
   const own = getSafeHref(item.path || item.url);
   if (own) return own;
-  if (!template) return null;
-  const filled = template.replace(/\{(sku|productId|id)\}/g, (placeholder, key) => encodeURIComponent(String(item[key] ?? '').toLowerCase()));
+  if (!linkTemplate) return null;
+  const filled = linkTemplate.replace(/\{(sku|productId|id)\}/g, (placeholder, key) => encodeURIComponent(String(item[key] ?? '').toLowerCase()));
   return /\{|\/\/?$/.test(filled) ? null : getSafeHref(filled);
 }
 
 /**
  * Active products with a name and a price, without duplicates (href null = no link).
  * Validates every field (URLs with getSafeHref, currency code, rating 0-5, oldPrice > price).
- * @param {Object[]} list Raw products (service or fallback)
- * @param {string} linkTemplate
- * @returns {Object[]}
+ * @param {Object[]} rawProducts Products as they come (service or fallback)
+ * @param {string} linkTemplate Product Link row
+ * @returns {Object[]} the normalised products
  */
-function normalizeProducts(list, linkTemplate) {
+function normalizeProducts(rawProducts, linkTemplate) {
   const seen = new Set();
-  return (Array.isArray(list) ? list : [])
+  return (Array.isArray(rawProducts) ? rawProducts : [])
     .filter((item) => item && item.active !== false)
     .map((item) => {
       const price = toNumberOrNull(item.price);
@@ -474,11 +474,12 @@ function renderProducts(block, header, products, settings) {
 async function loadProductsFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
-    const products = response?.data?.products;
-    if (!Array.isArray(products)) {
+    const rawProducts = response?.data?.products;
+    if (!Array.isArray(rawProducts)) {
       throw new Error('Unexpected response: data.products is not a list');
     }
-    renderProducts(block, header, normalizeProducts(products, settings.linkTemplate), settings);
+    const products = normalizeProducts(rawProducts, settings.linkTemplate);
+    renderProducts(block, header, products, settings);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-featured] Could not load featured products from', settings.endpoint, error);

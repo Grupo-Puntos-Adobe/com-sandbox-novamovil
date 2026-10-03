@@ -130,26 +130,26 @@ function readPromotionsSettings(block) {
 /**
  * The promotion's own path/url, or the authored template (placeholder: {id}).
  * @param {Object} item Raw promotion
- * @param {string} template Promo Link row ('' when the table has none)
+ * @param {string} linkTemplate Promo Link row ('' when the table has none)
  * @returns {string|null} null without template or when the placeholder could not be filled
  */
-function buildPromotionHref(item, template) {
+function buildPromotionHref(item, linkTemplate) {
   const own = getSafeHref(item.path || item.url);
   if (own) return own;
-  if (!template) return null;
-  const filled = template.replace(/\{id\}/g, encodeURIComponent(String(item.id ?? '').toLowerCase()));
+  if (!linkTemplate) return null;
+  const filled = linkTemplate.replace(/\{id\}/g, encodeURIComponent(String(item.id ?? '').toLowerCase()));
   return /\{|\/$/.test(filled) ? null : getSafeHref(filled);
 }
 
 /**
  * Active promotions with a title, without duplicates, by `order` (href null = no link).
- * @param {Object[]} list Raw promotions (service or fallback)
- * @param {string} linkTemplate
- * @returns {Object[]}
+ * @param {Object[]} rawPromotions Promotions as they come (service or fallback)
+ * @param {string} linkTemplate Promo Link row
+ * @returns {Object[]} the normalised promotions
  */
-function normalizePromotions(list, linkTemplate) {
+function normalizePromotions(rawPromotions, linkTemplate) {
   const seen = new Set();
-  return (Array.isArray(list) ? list : [])
+  return (Array.isArray(rawPromotions) ? rawPromotions : [])
     .filter((item) => item && item.active !== false)
     .map((item) => ({
       id: String(item.id ?? item.title ?? ''),
@@ -185,20 +185,20 @@ function createElementWithClass(tag, className, content) {
 /**
  * One promotion card: photo, gradient in the promotion colour (bottom → top), texts.
  * Service data is only ever set as text or validated URLs.
- * @param {Object} promo Normalised promotion
+ * @param {Object} promotion Normalised promotion
  * @returns {Element} div.card-promotions-card[role=listitem] > a.card-promotions-item
  *   (div.card-promotions-item when the promotion has no link)
  */
-function buildPromotionCard(promo) {
+function buildPromotionCard(promotion) {
   const card = createElementWithClass('div', 'card-promotions-card col-24 col-md-8');
   card.setAttribute('role', 'listitem');
-  const link = createElementWithClass(promo.href ? 'a' : 'div', 'card-promotions-item');
-  if (promo.href) link.href = promo.href;
-  if (promo.color) link.style.setProperty('--card-promotions-item-color', promo.color);
+  const link = createElementWithClass(promotion.href ? 'a' : 'div', 'card-promotions-item');
+  if (promotion.href) link.href = promotion.href;
+  if (promotion.color) link.style.setProperty('--card-promotions-item-color', promotion.color);
 
-  if (promo.image) {
+  if (promotion.image) {
     const img = createElementWithClass('img', 'card-promotions-image');
-    img.src = promo.image;
+    img.src = promotion.image;
     img.alt = ''; // decorative: the title and text describe the promotion
     img.loading = 'lazy';
     img.decoding = 'async';
@@ -207,8 +207,8 @@ function buildPromotionCard(promo) {
   }
 
   const content = createElementWithClass('span', 'card-promotions-content');
-  content.append(createElementWithClass('span', 'card-promotions-title', promo.title));
-  if (promo.sub) content.append(createElementWithClass('span', 'card-promotions-sub', promo.sub));
+  content.append(createElementWithClass('span', 'card-promotions-title', promotion.title));
+  if (promotion.sub) content.append(createElementWithClass('span', 'card-promotions-sub', promotion.sub));
   link.append(content);
 
   card.append(link);
@@ -292,12 +292,12 @@ function renderPromotions(block, header, promotions, settings) {
 async function loadPromotionsFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
-    const promotions = response?.data?.promotions;
-    if (!Array.isArray(promotions)) {
+    const rawPromotions = response?.data?.promotions;
+    if (!Array.isArray(rawPromotions)) {
       throw new Error('Unexpected response: data.promotions is not a list');
     }
-    const validPromotions = normalizePromotions(promotions, settings.linkTemplate);
-    renderPromotions(block, header, validPromotions, settings);
+    const promotions = normalizePromotions(rawPromotions, settings.linkTemplate);
+    renderPromotions(block, header, promotions, settings);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-promotions] Could not load promotions from', settings.endpoint, error);
@@ -317,8 +317,8 @@ export default function decorate(block) {
   const header = buildSectionTitle(block, 'card-promotions');
 
   if (!settings.endpoint) {
-    const validPromotions = normalizePromotions(FALLBACK_PROMOTIONS, settings.linkTemplate);
-    renderPromotions(block, header, validPromotions, settings);
+    const promotions = normalizePromotions(FALLBACK_PROMOTIONS, settings.linkTemplate);
+    renderPromotions(block, header, promotions, settings);
     return;
   }
 

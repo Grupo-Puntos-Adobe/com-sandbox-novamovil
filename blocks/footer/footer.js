@@ -38,14 +38,14 @@ const BRAND_ACCENT = 'Móvil';
 /**
  * Builds the wordmark. Keeps the authored markup (incl. <em>); if the author
  * did not emphasise anything, the trailing "Móvil" gets the accent colour.
- * @param {string} html Authored wordmark markup, or empty for the default
+ * @param {string} authoredName Authored wordmark markup, or empty for the default
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-name` span
  */
-function buildBrandWordmark(html, prefix) {
+function buildBrandWordmark(authoredName, prefix) {
   const name = document.createElement('span');
   name.className = `${prefix}-name`;
-  name.innerHTML = html || BRAND_NAME;
+  name.innerHTML = authoredName || BRAND_NAME;
   if (!name.querySelector('em') && name.textContent.trim().endsWith(BRAND_ACCENT)) {
     const text = name.textContent.trim();
     const em = document.createElement('em');
@@ -62,18 +62,18 @@ function buildBrandWordmark(html, prefix) {
  * - logo: the authored image; else the authored :logo: icon; else the default icon
  * - wordmark: the authored text; else "NovaMóvil" (omitted when an image stands alone)
  * The default logo is painted by CSS from the colour tokens, so its <img> is dropped.
- * @param {Element} source Element holding the authored logo/wordmark (consumed)
+ * @param {Element} brandSource Element holding the authored logo/wordmark (consumed)
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-link` anchor
  */
-function buildBrandLink(source, prefix) {
-  const authoredLink = source.querySelector('a');
-  const picture = source.querySelector('picture');
-  const icon = source.querySelector('.icon');
+function buildBrandLink(brandSource, prefix) {
+  const authoredLink = brandSource.querySelector('a');
+  const picture = brandSource.querySelector('picture');
+  const icon = brandSource.querySelector('.icon');
   [picture, icon].forEach((element) => element?.remove());
 
   // authored wordmark: first link/paragraph that still has letters once the logo is removed
-  const textSource = [authoredLink, ...source.querySelectorAll('p')]
+  const textSource = [authoredLink, ...brandSource.querySelectorAll('p')]
     .find((element) => element && /\p{L}/u.test(element.textContent));
   const authoredName = textSource ? textSource.innerHTML.trim() : '';
 
@@ -115,21 +115,21 @@ function getSectionElements(section) {
 /**
  * Section 1: brand link (logo + wordmark) followed by the tagline.
  * The brand is the first element (plus the next one when the first is a lone image).
- * @param {Element[]} items Authored elements
+ * @param {Element[]} brandItems Authored elements of the brand section
  * @returns {Element} the .footer-brand column
  */
-function buildFooterBrandColumn(items) {
+function buildFooterBrandColumn(brandItems) {
   const column = document.createElement('div');
   column.className = 'footer-brand';
 
-  const source = document.createElement('div');
-  const [first, second, ...rest] = items;
+  const brandSource = document.createElement('div');
+  const [first, second, ...rest] = brandItems;
   const tagline = rest;
-  if (first) source.append(first);
-  if (first && !hasLetterText(first) && second?.querySelector('a')) source.append(second);
+  if (first) brandSource.append(first);
+  if (first && !hasLetterText(first) && second?.querySelector('a')) brandSource.append(second);
   else if (second) tagline.unshift(second);
 
-  column.append(buildBrandLink(source, 'footer-brand'));
+  column.append(buildBrandLink(brandSource, 'footer-brand'));
   tagline.forEach((element) => {
     element.classList.add('footer-tagline');
     element.querySelectorAll('a').forEach((link) => link.classList.add('footer-inline-link'));
@@ -140,12 +140,12 @@ function buildFooterBrandColumn(items) {
 
 /**
  * Section 2: each heading starts a column holding the content that follows it.
- * @param {Element[]} items Authored elements
+ * @param {Element[]} linkItems Authored elements of the links section
  * @returns {Element[]} the .footer-column elements
  */
-function buildFooterLinkColumns(items) {
+function buildFooterLinkColumns(linkItems) {
   const columns = [];
-  items.forEach((element) => {
+  linkItems.forEach((element) => {
     const isHeading = /^H[1-6]$/.test(element.tagName);
     if (isHeading || !columns.length) {
       const column = document.createElement('div');
@@ -164,13 +164,13 @@ function buildFooterLinkColumns(items) {
 
 /**
  * Section 3: copyright paragraph(s) and the payment methods list.
- * @param {Element[]} items Authored elements
+ * @param {Element[]} bottomItems Authored elements of the bottom section
  * @returns {Element} the .footer-bottom row
  */
-function buildFooterBottom(items) {
+function buildFooterBottom(bottomItems) {
   const bottom = document.createElement('div');
   bottom.className = 'footer-bottom';
-  items.forEach((element) => {
+  bottomItems.forEach((element) => {
     if (element.tagName === 'UL' || element.tagName === 'OL') {
       element.classList.add('footer-payments');
       element.setAttribute('aria-label', 'Medios de pago');
@@ -206,8 +206,10 @@ export default async function decorate(block) {
 
   const grid = document.createElement('div');
   grid.className = 'footer-grid';
-  if (brandSection) grid.append(buildFooterBrandColumn(getSectionElements(brandSection)));
-  grid.append(...buildFooterLinkColumns(getSectionElements(linksSection)));
+  const brandItems = getSectionElements(brandSection);
+  const linkItems = getSectionElements(linksSection);
+  if (brandSection) grid.append(buildFooterBrandColumn(brandItems));
+  grid.append(...buildFooterLinkColumns(linkItems));
   if (grid.children.length) footer.append(grid);
 
   const bottomItems = getSectionElements(bottomSection);
