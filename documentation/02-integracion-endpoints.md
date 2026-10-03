@@ -47,7 +47,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `scripts/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
 | `styles/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
 | `styles/colors.css` | 🆕 | Colores de la alerta (`--toast-*`) | `1bccaff` |
-| `scripts/block-utils.js` | 🆕 | `readRawCell` (leer el endpoint tal cual), `alertOptions`, `safeHref` | `70c643f` |
+| `scripts/block-utils.js` | 🆕 | `readRawCell` (leer el endpoint tal cual), `alertOptions`, `safeHref`; hoy concentra todas las utilidades compartidas (paso 6) | `70c643f` |
 | `blocks/card-categories/card-categories.js` | 🆕 | Pide `data.categories` | `1bccaff` |
 | `blocks/card-featured/card-featured.js` | 🆕 | Pide `data.products` | `70c643f` |
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
@@ -68,10 +68,10 @@ Documento de Drive
                      │
                      ▼
 blocks/card-categories/card-categories.js  (decorate)
-  ├─ readRawCell(block, 'endpoint')          ← scripts/block-utils.js
+  ├─ readServiceSettings(block, icono)       ← scripts/block-utils.js (Endpoint, alerta, mensajes)
   ├─ ¿hay endpoint?
-  │    ├─ NO → pinta FALLBACK_CATEGORIES (JSON interno del bloque)
-  │    └─ SÍ → pinta esqueleto y llama:
+  │    ├─ NO → pinta FALLBACK_CATEGORIES (JSON interno del bloque; vacío → aviso de lista vacía)
+  │    └─ SÍ → renderSkeleton() y loadServiceList()   ← scripts/block-utils.js, que llama:
   │             get(endpoint)                 ← scripts/api/http-client.js
   │               ├─ interceptores request    ← scripts/api/interceptors.js
   │               ├─ fetch() + timeout 8 s    (API nativa del navegador)
@@ -247,81 +247,81 @@ header fijo:
 
 ### Paso 6 · Utilidades compartidas (`scripts/block-utils.js`)
 
-| Función | Por qué existe |
-|---|---|
-| `readRawCell(block, 'endpoint')` | `readBlockConfig` de AEM convierte los enlaces en URLs absolutas **de la página**. Una ruta relativa `/api/v1/...` terminaría apuntando al sitio y no a la API. Esta función lee la celda **tal como la escribió el autor** (texto o `href`) |
-| `alertOptions(config)` | Convierte las filas `Alert Duration` (segundos) y `Alert Color` en `{ duration, variant }` para `showToast`. Por defecto 5 s y `error` |
-| `safeHref(path)` | Los enlaces que vienen del servicio solo se aceptan si son rutas del sitio o `http(s)`. Bloquea `javascript:` y similares |
+Todo lo que se repetía en los bloques (o le puede servir a uno nuevo) vive aquí; cada bloque solo
+conserva lo suyo: su JSON interno, su `normalize()` y cómo se ve su tarjeta.
+
+| Sección | Función | Para qué |
+|---|---|---|
+| Leer la tabla | `readRawCell(block, fila)` | Lee la celda **tal como la escribió el autor** (texto o `href`). `readBlockConfig` de AEM convierte los enlaces en URLs absolutas de la página y una ruta `/api/v1/...` terminaría apuntando al sitio |
+| | `readRowText(block, fila, porDefecto)` | Fila que no existe → valor por defecto; fila vacía → `''` |
+| | `alertOptions(config)` | `Alert Duration` (segundos) y `Alert Color` → `{ duration, variant }`. Por defecto 5 s y `error` |
+| | `readServiceSettings(block, icono)` | Lo que comparten los bloques con servicio: `Endpoint`, alerta y mensajes (`Error Response Message`, `Empty List *`) con los valores de `scripts/messages.js` |
+| Datos del servicio | `safeHref(ruta)` | Solo rutas del sitio o `http(s)`; bloquea `javascript:` y similares |
+| | `safeColor(valor)` | Solo colores `#hex` (terminan en una variable CSS) |
+| | `toText(valor)` / `toNumber(valor)` | Texto sin espacios (`''` si no es texto) / número (`null` si no es número) |
+| | `orderValue(valor)` | Campo `order` → número; sin orden válido va al final |
+| | `activeItems(lista)` | Asegura que sea una lista y quita los `active: false` |
+| | `uniqueById(items)` | Deja el primero de cada `id` |
+| | `linkFromTemplate(item, plantilla, claves)` | `path` del item, o la plantilla de la tabla rellenada (`/productos/{sku}` → `/productos/iph-15-128-blk`) |
+| Formatos | `formatNumber(valor)` | `2,341`, con el `LOCALE` de `scripts/messages.js` |
+| | `formatPrice(valor, moneda)` | `$19,999` sin decimales; moneda desconocida o sin moneda → `CURRENCY` de `scripts/messages.js` |
+| Pintar el bloque | `el(etiqueta, clase, texto)` | `createElement` + clase + texto (nunca HTML) |
+| | `buildBlockHeader(block, prefijo, opciones)` | Título (`Title`) y, con `withLink`, el botón `Link` |
+| | `renderSkeleton(block, prefijo, encabezado, n)` | Encabezado + `n` tarjetas grises mientras responde el servicio |
+| | `renderCards(block, prefijo, encabezado, tarjetas, mensajes)` | La lista `[role=list]` nombrada por el título, o el aviso de lista vacía si no hay tarjetas |
+| Servicio | `loadServiceList(endpoint, clave, opciones)` | Pide `data[clave]`; si falla (red, tiempo, HTTP, respuesta sin la lista) lo registra en consola, muestra la alerta y responde `[]` |
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
-Los tres bloques siguen el mismo patrón y leen sus textos de la tabla (con `scripts/messages.js`
-como respaldo). Ejemplo real de `card-categories`; las guías de cada bloque son
-`04-card-categories.md`, `05-card-featured.md` y `06-card-promotions.md`:
+Los tres bloques siguen el mismo patrón. Ejemplo real y completo del `decorate` de
+`card-categories`; las guías de cada bloque son `04-card-categories.md`, `05-card-featured.md` y
+`06-card-promotions.md`:
 
 ```js
-import { readBlockConfig } from '../../scripts/aem.js';
-import { get } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/toast.js';
-import MESSAGES from '../../scripts/messages.js';            // mensajes genéricos
-import { readRawCell, readRowText, alertOptions, … } from '../../scripts/block-utils.js';
+import applyBlockOptions from '../../scripts/block-options.js';
+import {
+  readServiceSettings, buildBlockHeader, renderSkeleton, renderCards, loadServiceList, …
+} from '../../scripts/block-utils.js';
 
+const PREFIX = 'card-categories';
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
 const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
+const EMPTY_LIST_ICON = '🗂️';        // icono del aviso si la tabla no trae Empty List Icon
 
-function readSettings(block) {       // todo lo que viene de la tabla, con sus defaults
-  const text = (key) => readRawCell(block, key).text;
-  return {
-    endpoint: …,                                       // fila Endpoint, tal cual
-    alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
-    messages: {
-      errorResponseMessage: text('error response message')   // fila de la tabla…
-        || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
-      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
-      …
-    },
-  };
-}
-
-async function loadFromService(block, header, settings) {
-  try {
-    const response = await get(settings.endpoint);
-    const categories = response?.data?.categories;
-    if (!Array.isArray(categories)) {
-      throw new Error('Unexpected response: data.categories is not a list');
-    }
-    render(block, header, normalize(categories), settings);   // lista vacía → mensaje vacío
-  } catch (error) {
-    console.error('[card-categories] Could not load categories from', settings.endpoint, error);
-    showToast(settings.messages.errorResponseMessage, settings.alert);  // alerta flotante
-    render(block, header, [], settings);                      // mensaje vacío
-  }
-}
+function normalize(list) { … }       // lo propio del bloque: qué campos usa y cómo los valida
+function buildCard(category) { … }   // lo propio del bloque: cómo se ve su tarjeta
 
 export default function decorate(block) {
-  applyBlockOptions(block);
-  const settings = readSettings(block);
-  // Title sin valor por defecto: si no viene en la tabla no hay título
-  const header = buildBlockHeader(block, 'card-categories', { asDiv: true }); // featured: withLink
+  applyBlockOptions(block);                                     // filas Styles / Classname
+  const settings = readServiceSettings(block, EMPTY_LIST_ICON); // Endpoint, alerta, mensajes
+  const header = buildBlockHeader(block, PREFIX, { asDiv: true }); // Title, sin valor por defecto
+  const show = (list) => renderCards(
+    block, PREFIX, header, normalize(list).map(buildCard), settings.messages,
+  );                                                            // sin tarjetas → aviso vacío
 
-  if (!settings.endpoint) {                                    // sin endpoint → JSON interno
-    render(block, header, normalize(FALLBACK_CATEGORIES), settings);
+  if (!settings.endpoint) {                                     // sin endpoint → JSON interno
+    show(FALLBACK_CATEGORIES);
     return;
   }
   // esqueleto mientras carga; la petición NO bloquea el resto de la página
-  block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, settings);                    // sin await, a propósito
+  renderSkeleton(block, PREFIX, header, SKELETON_ELEMENTS);
+  loadServiceList(settings.endpoint, 'categories', {           // error → alerta + []
+    source: PREFIX,
+    errorMessage: settings.messages.errorResponseMessage,
+    alert: settings.alert,
+  }).then(show);                                                // sin await, a propósito
 }
 ```
 
 Detalles importantes:
-- **`loadFromService` sin `await`**: el bloque termina de "decorarse" enseguida y AEM sigue
+- **`loadServiceList` sin `await`**: el bloque termina de "decorarse" enseguida y AEM sigue
   cargando las demás secciones; los datos llegan después y reemplazan el esqueleto.
 - **Esqueleto**: tarjetas grises del mismo tamaño que las reales, para que la página no brinque (CLS).
-- **`normalize()`**: filtra `active: false`, exige los campos mínimos, quita duplicados por `id`,
-  ordena por `order` y valida colores (`#hex`) y enlaces (`safeHref`).
-- **Pintado seguro**: todo con `createElement` + `textContent`, **nunca `innerHTML`** con datos del servicio.
+- **`normalize()`**: con `activeItems`, `uniqueById`, `orderValue`, `safeColor` y `safeHref` filtra
+  `active: false`, exige los campos mínimos, quita duplicados por `id`, ordena por `order` y valida
+  colores y enlaces.
+- **Pintado seguro**: todo con `el()` / `createElement` + `textContent`, **nunca `innerHTML`** con
+  datos del servicio.
 
 | Bloque | Campo que lee de la respuesta | Enlace de cada tarjeta |
 |---|---|---|
@@ -380,10 +380,11 @@ técnico queda en la consola del navegador (`[card-categories] Could not load �
 ### Nuevo bloque que consume un servicio
 
 ```js
-import { get } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/toast.js';
-import { readRawCell, alertOptions } from '../../scripts/block-utils.js';
-// … mismo patrón del paso 7: endpoint del documento, fallback, esqueleto, try/catch
+import {
+  readServiceSettings, buildBlockHeader, renderSkeleton, renderCards, loadServiceList, el,
+} from '../../scripts/block-utils.js';
+// … mismo patrón del paso 7: readServiceSettings, JSON interno, renderSkeleton,
+// loadServiceList(endpoint, 'miLista', …).then(show); solo normalize() y buildCard() son nuevos
 ```
 
 ### Servicio que requiere token
