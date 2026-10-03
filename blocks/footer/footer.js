@@ -11,10 +11,10 @@
  * Flow:
  *   decorate(block)
  *     ├─ loadFragment(footerPath)                blocks/fragment/fragment.js
- *     ├─ section 1 → buildBrandColumn(items)     → buildBrand()  (brand functions in this file)
- *     ├─ section 2 → buildLinkColumns(items)
- *     └─ section 3 → buildBottom(items)
- *     (sectionContent() extracts the authored elements of each section)
+ *     ├─ section 1 → buildFooterBrandColumn(items) → buildBrandLink()  (brand code in this file)
+ *     ├─ section 2 → buildFooterLinkColumns(items)
+ *     └─ section 3 → buildFooterBottom(items)
+ *     (getSectionElements() extracts the authored elements of each section)
  *
  * Classes used by footer.css (no tag selectors): footer-inner, footer-grid, footer-brand(-link,
  * -logo, -image, -name, -accent), footer-tagline, footer-column, footer-column-title,
@@ -42,7 +42,7 @@ const BRAND_ACCENT = 'Móvil';
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-name` span
  */
-function buildBrandName(html, prefix) {
+function buildBrandWordmark(html, prefix) {
   const name = document.createElement('span');
   name.className = `${prefix}-name`;
   name.innerHTML = html || BRAND_NAME;
@@ -66,15 +66,15 @@ function buildBrandName(html, prefix) {
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-link` anchor
  */
-function buildBrand(source, prefix) {
+function buildBrandLink(source, prefix) {
   const authoredLink = source.querySelector('a');
   const picture = source.querySelector('picture');
   const icon = source.querySelector('.icon');
-  [picture, icon].forEach((el) => el?.remove());
+  [picture, icon].forEach((element) => element?.remove());
 
   // authored wordmark: first link/paragraph that still has letters once the logo is removed
   const textSource = [authoredLink, ...source.querySelectorAll('p')]
-    .find((el) => el && /\p{L}/u.test(el.textContent));
+    .find((element) => element && /\p{L}/u.test(element.textContent));
   const authoredName = textSource ? textSource.innerHTML.trim() : '';
 
   const link = document.createElement('a');
@@ -94,19 +94,19 @@ function buildBrand(source, prefix) {
     link.append(logo);
   }
 
-  if (authoredName || !picture) link.append(buildBrandName(authoredName, prefix));
+  if (authoredName || !picture) link.append(buildBrandWordmark(authoredName, prefix));
   return link;
 }
 
 // true when the element has any letter (tells a text brand from a lone logo image)
-const hasLetters = (el) => /\p{L}/u.test(el.textContent);
+const hasLetterText = (element) => /\p{L}/u.test(element.textContent);
 
 /**
  * Returns the authored elements of a fragment section (inside its content wrapper).
  * @param {Element} section A fragment section
  * @returns {Element[]}
  */
-function sectionContent(section) {
+function getSectionElements(section) {
   if (!section) return [];
   const wrapper = section.querySelector('.default-content-wrapper') || section;
   return [...wrapper.children];
@@ -118,7 +118,7 @@ function sectionContent(section) {
  * @param {Element[]} items Authored elements
  * @returns {Element} the .footer-brand column
  */
-function buildBrandColumn(items) {
+function buildFooterBrandColumn(items) {
   const column = document.createElement('div');
   column.className = 'footer-brand';
 
@@ -126,14 +126,14 @@ function buildBrandColumn(items) {
   const [first, second, ...rest] = items;
   const tagline = rest;
   if (first) source.append(first);
-  if (first && !hasLetters(first) && second?.querySelector('a')) source.append(second);
+  if (first && !hasLetterText(first) && second?.querySelector('a')) source.append(second);
   else if (second) tagline.unshift(second);
 
-  column.append(buildBrand(source, 'footer-brand'));
-  tagline.forEach((el) => {
-    el.classList.add('footer-tagline');
-    el.querySelectorAll('a').forEach((a) => a.classList.add('footer-inline-link'));
-    column.append(el);
+  column.append(buildBrandLink(source, 'footer-brand'));
+  tagline.forEach((element) => {
+    element.classList.add('footer-tagline');
+    element.querySelectorAll('a').forEach((link) => link.classList.add('footer-inline-link'));
+    column.append(element);
   });
   return column;
 }
@@ -143,21 +143,21 @@ function buildBrandColumn(items) {
  * @param {Element[]} items Authored elements
  * @returns {Element[]} the .footer-column elements
  */
-function buildLinkColumns(items) {
+function buildFooterLinkColumns(items) {
   const columns = [];
-  items.forEach((el) => {
-    const isHeading = /^H[1-6]$/.test(el.tagName);
+  items.forEach((element) => {
+    const isHeading = /^H[1-6]$/.test(element.tagName);
     if (isHeading || !columns.length) {
       const column = document.createElement('div');
       column.className = 'footer-column';
       columns.push(column);
     }
     // class hooks so footer.css never styles tags
-    if (isHeading) el.classList.add('footer-column-title');
-    else if (el.tagName === 'UL' || el.tagName === 'OL') el.classList.add('footer-links');
-    else el.classList.add('footer-column-text');
-    el.querySelectorAll('a').forEach((a) => a.classList.add('footer-link'));
-    columns.at(-1).append(el);
+    if (isHeading) element.classList.add('footer-column-title');
+    else if (element.tagName === 'UL' || element.tagName === 'OL') element.classList.add('footer-links');
+    else element.classList.add('footer-column-text');
+    element.querySelectorAll('a').forEach((link) => link.classList.add('footer-link'));
+    columns.at(-1).append(element);
   });
   return columns;
 }
@@ -167,19 +167,19 @@ function buildLinkColumns(items) {
  * @param {Element[]} items Authored elements
  * @returns {Element} the .footer-bottom row
  */
-function buildBottom(items) {
+function buildFooterBottom(items) {
   const bottom = document.createElement('div');
   bottom.className = 'footer-bottom';
-  items.forEach((el) => {
-    if (el.tagName === 'UL' || el.tagName === 'OL') {
-      el.classList.add('footer-payments');
-      el.setAttribute('aria-label', 'Medios de pago');
-      [...el.children].forEach((li) => li.classList.add('footer-payment'));
+  items.forEach((element) => {
+    if (element.tagName === 'UL' || element.tagName === 'OL') {
+      element.classList.add('footer-payments');
+      element.setAttribute('aria-label', 'Medios de pago');
+      [...element.children].forEach((paymentItem) => paymentItem.classList.add('footer-payment'));
     } else {
-      el.classList.add('footer-copyright');
-      el.querySelectorAll('a').forEach((a) => a.classList.add('footer-inline-link'));
+      element.classList.add('footer-copyright');
+      element.querySelectorAll('a').forEach((link) => link.classList.add('footer-inline-link'));
     }
-    bottom.append(el);
+    bottom.append(element);
   });
   return bottom;
 }
@@ -206,12 +206,12 @@ export default async function decorate(block) {
 
   const grid = document.createElement('div');
   grid.className = 'footer-grid';
-  if (brandSection) grid.append(buildBrandColumn(sectionContent(brandSection)));
-  grid.append(...buildLinkColumns(sectionContent(linksSection)));
+  if (brandSection) grid.append(buildFooterBrandColumn(getSectionElements(brandSection)));
+  grid.append(...buildFooterLinkColumns(getSectionElements(linksSection)));
   if (grid.children.length) footer.append(grid);
 
-  const bottomItems = sectionContent(bottomSection);
-  if (bottomItems.length) footer.append(buildBottom(bottomItems));
+  const bottomItems = getSectionElements(bottomSection);
+  if (bottomItems.length) footer.append(buildFooterBottom(bottomItems));
 
   block.append(footer);
 }

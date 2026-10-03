@@ -49,7 +49,7 @@ foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es *
 
 Los mensajes genéricos están en `scripts/messages.js` (junto con `LOCALE` y `CURRENCY`, el idioma
 y la moneda de los precios); la regla de "fila que no existe ≠ fila vacía" la aplica
-`readRowText(block, fila, porDefecto)` de `scripts/block-utils.js`.
+`readRowTextOrDefault(block, fila, porDefecto)` de `scripts/block-utils.js`.
 
 Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos").
 

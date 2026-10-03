@@ -9,7 +9,7 @@
  * Empty List Icon.
  * Defaults only for messages and the alert:
  *   - Title has no default: without text in the table the section has no title.
- *   - Empty List Title / Description / Icon (readRowText): row missing → default
+ *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
  *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * The list is named by the Title through aria-labelledby.
@@ -18,17 +18,19 @@
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
- *     ├─ readSettings(block)             endpoint, alert, messages
- *     │    └─ readRawCell / readRowText / alertOptions   scripts/block-utils.js
+ *     ├─ readCategoriesSettings(block)             endpoint, alert, messages
+ *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
  *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
- *     ├─ no endpoint → render(normalize(FALLBACK_CATEGORIES))
- *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
+ *     ├─ no endpoint → renderCategories(normalizeCategories(FALLBACK_CATEGORIES))
+ *     └─ endpoint    → buildCategoriesSkeleton() + loadCategoriesFromService()
+ *                       (not awaited: the page keeps loading)
  *                         ├─ get(endpoint)   scripts/api/http-client.js
- *                         ├─ ok    → render(normalize(data.categories))
- *                         └─ error → console.error + showToast(errorResponseMessage) + render([])
- *   render(block, header, categories, settings)
- *     ├─ none → buildEmpty()
- *     └─ div.card-categories-list[role=list] > buildCard() per category (columns: CSS)
+ *                         ├─ ok    → renderCategories(normalizeCategories(data.categories))
+ *                         └─ error → console.error + showToast(errorResponseMessage)
+ *                                    + renderCategories([])
+ *   renderCategories(block, header, categories, settings)
+ *     ├─ none → buildEmptyListMessage()
+ *     └─ div.card-categories-list[role=list] > buildCategoryCard() per category (columns: CSS)
  *
  * Markup is all divs except each card's link (<a>). Classes used by card-categories.css:
  * card-categories-header, -heading, -list, -card, -item, -icon, -label, -skeleton,
@@ -43,7 +45,7 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES from '../../scripts/messages.js';
 import {
-  readRawCell, readRowText, alertOptions, safeHref, buildBlockHeader,
+  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
@@ -74,7 +76,7 @@ const SKELETON_ELEMENTS = 6;
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 // icon of the "no categories" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🗂️';
-let headingCount = 0;
+let categoriesHeadingCount = 0;
 
 /**
  * Everything the block reads from its table, with the defaults applied.
@@ -83,21 +85,21 @@ let headingCount = 0;
  *   messages: {errorResponseMessage: string, emptyListTitle: string,
  *     emptyListDescription: string, emptyListIcon: string}}}
  */
-function readSettings(block) {
-  const text = (key) => readRawCell(block, key).text;
-  const endpointCell = readRawCell(block, 'endpoint');
+function readCategoriesSettings(block) {
+  const readCellText = (key) => readTableCell(block, key).text;
+  const endpointCell = readTableCell(block, 'endpoint');
   return {
     endpoint: endpointCell.href || endpointCell.text,
-    alert: alertOptions(readBlockConfig(block)),
+    alert: getAlertOptions(readBlockConfig(block)),
     messages: {
-      errorResponseMessage: text('error response message') || MESSAGES.errorResponseMessage,
-      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
-      emptyListDescription: readRowText(
+      errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
+      emptyListTitle: readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle),
+      emptyListDescription: readRowTextOrDefault(
         block,
         'empty list description',
         MESSAGES.emptyListDescription,
       ),
-      emptyListIcon: readRowText(block, 'empty list icon', EMPTY_LIST_ICON),
+      emptyListIcon: readRowTextOrDefault(block, 'empty list icon', EMPTY_LIST_ICON),
     },
   };
 }
@@ -107,7 +109,7 @@ function readSettings(block) {
  * @param {Object[]} list Raw categories (service or fallback)
  * @returns {Object[]}
  */
-function normalize(list) {
+function normalizeCategories(list) {
   const seen = new Set();
   return (Array.isArray(list) ? list : [])
     .filter((item) => item && item.active !== false)
@@ -115,7 +117,7 @@ function normalize(list) {
       id: String(item.id ?? item.label ?? ''),
       label: typeof item.label === 'string' ? item.label.trim() : '',
       icon: typeof item.icon === 'string' ? item.icon.trim() : '',
-      href: safeHref(item.path),
+      href: getSafeHref(item.path),
       color: HEX_COLOR.test(item.color) ? item.color : '',
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : Number.MAX_SAFE_INTEGER,
     }))
@@ -124,7 +126,7 @@ function normalize(list) {
       seen.add(item.id);
       return true;
     })
-    .sort((a, b) => a.order - b.order);
+    .sort((first, second) => first.order - second.order);
 }
 
 /**
@@ -134,7 +136,7 @@ function normalize(list) {
  * @param {string} [content]
  * @returns {Element}
  */
-function el(tag, className, content) {
+function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
   if (content !== undefined) node.textContent = content;
@@ -146,15 +148,15 @@ function el(tag, className, content) {
  * @param {Object} category Normalised category
  * @returns {Element} div.card-categories-card[role=listitem]
  */
-function buildCard(category) {
-  const card = el('div', 'card-categories-card');
+function buildCategoryCard(category) {
+  const card = createElementWithClass('div', 'card-categories-card');
   card.setAttribute('role', 'listitem');
-  const link = el('a', 'card-categories-item');
+  const link = createElementWithClass('a', 'card-categories-item');
   link.href = category.href;
   if (category.color) link.style.setProperty('--card-categories-item-color', category.color);
-  const icon = el('span', 'card-categories-icon', category.icon);
+  const icon = createElementWithClass('span', 'card-categories-icon', category.icon);
   icon.setAttribute('aria-hidden', 'true');
-  link.append(icon, el('span', 'card-categories-label', category.label));
+  link.append(icon, createElementWithClass('span', 'card-categories-label', category.label));
   card.append(link);
   return card;
 }
@@ -163,10 +165,10 @@ function buildCard(category) {
  * Grey placeholder cards shown while the service answers (avoids layout shift).
  * @returns {Element} div hidden from assistive technology
  */
-function buildSkeleton() {
-  const list = el('div', 'card-categories-list');
+function buildCategoriesSkeleton() {
+  const list = createElementWithClass('div', 'card-categories-list');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(el('div', 'card-categories-skeleton'));
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(createElementWithClass('div', 'card-categories-skeleton'));
   return list;
 }
 
@@ -176,20 +178,20 @@ function buildSkeleton() {
  *   and Empty List Icon (table or EMPTY_LIST_ICON)
  * @returns {Element} div[role=status]
  */
-function buildEmpty(messages) {
-  const empty = el('div', 'card-categories-empty');
+function buildEmptyListMessage(messages) {
+  const empty = createElementWithClass('div', 'card-categories-empty');
   empty.setAttribute('role', 'status');
   // each part only when it has text (an authored empty row leaves it out)
   if (messages.emptyListIcon) {
-    const icon = el('div', 'card-categories-empty-icon', messages.emptyListIcon);
+    const icon = createElementWithClass('div', 'card-categories-empty-icon', messages.emptyListIcon);
     icon.setAttribute('aria-hidden', 'true');
     empty.append(icon);
   }
   if (messages.emptyListTitle) {
-    empty.append(el('div', 'card-categories-empty-title', messages.emptyListTitle));
+    empty.append(createElementWithClass('div', 'card-categories-empty-title', messages.emptyListTitle));
   }
   if (messages.emptyListDescription) {
-    empty.append(el('div', 'card-categories-empty-text', messages.emptyListDescription));
+    empty.append(createElementWithClass('div', 'card-categories-empty-text', messages.emptyListDescription));
   }
   return empty;
 }
@@ -199,25 +201,25 @@ function buildEmpty(messages) {
  * @param {Element} block
  * @param {Element|null} header Optional title (Title row)
  * @param {Object[]} categories Normalised categories
- * @param {Object} settings readSettings() result
+ * @param {Object} settings readCategoriesSettings() result
  */
-function render(block, header, categories, settings) {
+function renderCategories(block, header, categories, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!categories.length) {
-    block.replaceChildren(...content, buildEmpty(settings.messages));
+    block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
     return;
   }
-  const list = el('div', 'card-categories-list');
+  const list = createElementWithClass('div', 'card-categories-list');
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Categorías, lista, 6 elementos")
   const heading = header?.querySelector('.card-categories-heading');
   if (heading) {
-    headingCount += 1;
-    heading.id = heading.id || `card-categories-heading-${headingCount}`;
+    categoriesHeadingCount += 1;
+    heading.id = heading.id || `card-categories-heading-${categoriesHeadingCount}`;
     list.setAttribute('aria-labelledby', heading.id);
   }
-  list.append(...categories.map(buildCard));
+  list.append(...categories.map(buildCategoryCard));
   block.replaceChildren(...content, list);
 }
 
@@ -226,21 +228,21 @@ function render(block, header, categories, settings) {
  * the empty message.
  * @param {Element} block
  * @param {Element|null} header
- * @param {Object} settings readSettings() result
+ * @param {Object} settings readCategoriesSettings() result
  */
-async function loadFromService(block, header, settings) {
+async function loadCategoriesFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
     const categories = response?.data?.categories;
     if (!Array.isArray(categories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    render(block, header, normalize(categories), settings);
+    renderCategories(block, header, normalizeCategories(categories), settings);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
     showToast(settings.messages.errorResponseMessage, settings.alert);
-    render(block, header, [], settings);
+    renderCategories(block, header, [], settings);
   }
 }
 
@@ -251,16 +253,16 @@ async function loadFromService(block, header, settings) {
  */
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
-  const settings = readSettings(block);
+  const settings = readCategoriesSettings(block);
   const header = buildBlockHeader(block, 'card-categories', { asDiv: true });
 
   if (!settings.endpoint) {
-    render(block, header, normalize(FALLBACK_CATEGORIES), settings);
+    renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);
     return;
   }
 
   // skeleton keeps the layout stable; the request does not block the following sections
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, settings);
+  block.replaceChildren(...[header, buildCategoriesSkeleton()].filter(Boolean));
+  loadCategoriesFromService(block, header, settings);
 }

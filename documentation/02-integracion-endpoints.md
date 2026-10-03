@@ -47,7 +47,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `scripts/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
 | `styles/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
 | `styles/colors.css` | 🆕 | Colores de la alerta (`--toast-*`) | `1bccaff` |
-| `scripts/block-utils.js` | 🆕 | `readRawCell` (leer el endpoint tal cual), `alertOptions`, `safeHref` | `70c643f` |
+| `scripts/block-utils.js` | 🆕 | `readTableCell` (leer el endpoint tal cual), `getAlertOptions`, `getSafeHref` | `70c643f` |
 | `blocks/card-categories/card-categories.js` | 🆕 | Pide `data.categories` | `1bccaff` |
 | `blocks/card-featured/card-featured.js` | 🆕 | Pide `data.products` | `70c643f` |
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
@@ -68,7 +68,7 @@ Documento de Drive
                      │
                      ▼
 blocks/card-categories/card-categories.js  (decorate)
-  ├─ readRawCell(block, 'endpoint')          ← scripts/block-utils.js
+  ├─ readTableCell(block, 'endpoint')          ← scripts/block-utils.js
   ├─ ¿hay endpoint?
   │    ├─ NO → pinta FALLBACK_CATEGORIES (JSON interno del bloque)
   │    └─ SÍ → pinta esqueleto y llama:
@@ -249,9 +249,12 @@ header fijo:
 
 | Función | Por qué existe |
 |---|---|
-| `readRawCell(block, 'endpoint')` | `readBlockConfig` de AEM convierte los enlaces en URLs absolutas **de la página**. Una ruta relativa `/api/v1/...` terminaría apuntando al sitio y no a la API. Esta función lee la celda **tal como la escribió el autor** (texto o `href`) |
-| `alertOptions(config)` | Convierte las filas `Alert Duration` (segundos) y `Alert Color` en `{ duration, variant }` para `showToast`. Por defecto 5 s y `error` |
-| `safeHref(path)` | Los enlaces que vienen del servicio solo se aceptan si son rutas del sitio o `http(s)`. Bloquea `javascript:` y similares |
+| `readTableCell(block, 'endpoint')` | `readBlockConfig` de AEM convierte los enlaces en URLs absolutas **de la página**. Una ruta relativa `/api/v1/...` terminaría apuntando al sitio y no a la API. Esta función lee la celda **tal como la escribió el autor** (texto o `href`) |
+| `readRowTextOrDefault(block, fila, textoPorDefecto)` | Fila que no existe → el texto por defecto; fila vacía → `''` (esa parte no se pinta) |
+| `getAlertOptions(config)` | Convierte las filas `Alert Duration` (segundos) y `Alert Color` en `{ duration, variant }` para `showToast`. Por defecto 5 s y `error` |
+| `getSafeHref(path)` | Los enlaces que vienen del servicio solo se aceptan si son rutas del sitio o `http(s)`. Bloquea `javascript:` y similares |
+| `formatPrice(value, currency)` | Devuelve el precio ya formateado (`$19,999`, sin decimales) con `LOCALE` y `CURRENCY` de `scripts/messages.js`; si la moneda no es válida usa `CURRENCY`. Hoy lo usa `card-featured`; cualquier bloque con precios debe usarlo |
+| `buildBlockHeader(block, prefijo, opciones)` | Arma el título de la sección desde la fila `Title` (y el botón `Link` con `withLink`); sin texto no pinta nada |
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
@@ -264,63 +267,63 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES from '../../scripts/messages.js';            // mensajes genéricos
-import { readRawCell, readRowText, alertOptions, … } from '../../scripts/block-utils.js';
+import { readTableCell, readRowTextOrDefault, getAlertOptions, … } from '../../scripts/block-utils.js';
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
 const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
 
-function readSettings(block) {       // todo lo que viene de la tabla, con sus defaults
-  const text = (key) => readRawCell(block, key).text;
+function readCategoriesSettings(block) {       // todo lo que viene de la tabla, con sus defaults
+  const readCellText = (key) => readTableCell(block, key).text;
   return {
     endpoint: …,                                       // fila Endpoint, tal cual
-    alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
+    alert: getAlertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
     messages: {
-      errorResponseMessage: text('error response message')   // fila de la tabla…
+      errorResponseMessage: readCellText('error response message')   // fila de la tabla…
         || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
-      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
+      emptyListTitle: readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle),
       …
     },
   };
 }
 
-async function loadFromService(block, header, settings) {
+async function loadCategoriesFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
     const categories = response?.data?.categories;
     if (!Array.isArray(categories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    render(block, header, normalize(categories), settings);   // lista vacía → mensaje vacío
+    renderCategories(block, header, normalizeCategories(categories), settings);   // lista vacía → mensaje vacío
   } catch (error) {
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
     showToast(settings.messages.errorResponseMessage, settings.alert);  // alerta flotante
-    render(block, header, [], settings);                      // mensaje vacío
+    renderCategories(block, header, [], settings);                      // mensaje vacío
   }
 }
 
 export default function decorate(block) {
   applyBlockOptions(block);
-  const settings = readSettings(block);
+  const settings = readCategoriesSettings(block);
   // Title sin valor por defecto: si no viene en la tabla no hay título
   const header = buildBlockHeader(block, 'card-categories', { asDiv: true }); // featured: withLink
 
   if (!settings.endpoint) {                                    // sin endpoint → JSON interno
-    render(block, header, normalize(FALLBACK_CATEGORIES), settings);
+    renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);
     return;
   }
   // esqueleto mientras carga; la petición NO bloquea el resto de la página
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, settings);                    // sin await, a propósito
+  block.replaceChildren(...[header, buildCategoriesSkeleton()].filter(Boolean));
+  loadCategoriesFromService(block, header, settings);                    // sin await, a propósito
 }
 ```
 
 Detalles importantes:
-- **`loadFromService` sin `await`**: el bloque termina de "decorarse" enseguida y AEM sigue
+- **`loadCategoriesFromService` sin `await`**: el bloque termina de "decorarse" enseguida y AEM sigue
   cargando las demás secciones; los datos llegan después y reemplazan el esqueleto.
 - **Esqueleto**: tarjetas grises del mismo tamaño que las reales, para que la página no brinque (CLS).
-- **`normalize()`**: filtra `active: false`, exige los campos mínimos, quita duplicados por `id`,
-  ordena por `order` y valida colores (`#hex`) y enlaces (`safeHref`).
+- **`normalizeCategories()`** (en los otros bloques `normalizeProducts()` / `normalizePromotions()`): filtra `active: false`, exige los campos mínimos, quita duplicados por `id`,
+  ordena por `order` y valida colores (`#hex`) y enlaces (`getSafeHref`).
 - **Pintado seguro**: todo con `createElement` + `textContent`, **nunca `innerHTML`** con datos del servicio.
 
 | Bloque | Campo que lee de la respuesta | Enlace de cada tarjeta |
@@ -382,7 +385,7 @@ técnico queda en la consola del navegador (`[card-categories] Could not load �
 ```js
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
-import { readRawCell, alertOptions } from '../../scripts/block-utils.js';
+import { readTableCell, getAlertOptions } from '../../scripts/block-utils.js';
 // … mismo patrón del paso 7: endpoint del documento, fallback, esqueleto, try/catch
 ```
 

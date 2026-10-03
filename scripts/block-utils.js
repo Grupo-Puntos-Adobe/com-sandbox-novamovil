@@ -1,16 +1,23 @@
 /*
  * Helpers shared by the NovaMóvil blocks. Pure DOM/string utilities, no network calls.
  *
- * Exports and who uses them:
- *   readRawCell(block, key)            card-* → Endpoint / Product Link / Promo Link, as authored
- *   readRowText(block, key, fallback)  card-* → Empty List * / Image Error Message rows:
- *                                      missing → default, present but empty → ''
- *   alertOptions(config)               card-* → Alert Duration / Alert Color → showToast options
- *   safeHref(path)                     card-* → validates every link/image URL from service data
- *   buildBlockHeader(block, prefix)    card-* → Title row (+ Link row, card-featured) → header
+ * Exports (name → what it does → who uses it):
+ *   readTableCell(block, rowName)
+ *     a row exactly as authored → { text, href, found }      card-* (Endpoint, links)
+ *   readRowTextOrDefault(block, rowName, defaultText)
+ *     missing row → default, present but empty → ''          card-* (Empty List *, …)
+ *   getAlertOptions(config)
+ *     Alert Duration / Alert Color → showToast options       card-*
+ *   getSafeHref(path)
+ *     only same-site paths and http(s) URLs, else null       card-* (service links, images)
+ *   buildBlockHeader(block, prefix, options)
+ *     Title row (+ Link row) → div.{prefix}-header           card-*
+ *   formatPrice(value, currency)
+ *     $19,999 with LOCALE / CURRENCY of messages.js          card-featured (any price)
  *
  * Card columns are pure CSS, written in each block's stylesheet (no JS measuring).
  */
+import { LOCALE, CURRENCY } from './messages.js';
 
 const DEFAULT_ALERT_SECONDS = 5;
 const DEFAULT_ALERT_VARIANT = 'error';
@@ -19,12 +26,13 @@ const DEFAULT_ALERT_VARIANT = 'error';
  * Reads a key/value row exactly as authored (readBlockConfig resolves links against
  * the page, but relative API paths must go to the API base URL).
  * @param {Element} block
- * @param {string} key Row name, case-insensitive (e.g. 'endpoint')
+ * @param {string} rowName Row name, case-insensitive (e.g. 'endpoint')
  * @returns {{text: string, href: string, found: boolean}} found = the row exists
  */
-export function readRawCell(block, key) {
+export function readTableCell(block, rowName) {
+  const wanted = rowName.toLowerCase();
   const row = [...block.querySelectorAll(':scope > div')].find(
-    (r) => r.children[0]?.textContent.trim().toLowerCase() === key.toLowerCase(),
+    (candidate) => candidate.children[0]?.textContent.trim().toLowerCase() === wanted,
   );
   const cell = row?.children[1];
   if (!cell) {
@@ -40,17 +48,17 @@ export function readRawCell(block, key) {
 
 /**
  * Text of an optional row with three cases:
- *   row missing          → fallback (the default)
+ *   row missing          → defaultText
  *   row present, empty   → '' (the author wants that part empty)
  *   row present, value   → the value
  * @param {Element} block
- * @param {string} key Row name, case-insensitive
- * @param {string} fallback Default used only when the row does not exist
+ * @param {string} rowName Row name, case-insensitive
+ * @param {string} defaultText Used only when the row does not exist
  * @returns {string}
  */
-export function readRowText(block, key, fallback) {
-  const cell = readRawCell(block, key);
-  return cell.found ? cell.text : fallback;
+export function readRowTextOrDefault(block, rowName, defaultText) {
+  const cell = readTableCell(block, rowName);
+  return cell.found ? cell.text : defaultText;
 }
 
 /**
@@ -59,7 +67,7 @@ export function readRowText(block, key, fallback) {
  * @param {Object} config readBlockConfig result
  * @returns {{duration: number, variant: string}}
  */
-export function alertOptions(config) {
+export function getAlertOptions(config) {
   const seconds = Number.parseFloat(config['alert-duration']);
   return {
     duration:
@@ -77,7 +85,7 @@ export function alertOptions(config) {
  * @param {string} path
  * @returns {string|null}
  */
-export function safeHref(path) {
+export function getSafeHref(path) {
   if (typeof path !== 'string' || !path.trim()) {
     return null;
   }
@@ -109,9 +117,9 @@ export function safeHref(path) {
  * @returns {Element|null} the header, or null when there is no title nor link
  */
 export function buildBlockHeader(block, prefix, { asDiv = false, withLink = false } = {}) {
-  const title = readRawCell(block, 'title').text;
-  const link = withLink ? readRawCell(block, 'link') : { text: '', href: '' };
-  const href = link.text ? safeHref(link.href) : null;
+  const title = readTableCell(block, 'title').text;
+  const link = withLink ? readTableCell(block, 'link') : { text: '', href: '' };
+  const href = link.text ? getSafeHref(link.href) : null;
   if (!title && !href) {
     return null;
   }
@@ -136,4 +144,22 @@ export function buildBlockHeader(block, prefix, { asDiv = false, withLink = fals
     header.append(cta);
   }
   return header;
+}
+
+/**
+ * Formats a price in LOCALE without decimals ($19,999); an unknown currency code falls
+ * back to CURRENCY (both from scripts/messages.js). Any block that shows prices uses it.
+ * @param {number} value
+ * @param {string} currency ISO 4217 code, e.g. 'MXN'
+ * @returns {string}
+ */
+export function formatPrice(value, currency) {
+  try {
+    return new Intl.NumberFormat(LOCALE, { style: 'currency', currency, maximumFractionDigits: 0 })
+      .format(value);
+  } catch {
+    return new Intl.NumberFormat(LOCALE, {
+      style: 'currency', currency: CURRENCY, maximumFractionDigits: 0,
+    }).format(value);
+  }
 }

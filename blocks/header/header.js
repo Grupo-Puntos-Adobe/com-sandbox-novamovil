@@ -10,12 +10,12 @@
  * Flow:
  *   decorate(block)
  *     ├─ loadFragment(navPath)        blocks/fragment/fragment.js → nav document sections
- *     ├─ .nav-brand    → buildBrand(section, 'nav-brand')   (brand functions in this file)
+ *     ├─ .nav-brand    → buildBrandLink(section, 'nav-brand')   (brand functions in this file)
  *     ├─ .nav-tools    → reads authored cuenta/carrito hrefs (else TOOL_DEFAULTS), then:
- *     │                   buildSearch()  → toggleSearch()
- *     │                   buildToolLink() × 2 (user, cart + badge)
- *     │                   hamburger      → toggleMenu()
- *     └─ listeners: Escape → closeOnEscape(); section link click → toggleMenu(nav, false)
+ *     │                   buildSearchBox()  → toggleSearchBox()
+ *     │                   buildHeaderToolLink() × 2 (user, cart + badge)
+ *     │                   hamburger      → toggleMobileMenu()
+ *     └─ listeners: Escape → closeOnEscapeKey(); section link click → toggleMobileMenu(nav, false)
  *
  * No resolution logic here: header.css decides what each resolution shows with the names of
  * styles/foundations/breakpoints.css (hamburger on mobile/tablet, horizontal menu on desktop,
@@ -47,7 +47,7 @@ const BRAND_ACCENT = 'Móvil';
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-name` span
  */
-function buildBrandName(html, prefix) {
+function buildBrandWordmark(html, prefix) {
   const name = document.createElement('span');
   name.className = `${prefix}-name`;
   name.innerHTML = html || BRAND_NAME;
@@ -71,15 +71,15 @@ function buildBrandName(html, prefix) {
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
  * @returns {Element} the `${prefix}-link` anchor
  */
-function buildBrand(source, prefix) {
+function buildBrandLink(source, prefix) {
   const authoredLink = source.querySelector('a');
   const picture = source.querySelector('picture');
   const icon = source.querySelector('.icon');
-  [picture, icon].forEach((el) => el?.remove());
+  [picture, icon].forEach((element) => element?.remove());
 
   // authored wordmark: first link/paragraph that still has letters once the logo is removed
   const textSource = [authoredLink, ...source.querySelectorAll('p')]
-    .find((el) => el && /\p{L}/u.test(el.textContent));
+    .find((element) => element && /\p{L}/u.test(element.textContent));
   const authoredName = textSource ? textSource.innerHTML.trim() : '';
 
   const link = document.createElement('a');
@@ -99,7 +99,7 @@ function buildBrand(source, prefix) {
     link.append(logo);
   }
 
-  if (authoredName || !picture) link.append(buildBrandName(authoredName, prefix));
+  if (authoredName || !picture) link.append(buildBrandWordmark(authoredName, prefix));
   return link;
 }
 
@@ -111,23 +111,23 @@ const TOOL_DEFAULTS = {
 
 /**
  * Escape closes the open search first, then the mobile menu (focus returns to the hamburger).
- * @param {KeyboardEvent} e
+ * @param {KeyboardEvent} event
  */
-function closeOnEscape(e) {
-  if (e.code !== 'Escape') return;
+function closeOnEscapeKey(event) {
+  if (event.code !== 'Escape') return;
   const nav = document.getElementById('nav');
   if (!nav) return;
   // close the search field if open
   const search = nav.querySelector('.nav-search.is-open');
   if (search) {
     // eslint-disable-next-line no-use-before-define
-    toggleSearch(search, false);
+    toggleSearchBox(search, false);
     return;
   }
   // close the mobile menu if open (on desktop the CSS ignores this state)
   if (nav.getAttribute('aria-expanded') === 'true') {
     // eslint-disable-next-line no-use-before-define
-    toggleMenu(nav, false);
+    toggleMobileMenu(nav, false);
     nav.querySelector('.nav-hamburger-button').focus();
   }
 }
@@ -137,7 +137,7 @@ function closeOnEscape(e) {
  * @param {Element} nav The container element
  * @param {*} forceExpanded Optional param to force nav expand behavior when not null
  */
-function toggleMenu(nav, forceExpanded = null) {
+function toggleMobileMenu(nav, forceExpanded = null) {
   const expanded = forceExpanded !== null ? !forceExpanded : nav.getAttribute('aria-expanded') === 'true';
   const button = nav.querySelector('.nav-hamburger-button');
   nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
@@ -152,7 +152,7 @@ function toggleMenu(nav, forceExpanded = null) {
  * @param {Element} search The .nav-search wrapper
  * @param {*} forceOpen Optional param to force open/close when not null
  */
-function toggleSearch(search, forceOpen = null) {
+function toggleSearchBox(search, forceOpen = null) {
   const isOpen = forceOpen !== null ? forceOpen : !search.classList.contains('is-open');
   search.classList.toggle('is-open', isOpen);
   const toggle = search.querySelector('.nav-search-toggle');
@@ -170,7 +170,7 @@ function toggleSearch(search, forceOpen = null) {
  * Builds the search field (magnifier toggle + expanding input + clear button)
  * @returns {Element} the .nav-search wrapper
  */
-function buildSearch() {
+function buildSearchBox() {
   const search = document.createElement('div');
   search.className = 'nav-search';
   search.innerHTML = `
@@ -189,14 +189,14 @@ function buildSearch() {
   const clear = search.querySelector('.nav-search-clear');
   const form = search.querySelector('.nav-search-field');
 
-  toggle.addEventListener('click', () => toggleSearch(search));
+  toggle.addEventListener('click', () => toggleSearchBox(search));
   clear.addEventListener('click', () => {
-    toggleSearch(search, false);
+    toggleSearchBox(search, false);
     toggle.focus();
   });
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', (event) => {
     const value = form.querySelector('.nav-search-input').value.trim();
-    if (!value) e.preventDefault();
+    if (!value) event.preventDefault();
   });
   return search;
 }
@@ -210,7 +210,7 @@ function buildSearch() {
  * @param {string} [tool.badge] Counter shown on the icon (e.g. cart items)
  * @returns {Element} a.nav-tool
  */
-function buildToolLink({
+function buildHeaderToolLink({
   href, label, icon, badge,
 }) {
   const link = document.createElement('a');
@@ -255,27 +255,27 @@ export default async function decorate(block) {
 
   // brand: logo + wordmark as one link, ensure it points home
   const navBrand = nav.querySelector('.nav-brand');
-  if (navBrand) navBrand.replaceChildren(buildBrand(navBrand, 'nav-brand'));
+  if (navBrand) navBrand.replaceChildren(buildBrandLink(navBrand, 'nav-brand'));
 
   // sections: primary navigation links, with class hooks (the CSS never styles tags)
   const navSections = nav.querySelector('.nav-sections');
   if (navSections) {
     navSections.querySelectorAll('ul').forEach((ul) => ul.classList.add('nav-menu'));
-    navSections.querySelectorAll('li').forEach((li) => {
-      li.classList.add('nav-menu-item');
+    navSections.querySelectorAll('li').forEach((menuItem) => {
+      menuItem.classList.add('nav-menu-item');
       // items may be plain text while the author has not linked them yet
-      if (li.querySelector('a')) li.classList.add('has-link');
+      if (menuItem.querySelector('a')) menuItem.classList.add('has-link');
     });
-    navSections.querySelectorAll('a').forEach((a) => a.classList.add('nav-menu-link'));
+    navSections.querySelectorAll('a').forEach((link) => link.classList.add('nav-menu-link'));
   }
 
   // read author-provided tool links (cuenta/carrito) from the tools section, else defaults
   const navTools = nav.querySelector('.nav-tools');
   const toolLinks = {};
   if (navTools) {
-    navTools.querySelectorAll('a').forEach((a) => {
-      const key = a.textContent.trim().toLowerCase();
-      toolLinks[key] = a.getAttribute('href');
+    navTools.querySelectorAll('a').forEach((link) => {
+      const key = link.textContent.trim().toLowerCase();
+      toolLinks[key] = link.getAttribute('href');
     });
     navTools.innerHTML = '';
   }
@@ -283,13 +283,13 @@ export default async function decorate(block) {
   tools.className = 'nav-tools';
 
   // build the interactive tools: search, user, cart
-  tools.append(buildSearch());
-  tools.append(buildToolLink({
+  tools.append(buildSearchBox());
+  tools.append(buildHeaderToolLink({
     href: toolLinks.cuenta || TOOL_DEFAULTS.cuenta,
     label: 'Mi cuenta',
     icon: 'user',
   }));
-  tools.append(buildToolLink({
+  tools.append(buildHeaderToolLink({
     href: toolLinks.carrito || TOOL_DEFAULTS.carrito,
     label: 'Carrito',
     icon: 'cart',
@@ -303,17 +303,17 @@ export default async function decorate(block) {
   hamburger.innerHTML = `<button class="nav-hamburger-button" type="button" aria-controls="nav" aria-label="Abrir menú" aria-expanded="false">
       <span class="nav-hamburger-icon"></span>
     </button>`;
-  hamburger.addEventListener('click', () => toggleMenu(nav));
+  hamburger.addEventListener('click', () => toggleMobileMenu(nav));
   tools.append(hamburger);
   nav.setAttribute('aria-expanded', 'false');
 
-  window.addEventListener('keydown', closeOnEscape);
+  window.addEventListener('keydown', closeOnEscapeKey);
 
   // close the mobile menu when a section link is followed
   if (navSections) {
-    navSections.querySelectorAll('a').forEach((a) => {
-      a.addEventListener('click', () => {
-        toggleMenu(nav, false);
+    navSections.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        toggleMobileMenu(nav, false);
       });
     });
   }

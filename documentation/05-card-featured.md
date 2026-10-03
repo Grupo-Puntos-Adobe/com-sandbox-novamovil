@@ -55,7 +55,7 @@ foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es *
 
 Los mensajes genéricos están en `scripts/messages.js` (junto con `LOCALE` y `CURRENCY`, el idioma
 y la moneda de los precios); la regla de "fila que no existe ≠ fila vacía" la aplica
-`readRowText(block, fila, porDefecto)` de `scripts/block-utils.js`.
+`readRowTextOrDefault(block, fila, porDefecto)` de `scripts/block-utils.js`.
 
 Los textos que solo oyen los lectores de pantalla ("Precio", "Precio anterior", "Calificación 4.6 de
 5, 2,341 reseñas") no van en la tabla: están en `LABELS` de `card-featured.js`.

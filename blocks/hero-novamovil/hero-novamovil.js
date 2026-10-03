@@ -18,11 +18,11 @@
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)   scripts/block-options.js → Styles / Classname rows
- *     ├─ readRows(block)            { 'tag': [cells], 'button 1': [cells], … }
- *     ├─ buildText()                tag, description · buildTitle() (role=heading, level 1)
- *     ├─ buildButtons()             numbered "Button N" rows → a.hero-button
- *     ├─ buildStats()               numbered "Stat N" rows → div.hero-stat (role=listitem)
- *     └─ buildMedia()               picture with loading=eager + fetchpriority=high
+ *     ├─ readHeroRows(block)            { 'tag': [cells], 'button 1': [cells], … }
+ *     ├─ buildHeroText()                tag, description · buildHeroTitle() (role=heading, level 1)
+ *     ├─ buildHeroButtons()             numbered "Button N" rows → a.hero-button
+ *     ├─ buildHeroStats()               numbered "Stat N" rows → div.hero-stat (role=listitem)
+ *     └─ buildHeroMedia()               picture with loading=eager + fetchpriority=high
  *
  * Everything is a <div> except the buttons (<a>, they are links) and the image
  * (<picture>/<img>, optimised by AEM). Classes used by hero-novamovil.css: hero-inner,
@@ -39,7 +39,7 @@ import applyBlockOptions from '../../scripts/block-options.js';
  * @param {Element} block
  * @returns {Object<string, Element[]>} row name → value cells
  */
-function readRows(block) {
+function readHeroRows(block) {
   const rows = {};
   [...block.children].forEach((row) => {
     const [keyCell, ...cells] = row.children;
@@ -55,12 +55,12 @@ function readRows(block) {
  * @param {string} name 'button' | 'stat'
  * @returns {Element[][]} value cells of each row
  */
-function numberedRows(rows, name) {
+function getNumberedRows(rows, name) {
   const pattern = new RegExp(`^${name} ?(\\d+)$`);
   return Object.keys(rows)
     .map((key) => ({ key, number: Number(key.match(pattern)?.[1]) }))
     .filter(({ number }) => Number.isFinite(number))
-    .sort((a, b) => a.number - b.number)
+    .sort((first, second) => first.number - second.number)
     .map(({ key }) => rows[key]);
 }
 
@@ -71,11 +71,11 @@ function numberedRows(rows, name) {
  * @param {string} className
  * @returns {Element|null} null when the cell is empty
  */
-function buildText(cell, className) {
+function buildHeroText(cell, className) {
   if (!cell || !cell.textContent.trim()) return null;
   const div = document.createElement('div');
   div.className = className;
-  const paragraphs = [...cell.children].filter((el) => el.tagName === 'P');
+  const paragraphs = [...cell.children].filter((element) => element.tagName === 'P');
   if (paragraphs.length > 1) {
     paragraphs.forEach((p) => {
       const line = document.createElement('div');
@@ -94,8 +94,8 @@ function buildText(cell, className) {
  * @param {Element} cell Authored Title cell
  * @returns {Element|null}
  */
-function buildTitle(cell) {
-  const title = buildText(cell, 'hero-title');
+function buildHeroTitle(cell) {
+  const title = buildHeroText(cell, 'hero-title');
   if (!title) return null;
   title.setAttribute('role', 'heading');
   title.setAttribute('aria-level', '1');
@@ -114,7 +114,7 @@ function buildTitle(cell) {
  * @param {Element[][]} buttonRows Value cells of each Button row, in order
  * @returns {Element|null} div.hero-actions
  */
-function buildButtons(buttonRows) {
+function buildHeroButtons(buttonRows) {
   const links = buttonRows.map(([cell]) => cell?.querySelector('a')).filter(Boolean);
   if (!links.length) return null;
   const actions = document.createElement('div');
@@ -135,7 +135,7 @@ function buildButtons(buttonRows) {
  * @param {Element[][]} statRows Value cells of each Stat row, in order
  * @returns {Element|null} div.hero-stats
  */
-function buildStats(statRows) {
+function buildHeroStats(statRows) {
   const items = statRows.filter(([value]) => value?.textContent.trim());
   if (!items.length) return null;
   const stats = document.createElement('div');
@@ -165,7 +165,7 @@ function buildStats(statRows) {
  * @param {Element[]} [imageCells]
  * @returns {Element|null}
  */
-function buildMedia(imageCells) {
+function buildHeroMedia(imageCells) {
   const picture = imageCells?.map((cell) => cell.querySelector('picture')).find(Boolean);
   if (!picture) return null;
   picture.classList.add('hero-picture');
@@ -189,22 +189,22 @@ function buildMedia(imageCells) {
  */
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the rows
-  const rows = readRows(block);
+  const rows = readHeroRows(block);
 
   const content = document.createElement('div');
   content.className = 'hero-content';
   content.append(...[
-    buildText(rows.tag?.[0], 'hero-tag'),
-    buildTitle(rows.title?.[0]),
-    buildText(rows.description?.[0], 'hero-description'),
-    buildButtons(numberedRows(rows, 'button')),
-    buildStats(numberedRows(rows, 'stat')),
+    buildHeroText(rows.tag?.[0], 'hero-tag'),
+    buildHeroTitle(rows.title?.[0]),
+    buildHeroText(rows.description?.[0], 'hero-description'),
+    buildHeroButtons(getNumberedRows(rows, 'button')),
+    buildHeroStats(getNumberedRows(rows, 'stat')),
   ].filter(Boolean));
 
   const inner = document.createElement('div');
   inner.className = 'hero-inner';
   inner.append(content);
-  const media = buildMedia(rows.image);
+  const media = buildHeroMedia(rows.image);
   if (media) inner.append(media);
   else block.classList.add('no-media');
 

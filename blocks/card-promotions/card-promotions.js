@@ -11,7 +11,7 @@
  * Defaults only for messages and the alert:
  *   - Title and Promo Link have no default: without text in the table there is no title,
  *     and a promotion without its own path has no link (the card is not clickable).
- *   - Empty List Title / Description / Icon (readRowText): row missing → default
+ *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
  *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * The list is named by the Title through aria-labelledby.
@@ -20,17 +20,19 @@
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
- *     ├─ readSettings(block)             endpoint, promo link, alert, messages
- *     │    └─ readRawCell / readRowText / alertOptions   scripts/block-utils.js
+ *     ├─ readPromotionsSettings(block)             endpoint, promo link, alert, messages
+ *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
  *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
- *     ├─ no endpoint → render(normalize(FALLBACK_PROMOTIONS))
- *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
+ *     ├─ no endpoint → renderPromotions(normalizePromotions(FALLBACK_PROMOTIONS))
+ *     └─ endpoint    → buildPromotionsSkeleton() + loadPromotionsFromService()
+ *                       (not awaited: the page keeps loading)
  *                         ├─ get(endpoint)   scripts/api/http-client.js
- *                         ├─ ok    → render(normalize(data.promotions))
- *                         └─ error → console.error + showToast(errorResponseMessage) + render([])
- *   render(block, header, promotions, settings)
- *     ├─ none → buildEmpty()
- *     └─ div.card-promotions-list[role=list] > buildCard() per promotion (columns: CSS)
+ *                         ├─ ok    → renderPromotions(normalizePromotions(data.promotions))
+ *                         └─ error → console.error + showToast(errorResponseMessage)
+ *                                    + renderPromotions([])
+ *   renderPromotions(block, header, promotions, settings)
+ *     ├─ none → buildEmptyListMessage()
+ *     └─ div.card-promotions-list[role=list] > buildPromotionCard() per promotion (columns: CSS)
  *
  * Markup is all divs except each card's link (<a>, a div when it has no link) and photo
  * (<img>). Classes used by
@@ -48,7 +50,7 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES from '../../scripts/messages.js';
 import {
-  readRawCell, readRowText, alertOptions, safeHref, buildBlockHeader,
+  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
@@ -88,10 +90,10 @@ const SKELETON_ELEMENTS = 3;
 // icon of the "no promotions" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🏷️';
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-let headingCount = 0;
+let promotionsHeadingCount = 0;
 
 // service value → trimmed string ('' if not a string)
-const text = (value) => (typeof value === 'string' ? value.trim() : '');
+const toTrimmedText = (value) => (typeof value === 'string' ? value.trim() : '');
 
 /**
  * Everything the block reads from its table, with the defaults applied.
@@ -100,22 +102,22 @@ const text = (value) => (typeof value === 'string' ? value.trim() : '');
  *   messages: {errorResponseMessage: string, emptyListTitle: string,
  *     emptyListDescription: string, emptyListIcon: string}}}
  */
-function readSettings(block) {
-  const cell = (key) => readRawCell(block, key).text;
-  const endpointCell = readRawCell(block, 'endpoint');
+function readPromotionsSettings(block) {
+  const readCellText = (key) => readTableCell(block, key).text;
+  const endpointCell = readTableCell(block, 'endpoint');
   return {
     endpoint: endpointCell.href || endpointCell.text,
-    linkTemplate: cell('promo link'),
-    alert: alertOptions(readBlockConfig(block)),
+    linkTemplate: readCellText('promo link'),
+    alert: getAlertOptions(readBlockConfig(block)),
     messages: {
-      errorResponseMessage: cell('error response message') || MESSAGES.errorResponseMessage,
-      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
-      emptyListDescription: readRowText(
+      errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
+      emptyListTitle: readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle),
+      emptyListDescription: readRowTextOrDefault(
         block,
         'empty list description',
         MESSAGES.emptyListDescription,
       ),
-      emptyListIcon: readRowText(block, 'empty list icon', EMPTY_LIST_ICON),
+      emptyListIcon: readRowTextOrDefault(block, 'empty list icon', EMPTY_LIST_ICON),
     },
   };
 }
@@ -126,12 +128,12 @@ function readSettings(block) {
  * @param {string} template Promo Link row ('' when the table has none)
  * @returns {string|null} null without template or when the placeholder could not be filled
  */
-function promoHref(item, template) {
-  const own = safeHref(item.path || item.url);
+function buildPromotionHref(item, template) {
+  const own = getSafeHref(item.path || item.url);
   if (own) return own;
   if (!template) return null;
   const filled = template.replace(/\{id\}/g, encodeURIComponent(String(item.id ?? '').toLowerCase()));
-  return /\{|\/$/.test(filled) ? null : safeHref(filled);
+  return /\{|\/$/.test(filled) ? null : getSafeHref(filled);
 }
 
 /**
@@ -140,17 +142,17 @@ function promoHref(item, template) {
  * @param {string} linkTemplate
  * @returns {Object[]}
  */
-function normalize(list, linkTemplate) {
+function normalizePromotions(list, linkTemplate) {
   const seen = new Set();
   return (Array.isArray(list) ? list : [])
     .filter((item) => item && item.active !== false)
     .map((item) => ({
       id: String(item.id ?? item.title ?? ''),
-      title: text(item.title),
-      sub: text(item.sub),
+      title: toTrimmedText(item.title),
+      sub: toTrimmedText(item.sub),
       color: HEX_COLOR.test(item.color) ? item.color : '',
-      image: safeHref(item.img || item.image),
-      href: promoHref(item, linkTemplate),
+      image: getSafeHref(item.img || item.image),
+      href: buildPromotionHref(item, linkTemplate),
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : Number.MAX_SAFE_INTEGER,
     }))
     .filter((item) => {
@@ -158,7 +160,7 @@ function normalize(list, linkTemplate) {
       seen.add(item.id);
       return true;
     })
-    .sort((a, b) => a.order - b.order);
+    .sort((first, second) => first.order - second.order);
 }
 
 /**
@@ -168,7 +170,7 @@ function normalize(list, linkTemplate) {
  * @param {string} [content]
  * @returns {Element}
  */
-function el(tag, className, content) {
+function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
   if (content !== undefined) node.textContent = content;
@@ -182,15 +184,15 @@ function el(tag, className, content) {
  * @returns {Element} div.card-promotions-card[role=listitem] > a.card-promotions-item
  *   (div.card-promotions-item when the promotion has no link)
  */
-function buildCard(promo) {
-  const card = el('div', 'card-promotions-card');
+function buildPromotionCard(promo) {
+  const card = createElementWithClass('div', 'card-promotions-card');
   card.setAttribute('role', 'listitem');
-  const link = el(promo.href ? 'a' : 'div', 'card-promotions-item');
+  const link = createElementWithClass(promo.href ? 'a' : 'div', 'card-promotions-item');
   if (promo.href) link.href = promo.href;
   if (promo.color) link.style.setProperty('--card-promotions-item-color', promo.color);
 
   if (promo.image) {
-    const img = el('img', 'card-promotions-image');
+    const img = createElementWithClass('img', 'card-promotions-image');
     img.src = promo.image;
     img.alt = ''; // decorative: the title and text describe the promotion
     img.loading = 'lazy';
@@ -201,9 +203,9 @@ function buildCard(promo) {
     link.append(img);
   }
 
-  const content = el('span', 'card-promotions-content');
-  content.append(el('span', 'card-promotions-title', promo.title));
-  if (promo.sub) content.append(el('span', 'card-promotions-sub', promo.sub));
+  const content = createElementWithClass('span', 'card-promotions-content');
+  content.append(createElementWithClass('span', 'card-promotions-title', promo.title));
+  if (promo.sub) content.append(createElementWithClass('span', 'card-promotions-sub', promo.sub));
   link.append(content);
 
   card.append(link);
@@ -214,10 +216,10 @@ function buildCard(promo) {
  * Grey placeholder cards shown while the service answers (avoids layout shift).
  * @returns {Element} div hidden from assistive technology
  */
-function buildSkeleton() {
-  const list = el('div', 'card-promotions-list');
+function buildPromotionsSkeleton() {
+  const list = createElementWithClass('div', 'card-promotions-list');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(el('div', 'card-promotions-skeleton'));
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(createElementWithClass('div', 'card-promotions-skeleton'));
   return list;
 }
 
@@ -227,20 +229,20 @@ function buildSkeleton() {
  *   and Empty List Icon (table or EMPTY_LIST_ICON)
  * @returns {Element} div[role=status]
  */
-function buildEmpty(messages) {
-  const empty = el('div', 'card-promotions-empty');
+function buildEmptyListMessage(messages) {
+  const empty = createElementWithClass('div', 'card-promotions-empty');
   empty.setAttribute('role', 'status');
   // each part only when it has text (an authored empty row leaves it out)
   if (messages.emptyListIcon) {
-    const icon = el('div', 'card-promotions-empty-icon', messages.emptyListIcon);
+    const icon = createElementWithClass('div', 'card-promotions-empty-icon', messages.emptyListIcon);
     icon.setAttribute('aria-hidden', 'true');
     empty.append(icon);
   }
   if (messages.emptyListTitle) {
-    empty.append(el('div', 'card-promotions-empty-title', messages.emptyListTitle));
+    empty.append(createElementWithClass('div', 'card-promotions-empty-title', messages.emptyListTitle));
   }
   if (messages.emptyListDescription) {
-    empty.append(el('div', 'card-promotions-empty-text', messages.emptyListDescription));
+    empty.append(createElementWithClass('div', 'card-promotions-empty-text', messages.emptyListDescription));
   }
   return empty;
 }
@@ -250,25 +252,25 @@ function buildEmpty(messages) {
  * @param {Element} block
  * @param {Element|null} header Optional title (Title row)
  * @param {Object[]} promotions Normalised promotions
- * @param {Object} settings readSettings() result
+ * @param {Object} settings readPromotionsSettings() result
  */
-function render(block, header, promotions, settings) {
+function renderPromotions(block, header, promotions, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!promotions.length) {
-    block.replaceChildren(...content, buildEmpty(settings.messages));
+    block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
     return;
   }
-  const list = el('div', 'card-promotions-list');
+  const list = createElementWithClass('div', 'card-promotions-list');
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Promociones, lista, 3 elementos")
   const heading = header?.querySelector('.card-promotions-heading');
   if (heading) {
-    headingCount += 1;
-    heading.id = heading.id || `card-promotions-heading-${headingCount}`;
+    promotionsHeadingCount += 1;
+    heading.id = heading.id || `card-promotions-heading-${promotionsHeadingCount}`;
     list.setAttribute('aria-labelledby', heading.id);
   }
-  list.append(...promotions.map(buildCard));
+  list.append(...promotions.map(buildPromotionCard));
   block.replaceChildren(...content, list);
 }
 
@@ -277,21 +279,22 @@ function render(block, header, promotions, settings) {
  * the empty message.
  * @param {Element} block
  * @param {Element|null} header
- * @param {Object} settings readSettings() result
+ * @param {Object} settings readPromotionsSettings() result
  */
-async function loadFromService(block, header, settings) {
+async function loadPromotionsFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
     const promotions = response?.data?.promotions;
     if (!Array.isArray(promotions)) {
       throw new Error('Unexpected response: data.promotions is not a list');
     }
-    render(block, header, normalize(promotions, settings.linkTemplate), settings);
+    const validPromotions = normalizePromotions(promotions, settings.linkTemplate);
+    renderPromotions(block, header, validPromotions, settings);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[card-promotions] Could not load promotions from', settings.endpoint, error);
     showToast(settings.messages.errorResponseMessage, settings.alert);
-    render(block, header, [], settings);
+    renderPromotions(block, header, [], settings);
   }
 }
 
@@ -302,16 +305,17 @@ async function loadFromService(block, header, settings) {
  */
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
-  const settings = readSettings(block);
+  const settings = readPromotionsSettings(block);
   const header = buildBlockHeader(block, 'card-promotions', { asDiv: true });
 
   if (!settings.endpoint) {
-    render(block, header, normalize(FALLBACK_PROMOTIONS, settings.linkTemplate), settings);
+    const validPromotions = normalizePromotions(FALLBACK_PROMOTIONS, settings.linkTemplate);
+    renderPromotions(block, header, validPromotions, settings);
     return;
   }
 
   // skeleton keeps the layout stable; the request does not block the following sections
   block.setAttribute('aria-busy', 'true');
-  block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, settings);
+  block.replaceChildren(...[header, buildPromotionsSkeleton()].filter(Boolean));
+  loadPromotionsFromService(block, header, settings);
 }

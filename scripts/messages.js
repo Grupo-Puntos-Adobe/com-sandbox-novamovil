@@ -3,7 +3,7 @@
  *
  * Only messages have defaults here: the floating alert, what a service answer leaves on
  * screen and the photo that fails. A block uses them only when its table in Drive does
- * not have the row (an empty row means "no text", see readRowText in block-utils.js;
+ * not have the row (an empty row means "no text", see readRowTextOrDefault in block-utils.js;
  * Error Response Message uses the default also when empty):
  *   | Error Response Message | …  → errorResponseMessage
  *   | Empty List Title       | …  → emptyListTitle
