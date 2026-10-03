@@ -15,7 +15,7 @@
  *   formatPrice(value, currency)
  *     $19,999 with LOCALE / CURRENCY of messages.js          card-featured (any price)
  *
- * Card columns are pure CSS, written in each block's stylesheet (no JS measuring).
+ * Card columns come from the grid (styles/foundations/grid.css): container > row > col.
  */
 import { LOCALE, CURRENCY } from './messages.js';
 

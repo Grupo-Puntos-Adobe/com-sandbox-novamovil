@@ -39,8 +39,9 @@
  * (col-24 col-md-8 col-lg-4: 1 per row on mobile, 3 on tablet, 6 on desktop).
  *
  * Markup is all divs except each card's link (<a>). Classes used by card-categories.css:
- * card-categories-header, -heading, -list, -card, -item, -icon, -label, -skeleton,
- * -empty, -empty-icon, -empty-title, -empty-text.
+ * card-categories-header, -heading, -item, -icon, -label, -skeleton, -empty, -empty-icon,
+ * -empty-title, -empty-text. card-categories-grid, -list and -card only name the grid levels
+ * (container, row, col).
  *
  * Expected response: { data: { categories: [{ id, label, icon, path, color, active, order }] } }
  * Guides: documentation/02-integracion-endpoints.md, documentation/04-card-categories.md

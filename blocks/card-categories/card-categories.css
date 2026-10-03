@@ -16,7 +16,7 @@
  *     --card-categories-item-color that each category brings from the service). Fonts
  *     come from styles.css (body, and [role='heading'] for the title).
  *
- * Sections: 1 header · 2 card cell · 3 card · 4 loading skeleton · 5 empty state
+ * Sections: 1 header · 2 card · 3 loading skeleton · 4 empty state
  */
 
 .card-categories {
@@ -47,15 +47,8 @@
   }
 
   /* ========================================================================
-     2. Card cell: the grid column; its card (or skeleton) fills it
-     ======================================================================== */
-
-  & .card-categories-card {
-    display: flex;
-  }
-
-  /* ========================================================================
-     3. Card: white surface, icon + label centred; hover in the category colour
+     2. Card: white surface, icon + label centred; hover in the category colour.
+        It sits in its grid column (div.card-categories-card) and fills its width
      ======================================================================== */
 
   & .card-categories-item {
@@ -63,7 +56,6 @@
 
     box-sizing: border-box;
     display: flex;
-    flex: 1 1 auto;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -121,11 +113,10 @@
   }
 
   /* ========================================================================
-     4. Loading skeleton: same size as the cards, gentle shine
+     3. Loading skeleton: same size as the cards, gentle shine
      ======================================================================== */
 
   & .card-categories-skeleton {
-    flex: 1 1 auto;
     block-size: 105px;
     border-radius: 14px;
     background: linear-gradient(
@@ -147,7 +138,7 @@
   }
 
   /* ========================================================================
-     5. Empty state (empty list or service error)
+     4. Empty state (empty list or service error)
      ======================================================================== */
 
   & .card-categories-empty {

@@ -53,10 +53,11 @@
  * column (col-24 col-md-12 col-lg-6: 1 per row on mobile, 2 on tablet, 4 on desktop).
  *
  * Markup is all divs except the product image (<img>) and the links (<a>). Classes used by
- * card-featured.css: card-featured-header, -heading, -link, -list, -cell, -item, -media, -image,
+ * card-featured.css: card-featured-header, -heading, -link, -item, -media, -image,
  * -media-fallback, -badge, -promo, -body, -brand, -name, -name-link, -rating, -stars,
- * -reviews, -prices, -price, -old-price, -button, -sr-only, -skeleton, -empty,
- * -empty-icon, -empty-title, -empty-text.
+ * -reviews, -prices, -prices-row, -price, -old-price, -button, -sr-only, -skeleton, -empty,
+ * -empty-icon, -empty-title, -empty-text. card-featured-grid, -list, -cell, -header-grid,
+ * -header-row, -header-title and -header-action only name the grid levels (container, row, col).
  *
  * Expected response: { data: { products: [{ id, sku, brand, name, description, image, price,
  *   oldPrice, promo, currency, rating, reviews, badge, active, path? }] } }
