@@ -5,9 +5,11 @@
  * "Card Categories" table.
  *
  * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
- * Alert Color, Error Response Message, Empty Elements Title, Empty Elements Description,
- * Elements List Accessible Name.
- * Texts missing in the table come from scripts/messages.js (generic messages).
+ * Alert Color, Error Response Message, Empty List Title, Empty List Description,
+ * Empty List Icon.
+ * Texts missing in the table come from scripts/messages.js (generic messages); the icon
+ * missing in the table is EMPTY_LIST_ICON (below). The list is named by the Title
+ * through aria-labelledby.
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
@@ -66,14 +68,16 @@ const FALLBACK_CATEGORIES = [
 // grey placeholder cards painted while the service answers
 const SKELETON_ELEMENTS = 6;
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-const EMPTY_ICON = '🗂️';
+// icon of the "no categories" message, unless the table has an Empty List Icon row
+const EMPTY_LIST_ICON = '🗂️';
+let headingCount = 0;
 
 /**
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
  * @returns {{endpoint: string, alert: Object,
- *   messages: {errorResponseMessage: string, emptyElementsTitle: string,
- *     emptyElementsDescription: string, elementsListAccessibleName: string}}}
+ *   messages: {errorResponseMessage: string, emptyListTitle: string,
+ *     emptyListDescription: string, emptyListIcon: string}}}
  */
 function readSettings(block) {
   const text = (key) => readRawCell(block, key).text;
@@ -83,11 +87,9 @@ function readSettings(block) {
     alert: alertOptions(readBlockConfig(block)),
     messages: {
       errorResponseMessage: text('error response message') || MESSAGES.errorResponseMessage,
-      emptyElementsTitle: text('empty elements title') || MESSAGES.emptyElementsTitle,
-      emptyElementsDescription: text('empty elements description')
-        || MESSAGES.emptyElementsDescription,
-      elementsListAccessibleName: text('elements list accessible name') || text('title')
-        || MESSAGES.elementsListAccessibleName,
+      emptyListTitle: text('empty list title') || MESSAGES.emptyListTitle,
+      emptyListDescription: text('empty list description') || MESSAGES.emptyListDescription,
+      emptyListIcon: text('empty list icon') || EMPTY_LIST_ICON,
     },
   };
 }
@@ -162,18 +164,19 @@ function buildSkeleton() {
 
 /**
  * "No categories" message: empty list or service error.
- * @param {Object} messages Empty Elements Title / Description (table or scripts/messages.js)
+ * @param {Object} messages Empty List Title / Description (table or scripts/messages.js)
+ *   and Empty List Icon (table or EMPTY_LIST_ICON)
  * @returns {Element} div[role=status]
  */
 function buildEmpty(messages) {
   const empty = el('div', 'card-categories-empty');
   empty.setAttribute('role', 'status');
-  const icon = el('div', 'card-categories-empty-icon', EMPTY_ICON);
+  const icon = el('div', 'card-categories-empty-icon', messages.emptyListIcon);
   icon.setAttribute('aria-hidden', 'true');
   empty.append(
     icon,
-    el('div', 'card-categories-empty-title', messages.emptyElementsTitle),
-    el('div', 'card-categories-empty-text', messages.emptyElementsDescription),
+    el('div', 'card-categories-empty-title', messages.emptyListTitle),
+    el('div', 'card-categories-empty-text', messages.emptyListDescription),
   );
   return empty;
 }
@@ -194,7 +197,13 @@ function render(block, header, categories, settings) {
   }
   const list = el('div', 'card-categories-list');
   list.setAttribute('role', 'list');
-  list.setAttribute('aria-label', settings.messages.elementsListAccessibleName);
+  // screen readers name the list with the visible title ("Categorías, lista, 6 elementos")
+  const heading = header?.querySelector('.card-categories-heading');
+  if (heading) {
+    headingCount += 1;
+    heading.id = heading.id || `card-categories-heading-${headingCount}`;
+    list.setAttribute('aria-labelledby', heading.id);
+  }
   list.append(...categories.map(buildCard));
   block.replaceChildren(...content, list);
 }
