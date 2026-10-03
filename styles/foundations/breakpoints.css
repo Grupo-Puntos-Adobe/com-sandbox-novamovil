@@ -5,7 +5,7 @@
  *
  *   mobile   < 768px
  *   tablet   768px – 991px
- *   desktop  ≥ 992px          (Ant Design md / lg)
+ *   desktop  ≥ 992px
  *
  * The two numbers live ONLY in the two @media below: change them here and every
  * file that uses the names follows.
