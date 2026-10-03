@@ -274,7 +274,6 @@ function readSettings(block) {       // todo lo que viene de la tabla, con sus d
   return {
     endpoint: …,                                       // fila Endpoint, tal cual
     alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
-    title: readRowText(block, 'title', DEFAULT_TITLE),  // sin fila → default; vacía → sin título
     messages: {
       errorResponseMessage: text('error response message')   // fila de la tabla…
         || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
@@ -302,9 +301,8 @@ async function loadFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block);
   const settings = readSettings(block);
-  const header = buildBlockHeader(block, 'card-categories', {
-    asDiv: true, title: settings.title,              // card-featured añade withLink: true
-  });
+  // Title sin valor por defecto: si no viene en la tabla no hay título
+  const header = buildBlockHeader(block, 'card-categories', { asDiv: true }); // featured: withLink
 
   if (!settings.endpoint) {                                    // sin endpoint → JSON interno
     render(block, header, normalize(FALLBACK_CATEGORIES), settings);
@@ -325,11 +323,11 @@ Detalles importantes:
   ordena por `order` y valida colores (`#hex`) y enlaces (`safeHref`).
 - **Pintado seguro**: todo con `createElement` + `textContent`, **nunca `innerHTML`** con datos del servicio.
 
-| Bloque | Campo que lee de la respuesta | Enlace por defecto |
+| Bloque | Campo que lee de la respuesta | Enlace de cada tarjeta |
 |---|---|---|
 | `card-categories` | `data.categories` | `path` de cada categoría |
-| `card-featured` | `data.products` | fila `Product Link` → `/productos/{sku}` |
-| `card-promotions` | `data.promotions` | fila `Promo Link` → `/promociones/{id}` |
+| `card-featured` | `data.products` | `path` del producto o fila `Product Link` (`/productos/{sku}`); sin ninguno, sin enlace |
+| `card-promotions` | `data.promotions` | `path` de la promoción o fila `Promo Link` (`/promociones/{id}`); sin ninguno, sin enlace |
 
 ### Paso 8 · Configurarlo en el documento (`content-drive/index.docx`)
 

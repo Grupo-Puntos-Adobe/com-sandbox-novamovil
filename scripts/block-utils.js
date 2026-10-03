@@ -3,8 +3,8 @@
  *
  * Exports and who uses them:
  *   readRawCell(block, key)            card-* → Endpoint / Product Link / Promo Link, as authored
- *   readRowText(block, key, fallback)  card-* → Title / Empty List * rows: missing → default,
- *                                      present but empty → ''
+ *   readRowText(block, key, fallback)  card-* → Empty List * / Image Error Message rows:
+ *                                      missing → default, present but empty → ''
  *   alertOptions(config)               card-* → Alert Duration / Alert Color → showToast options
  *   safeHref(path)                     card-* → validates every link/image URL from service data
  *   buildBlockHeader(block, prefix)    card-* → Title row (+ Link row, card-featured) → header
@@ -103,16 +103,13 @@ export function safeHref(path) {
  * @param {Element} block
  * @param {string} prefix Block class, e.g. 'card-featured'
  * @param {Object} [options]
+ * Title and Link have no default: a missing or empty row paints nothing.
  * @param {boolean} [options.asDiv=false] Build the heading as a div instead of an h2
- * @param {string} [options.title] Title already resolved by the block (e.g. with
- *   readRowText and a default); when omitted the Title row is read as is
  * @param {boolean} [options.withLink=false] Also read the Link row (a.{prefix}-link)
  * @returns {Element|null} the header, or null when there is no title nor link
  */
-export function buildBlockHeader(block, prefix, {
-  asDiv = false, title: resolvedTitle, withLink = false,
-} = {}) {
-  const title = resolvedTitle ?? readRawCell(block, 'title').text;
+export function buildBlockHeader(block, prefix, { asDiv = false, withLink = false } = {}) {
+  const title = readRawCell(block, 'title').text;
   const link = withLink ? readRawCell(block, 'link') : { text: '', href: '' };
   const href = link.text ? safeHref(link.href) : null;
   if (!title && !href) {

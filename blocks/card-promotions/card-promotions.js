@@ -8,18 +8,19 @@
  * Authored rows (all optional): Styles, Classname, Title, Endpoint,
  * Promo Link ("/promociones/{id}"), Alert Duration, Alert Color, Error Response Message,
  * Empty List Title, Empty List Description, Empty List Icon.
- * Title, Empty List Title, Empty List Description and Empty List Icon follow one rule
- * (readRowText): row missing → default; row present but empty → that part is left empty
- * (not painted); row with a value → the value. Defaults: DEFAULT_TITLE and
- * EMPTY_LIST_ICON (below) and the generic texts of scripts/messages.js.
- * The other rows use their default when they are missing or empty.
+ * Defaults only for messages and the alert:
+ *   - Title and Promo Link have no default: without text in the table there is no title,
+ *     and a promotion without its own path has no link (the card is not clickable).
+ *   - Empty List Title / Description / Icon (readRowText): row missing → default
+ *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
+ *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * The list is named by the Title through aria-labelledby.
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
- *     ├─ readSettings(block)             endpoint, promo link, alert, title, messages
+ *     ├─ readSettings(block)             endpoint, promo link, alert, messages
  *     │    └─ readRawCell / readRowText / alertOptions   scripts/block-utils.js
  *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → render(normalize(FALLBACK_PROMOTIONS))
@@ -31,7 +32,8 @@
  *     ├─ none → buildEmpty()
  *     └─ div.card-promotions-list[role=list] > buildCard() per promotion (columns: CSS)
  *
- * Markup is all divs except each card's link (<a>) and photo (<img>). Classes used by
+ * Markup is all divs except each card's link (<a>, a div when it has no link) and photo
+ * (<img>). Classes used by
  * card-promotions.css: card-promotions-header, -heading, -list, -card, -item, -image,
  * -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title, -empty-text.
  *
@@ -82,11 +84,8 @@ const FALLBACK_PROMOTIONS = [
 
 // grey placeholder cards painted while the service answers
 const SKELETON_ELEMENTS = 3;
-// section title, unless the table has a Title row
-const DEFAULT_TITLE = 'Promociones';
 // icon of the "no promotions" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🏷️';
-const DEFAULT_PROMO_LINK = '/promociones/{id}';
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 let headingCount = 0;
 
@@ -96,7 +95,7 @@ const text = (value) => (typeof value === 'string' ? value.trim() : '');
 /**
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
- * @returns {{endpoint: string, linkTemplate: string, alert: Object, title: string,
+ * @returns {{endpoint: string, linkTemplate: string, alert: Object,
  *   messages: {errorResponseMessage: string, emptyListTitle: string,
  *     emptyListDescription: string, emptyListIcon: string}}}
  */
@@ -105,9 +104,8 @@ function readSettings(block) {
   const endpointCell = readRawCell(block, 'endpoint');
   return {
     endpoint: endpointCell.href || endpointCell.text,
-    linkTemplate: cell('promo link') || DEFAULT_PROMO_LINK,
+    linkTemplate: cell('promo link'),
     alert: alertOptions(readBlockConfig(block)),
-    title: readRowText(block, 'title', DEFAULT_TITLE),
     messages: {
       errorResponseMessage: cell('error response message') || MESSAGES.errorResponseMessage,
       emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
@@ -124,18 +122,19 @@ function readSettings(block) {
 /**
  * The promotion's own path/url, or the authored template (placeholder: {id}).
  * @param {Object} item Raw promotion
- * @param {string} template Promo Link row or DEFAULT_PROMO_LINK
- * @returns {string|null} null when the placeholder could not be filled
+ * @param {string} template Promo Link row ('' when the table has none)
+ * @returns {string|null} null without template or when the placeholder could not be filled
  */
 function promoHref(item, template) {
   const own = safeHref(item.path || item.url);
   if (own) return own;
+  if (!template) return null;
   const filled = template.replace(/\{id\}/g, encodeURIComponent(String(item.id ?? '').toLowerCase()));
   return /\{|\/$/.test(filled) ? null : safeHref(filled);
 }
 
 /**
- * Active promotions with a title and a valid link, without duplicates, by `order`.
+ * Active promotions with a title, without duplicates, by `order` (href null = no link).
  * @param {Object[]} list Raw promotions (service or fallback)
  * @param {string} linkTemplate
  * @returns {Object[]}
@@ -154,7 +153,7 @@ function normalize(list, linkTemplate) {
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : Number.MAX_SAFE_INTEGER,
     }))
     .filter((item) => {
-      if (!item.title || !item.href || seen.has(item.id)) return false;
+      if (!item.title || seen.has(item.id)) return false;
       seen.add(item.id);
       return true;
     })
@@ -180,12 +179,13 @@ function el(tag, className, content) {
  * Service data is only ever set as text or validated URLs.
  * @param {Object} promo Normalised promotion
  * @returns {Element} div.card-promotions-card[role=listitem] > a.card-promotions-item
+ *   (div.card-promotions-item when the promotion has no link)
  */
 function buildCard(promo) {
   const card = el('div', 'card-promotions-card');
   card.setAttribute('role', 'listitem');
-  const link = el('a', 'card-promotions-item');
-  link.href = promo.href;
+  const link = el(promo.href ? 'a' : 'div', 'card-promotions-item');
+  if (promo.href) link.href = promo.href;
   if (promo.color) link.style.setProperty('--card-promotions-item-color', promo.color);
 
   if (promo.image) {
@@ -302,9 +302,7 @@ async function loadFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readSettings(block);
-  const header = buildBlockHeader(block, 'card-promotions', {
-    asDiv: true, title: settings.title,
-  });
+  const header = buildBlockHeader(block, 'card-promotions', { asDiv: true });
 
   if (!settings.endpoint) {
     render(block, header, normalize(FALLBACK_PROMOTIONS, settings.linkTemplate), settings);

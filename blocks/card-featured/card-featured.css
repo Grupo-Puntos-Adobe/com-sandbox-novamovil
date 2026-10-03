@@ -99,7 +99,8 @@
   }
 
   /* ========================================================================
-     3. Card: image area + body; the whole card is clickable, hover only lifts it
+     3. Card: image area + body; with a link (button or name) the whole card opens
+        the product and hover lifts it; without a link it stays still
      ======================================================================== */
 
   & .card-featured-item {
@@ -110,13 +111,12 @@
     border: 1px solid var(--card-featured-border);
     border-radius: 14px;
     background: var(--card-featured-surface);
-    cursor: pointer;
 
     /* identity translate so hover does not create a new stacking context */
     translate: 0 0;
     transition: translate 0.2s ease;
 
-    &:hover,
+    &:has(:any-link):hover,
     &:focus-within {
       translate: 0 -4px;
     }
@@ -124,7 +124,7 @@
     @media (prefers-reduced-motion: reduce) {
       transition: none;
 
-      &:hover,
+      &:has(:any-link):hover,
       &:focus-within {
         translate: 0 0;
       }
@@ -225,6 +225,28 @@
     line-height: 1.35;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+  }
+
+  /* name as the product link when the table has no Button Text (stretched over the card) */
+  & .card-featured-name-link {
+    color: inherit;
+    text-decoration: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-featured-button-text);
+      outline-offset: 2px;
+    }
   }
 
   & .card-featured-rating {

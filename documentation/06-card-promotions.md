@@ -19,32 +19,38 @@ Tarjetas de promociones (foto + degradado del color de la promoción) que llegan
 | Empty List Description | Vuelve pronto para descubrir nuestras nuevas ofertas. |
 | Empty List Icon | 🏷️ |
 
-## De dónde sale cada texto
+## Qué lleva valor por defecto y qué no
 
-**Fila que no existe ≠ fila vacía** en `Title`, `Empty List Title`, `Empty List Description` y `Empty List Icon`:
+Solo los **mensajes** (lo que dice la página cuando el servicio falla, no trae datos o falla una
+foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es **contenido**
+(título, botones, enlaces) sale solo de la tabla: si no viene, no se pinta.
 
-| La fila… | Resultado |
+**1 · Contenido, sin valor por defecto** (fila que no existe o vacía → no se pinta):
+
+| Fila | Para qué |
 |---|---|
-| no existe en la tabla | se usa el valor por defecto (columna de abajo) |
-| existe pero está vacía | esa parte se deja vacía y no se pinta |
-| tiene texto | se usa ese texto |
+| `Title` | Título de la sección (sin título la lista no lleva nombre para lectores de pantalla) |
+| `Promo Link` | Enlace de cada tarjeta si la promoción no trae `path`; acepta `{id}`. Sin él (y sin `path`), la tarjeta se muestra sin enlace |
 
-| Fila | Para qué | Por defecto (fila que no existe) |
-|---|---|---|
-| `Title` | Título de la sección | `DEFAULT_TITLE = 'Promociones'` en `card-promotions.js` (vacía = sin título) |
-| `Empty List Title` / `Empty List Description` | Aviso cuando no hay promociones que mostrar | `scripts/messages.js` → `emptyListTitle` / `emptyListDescription` |
-| `Empty List Icon` | Icono de ese aviso (emoji o texto corto) | `EMPTY_LIST_ICON = '🏷️'` en `card-promotions.js` |
-
-Resto de filas (no existe **o** está vacía → por defecto):
+**2 · Mensajes, con valor por defecto** (fila que no existe → por defecto; fila vacía → no se pinta):
 
 | Fila | Para qué | Por defecto |
 |---|---|---|
-| `Endpoint` | URL del servicio | Se usan las 3 promociones del JSON interno |
-| `Promo Link` | Enlace de cada tarjeta si la promoción no trae `path`; acepta `{id}` | `/promociones/{id}` |
+| `Empty List Title` / `Empty List Description` | Aviso cuando no hay promociones que mostrar | `scripts/messages.js` → `emptyListTitle` / `emptyListDescription` |
+| `Empty List Icon` | Icono de ese aviso (emoji o texto corto) | `EMPTY_LIST_ICON = '🏷️'` en el JS del bloque |
+
+**3 · Configuración, con valor por defecto** (fila que no existe o vacía → por defecto):
+
+| Fila | Para qué | Por defecto |
+|---|---|---|
+| `Endpoint` | URL del servicio | Sin fila: las 3 promociones del JSON interno |
 | `Alert Duration` / `Alert Color` | Duración (segundos) y color de la alerta de error | 5 s, `error` |
 | `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
 
-La regla la aplica `readRowText(block, fila, porDefecto)` de `scripts/block-utils.js`.
+Los mensajes genéricos están en `scripts/messages.js` (junto con `LOCALE` y `CURRENCY`, el idioma
+y la moneda de los precios); la regla de "fila que no existe ≠ fila vacía" la aplica
+`readRowText(block, fila, porDefecto)` de `scripts/block-utils.js`.
+
 Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos").
 
 ## Cómo se ve
@@ -55,15 +61,15 @@ Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos"
 | tablet y desktop (≥ 768 px) | 3 | se estiran para llenar la fila, 200 px de alto |
 
 El degradado de abajo hacia arriba usa el `color` de cada promoción (del servicio); al pasar el
-mouse la tarjeta sube 4 px.
+mouse la tarjeta sube 4 px (solo si tiene enlace).
 
 ## HTML que genera (todo con `div`)
 
 - Título: `div.card-promotions-heading` con `role="heading" aria-level="2"`.
-- Lista: `div.card-promotions-list[role=list]`, con `aria-labelledby` apuntando al título (con
-  `Title` vacío no lleva nombre), con un `div.card-promotions-card[role=listitem]` por promoción;
-  dentro, el enlace `a.card-promotions-item` con la foto decorativa (`img.card-promotions-image`),
-  el título (`-title`) y el texto (`-sub`).
+- Lista: `div.card-promotions-list[role=list]`, con `aria-labelledby` apuntando al título (sin
+  `Title` no lleva nombre), con un `div.card-promotions-card[role=listitem]` por promoción;
+  dentro, el enlace `a.card-promotions-item` (un `div` si la promoción no tiene enlace) con la
+  foto decorativa (`img.card-promotions-image`), el título (`-title`) y el texto (`-sub`).
 - Carga: `div.card-promotions-skeleton` × `SKELETON_ELEMENTS` (3, constante en
   `card-promotions.js`). Vacío o error: `div.card-promotions-empty`.
 

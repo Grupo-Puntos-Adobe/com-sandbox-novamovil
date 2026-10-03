@@ -7,10 +7,11 @@
  * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
  * Alert Color, Error Response Message, Empty List Title, Empty List Description,
  * Empty List Icon.
- * Title, Empty List Title, Empty List Description and Empty List Icon follow one rule
- * (readRowText): row missing → default; row present but empty → that part is left empty
- * (not painted); row with a value → the value. Defaults: DEFAULT_TITLE and
- * EMPTY_LIST_ICON (below) and the generic texts of scripts/messages.js.
+ * Defaults only for messages and the alert:
+ *   - Title has no default: without text in the table the section has no title.
+ *   - Empty List Title / Description / Icon (readRowText): row missing → default
+ *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
+ *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * The list is named by the Title through aria-labelledby.
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
@@ -18,7 +19,7 @@
  *   decorate(block)
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
  *     ├─ readSettings(block)             endpoint, alert, messages
- *     │    └─ readRawCell / alertOptions scripts/block-utils.js · MESSAGES scripts/messages.js
+ *     │    └─ readRawCell / readRowText / alertOptions   scripts/block-utils.js
  *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → render(normalize(FALLBACK_CATEGORIES))
  *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
@@ -70,8 +71,6 @@ const FALLBACK_CATEGORIES = [
 // grey placeholder cards painted while the service answers
 const SKELETON_ELEMENTS = 6;
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-// section title, unless the table has a Title row
-const DEFAULT_TITLE = 'Categorías';
 // icon of the "no categories" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🗂️';
 let headingCount = 0;
@@ -79,7 +78,7 @@ let headingCount = 0;
 /**
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
- * @returns {{endpoint: string, alert: Object, title: string,
+ * @returns {{endpoint: string, alert: Object,
  *   messages: {errorResponseMessage: string, emptyListTitle: string,
  *     emptyListDescription: string, emptyListIcon: string}}}
  */
@@ -89,7 +88,6 @@ function readSettings(block) {
   return {
     endpoint: endpointCell.href || endpointCell.text,
     alert: alertOptions(readBlockConfig(block)),
-    title: readRowText(block, 'title', DEFAULT_TITLE),
     messages: {
       errorResponseMessage: text('error response message') || MESSAGES.errorResponseMessage,
       emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
@@ -253,9 +251,7 @@ async function loadFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readSettings(block);
-  const header = buildBlockHeader(block, 'card-categories', {
-    asDiv: true, title: settings.title,
-  });
+  const header = buildBlockHeader(block, 'card-categories', { asDiv: true });
 
   if (!settings.endpoint) {
     render(block, header, normalize(FALLBACK_CATEGORIES), settings);

@@ -65,7 +65,7 @@
 
   /* ========================================================================
      3. Card: photo + gradient in the promotion colour (bottom → top) + texts;
-        hover only lifts it
+        hover lifts it only when it is a link
      ======================================================================== */
 
   & .card-promotions-item {
@@ -82,7 +82,6 @@
     background: var(--card-promotions-media-background);
     color: var(--card-promotions-text);
     text-decoration: none;
-    cursor: pointer;
 
     /* identity translate so hover does not create a new stacking context */
     translate: 0 0;
@@ -102,7 +101,7 @@
       );
     }
 
-    &:hover,
+    &:any-link:hover,
     &:focus-visible {
       color: var(--card-promotions-text);
       text-decoration: none;
@@ -117,7 +116,7 @@
     @media (prefers-reduced-motion: reduce) {
       transition: none;
 
-      &:hover,
+      &:any-link:hover,
       &:focus-visible {
         translate: 0 0;
       }
