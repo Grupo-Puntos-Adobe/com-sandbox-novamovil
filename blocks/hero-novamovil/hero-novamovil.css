@@ -13,7 +13,7 @@
  *   - The only variables are colours (styles/colors.css: palette + --hero-novamovil-*)
  *     and the site fonts (--body-font-family, --heading-font-family).
  *
- * Sections: 1 root & decorative circles · 2 container · 3 eyebrow · 4 title ·
+ * Sections: 1 root & decorative circles · 2 container · 3 tag · 4 title ·
  *           5 description · 6 buttons · 7 stats · 8 image
  */
 
@@ -100,18 +100,18 @@
   }
 
   /* ========================================================================
-     3. Eyebrow: pill with a cian dot
+     3. Tag: pill with a cian dot
      ======================================================================== */
 
-  & .hero-eyebrow {
+  & .hero-tag {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     margin: 0;
     padding: 6px 14px;
-    border: 1px solid var(--hero-novamovil-eyebrow-border);
+    border: 1px solid var(--hero-novamovil-tag-border);
     border-radius: 999px;
-    background: var(--hero-novamovil-eyebrow-background);
+    background: var(--hero-novamovil-tag-background);
     color: var(--color-accent);
     font-size: 13px;
     font-weight: 600;

@@ -67,8 +67,8 @@
   /* hero-novamovil (plain colours use the palette directly; only hero-specific values here) */
   --hero-novamovil-background: linear-gradient(135deg, var(--color-navy-950) 0%, var(--color-navy-800) 55%, var(--color-navy-700) 100%);
   --hero-novamovil-glow: color-mix(in srgb, var(--color-primary) 16%, transparent);
-  --hero-novamovil-eyebrow-border: color-mix(in srgb, var(--color-accent) 35%, transparent);
-  --hero-novamovil-eyebrow-background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --hero-novamovil-tag-border: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  --hero-novamovil-tag-background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   --hero-novamovil-button-glow: color-mix(in srgb, var(--color-primary) 45%, transparent);
   --hero-novamovil-button-secondary-background: color-mix(in srgb, var(--color-white) 10%, transparent);
   --hero-novamovil-button-secondary-hover: color-mix(in srgb, var(--color-white) 16%, transparent);

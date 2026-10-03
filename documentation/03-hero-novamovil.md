@@ -2,7 +2,7 @@
 
 El hero se escribe como una tabla con **una fila por elemento**. Todas las filas son
 opcionales y pueden ir en cualquier orden: en la página siempre se muestran en el orden
-del diseño (etiqueta, título, descripción, botones, estadísticas e imagen).
+del diseño (tag, título, descripción, botones, estadísticas e imagen).
 
 ## La tabla
 
@@ -10,7 +10,7 @@ del diseño (etiqueta, título, descripción, botones, estadísticas e imagen).
 |---|---|---|
 | Styles | *(opcional, ver 01-styles-classname.md)* | |
 | Classname | *(opcional)* | |
-| Eyebrow | Lanzamiento exclusivo 2026 | |
+| Tag | Lanzamiento exclusivo 2026 | |
 | Title | El futuro de la *conectividad* está aquí | |
 | Description | Los mejores smartphones del mercado con planes ilimitados… | |
 | Button 1 | [Ver celulares](/celulares) | |
@@ -24,7 +24,7 @@ del diseño (etiqueta, título, descripción, botones, estadísticas e imagen).
 
 | Fila | Qué poner | Cómo se ve |
 |---|---|---|
-| `Eyebrow` | Texto corto | Píldora con punto cian arriba del título |
+| `Tag` | Texto corto | Píldora con punto cian arriba del título |
 | `Title` | Texto normal; la palabra en *cursiva* se destaca | Título grande; la cursiva sale con el degradado de marca |
 | `Description` | Uno o varios párrafos | Texto gris debajo del título |
 | `Button 1`, `Button 2`, `Button 3`… | Un enlace (texto + URL) | `Button 1` es el principal (degradado); los demás, secundarios (translúcidos). Se ordenan por número |
@@ -33,7 +33,8 @@ del diseño (etiqueta, título, descripción, botones, estadísticas e imagen).
 
 - No hace falta usar estilos de título de Docs (Título 1, 2…) ni negritas o cursivas en los botones.
 - Si una fila no existe o está vacía, ese elemento no aparece. Sin `Image`, el bloque recibe la clase `no-media`.
-- La tabla tiene 3 columnas por las estadísticas; en las demás filas la 3.ª celda queda vacía.
+- La tabla tiene 3 columnas por las estadísticas; en las demás filas el valor ocupa las 2 últimas
+  columnas (celdas combinadas). La tabla mide el ancho de la página (6.5"), así que no se sale.
 
 ## HTML que genera (todo con `div`)
 

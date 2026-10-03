@@ -1,12 +1,12 @@
 /*
- * Hero Novamovil block: eyebrow, title, description, buttons, stats + image.
+ * Hero Novamovil block: tag, title, description, buttons, stats + image.
  *
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
  * "Hero Novamovil" table. It is the first section, so it is loaded eagerly (LCP).
  *
  * Authoring: one row per element, every row optional and in any order:
  *   | Styles / Classname | …                          (scripts/block-options.js)
- *   | Eyebrow            | Lanzamiento exclusivo 2026 |
+ *   | Tag                | Lanzamiento exclusivo 2026 |
  *   | Title              | El futuro de la *conectividad* está aquí |   (italic = highlight)
  *   | Description        | Los mejores smartphones…   |
  *   | Button 1           | [Ver celulares](/celulares) |   (Button 1 = primary)
@@ -18,15 +18,15 @@
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)   scripts/block-options.js → Styles / Classname rows
- *     ├─ readRows(block)            { 'eyebrow': [cells], 'button 1': [cells], … }
- *     ├─ buildText()                eyebrow, description · buildTitle() (role=heading, level 1)
+ *     ├─ readRows(block)            { 'tag': [cells], 'button 1': [cells], … }
+ *     ├─ buildText()                tag, description · buildTitle() (role=heading, level 1)
  *     ├─ buildButtons()             numbered "Button N" rows → a.hero-button
  *     ├─ buildStats()               numbered "Stat N" rows → div.hero-stat (role=listitem)
  *     └─ buildMedia()               picture with loading=eager + fetchpriority=high
  *
  * Everything is a <div> except the buttons (<a>, they are links) and the image
  * (<picture>/<img>, optimised by AEM). Classes used by hero-novamovil.css: hero-inner,
- * hero-content, hero-eyebrow, hero-title, hero-highlight, hero-description, hero-actions,
+ * hero-content, hero-tag, hero-title, hero-highlight, hero-description, hero-actions,
  * hero-button(-primary|-secondary), hero-stats, hero-stat(-value|-label), hero-media,
  * hero-picture, hero-image.
  *
@@ -194,7 +194,7 @@ export default function decorate(block) {
   const content = document.createElement('div');
   content.className = 'hero-content';
   content.append(...[
-    buildText(rows.eyebrow?.[0], 'hero-eyebrow'),
+    buildText(rows.tag?.[0], 'hero-tag'),
     buildTitle(rows.title?.[0]),
     buildText(rows.description?.[0], 'hero-description'),
     buildButtons(numberedRows(rows, 'button')),
