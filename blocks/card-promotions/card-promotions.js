@@ -41,9 +41,9 @@
  * (col-24 col-md-8: 1 per row on mobile, 3 on tablet and desktop).
  *
  * Markup is all divs except each card's link (<a>, a div when it has no link) and photo
- * (<img>). Classes used by card-promotions.css: card-promotions-header, -heading, -list,
- * -card, -item, -image, -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title,
- * -empty-text.
+ * (<img>). Classes used by card-promotions.css: card-promotions-header, -heading, -item,
+ * -image, -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title, -empty-text.
+ * card-promotions-grid, -list and -card only name the grid levels (container, row, col).
  *
  * Expected response:
  *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }

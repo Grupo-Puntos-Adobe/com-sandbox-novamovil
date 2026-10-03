@@ -16,7 +16,7 @@
  *     --card-promotions-item-color that each promotion brings from the service). Fonts
  *     come from styles.css (body, and [role='heading'] for the title).
  *
- * Sections: 1 header · 2 card cell · 3 card · 4 loading skeleton · 5 empty state
+ * Sections: 1 header · 2 card · 3 loading skeleton · 4 empty state
  */
 
 .card-promotions {
@@ -47,16 +47,9 @@
   }
 
   /* ========================================================================
-     2. Card cell: the grid column; its card (or skeleton) fills it
-     ======================================================================== */
-
-  & .card-promotions-card {
-    display: flex;
-  }
-
-  /* ========================================================================
-     3. Card: photo + gradient in the promotion colour (bottom → top) + texts;
-        hover lifts it only when it is a link
+     2. Card: photo + gradient in the promotion colour (bottom → top) + texts;
+        hover lifts it only when it is a link. It sits in its grid column
+        (div.card-promotions-card) and fills its width
      ======================================================================== */
 
   & .card-promotions-item {
@@ -64,7 +57,6 @@
 
     position: relative;
     display: flex;
-    flex: 1 1 auto;
     align-items: flex-end;
     overflow: hidden;
     isolation: isolate;
@@ -160,11 +152,10 @@
   }
 
   /* ========================================================================
-     4. Loading skeleton: same size as the cards, gentle shine
+     3. Loading skeleton: same size as the cards, gentle shine
      ======================================================================== */
 
   & .card-promotions-skeleton {
-    flex: 1 1 auto;
     block-size: 168px;
     border-radius: 14px;
     background: linear-gradient(
@@ -186,7 +177,7 @@
   }
 
   /* ========================================================================
-     5. Empty state (empty list or service error)
+     4. Empty state (empty list or service error)
      ======================================================================== */
 
   & .card-promotions-empty {
