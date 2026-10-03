@@ -19,7 +19,7 @@
  *     (the star fill is worked out here, not in JS).
  *     Fonts come from styles.css (body, and [role='heading'] for the titles).
  *
- * Sections: 1 header · 2 card cell · 3 card · 4 media · 5 body · 6 loading skeleton · 7 empty state
+ * Sections: 1 header · 2 card · 3 media · 4 body · 5 loading skeleton · 6 empty state
  */
 
 .card-featured {
@@ -78,24 +78,17 @@
   }
 
   /* ========================================================================
-     2. Card cell: the grid column; its card (or skeleton) fills it, so the cards of a
-        row are as tall as the tallest one
-     ======================================================================== */
-
-  & .card-featured-cell {
-    display: flex;
-  }
-
-  /* ========================================================================
-     3. Card: image area + body; with a link (button or name) the whole card opens
-        the product and hover lifts it; without a link it stays still
+     2. Card: image area + body; with a link (button or name) the whole card opens
+        the product and hover lifts it; without a link it stays still. It fills the
+        height of its grid column, so the cards of a row are as tall as the tallest one
      ======================================================================== */
 
   & .card-featured-item {
     position: relative;
+    box-sizing: border-box;
     display: flex;
-    flex: 1 1 auto;
     flex-direction: column;
+    block-size: 100%;
     overflow: hidden;
     border: 1px solid var(--card-featured-border);
     border-radius: 14px;
@@ -121,7 +114,7 @@
   }
 
   /* ========================================================================
-     4. Media: product image centred on a light background, badge and promo tags
+     3. Media: product image centred on a light background, badge and promo tags
      ======================================================================== */
 
   & .card-featured-media {
@@ -181,7 +174,7 @@
   }
 
   /* ========================================================================
-     5. Body: brand, name, rating, prices and the button pinned to the bottom
+     4. Body: brand, name, rating, prices and the button pinned to the bottom
      ======================================================================== */
 
   & .card-featured-body {
@@ -330,11 +323,10 @@
   }
 
   /* ========================================================================
-     6. Loading skeleton: about the height of a card, gentle shine
+     5. Loading skeleton: about the height of a card, gentle shine
      ======================================================================== */
 
   & .card-featured-skeleton {
-    flex: 1 1 auto;
     block-size: 380px;
     border-radius: 14px;
     background: linear-gradient(
@@ -356,7 +348,7 @@
   }
 
   /* ========================================================================
-     7. Empty state (empty list or service error)
+     6. Empty state (empty list or service error)
      ======================================================================== */
 
   & .card-featured-empty {
