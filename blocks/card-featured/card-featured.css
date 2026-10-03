@@ -9,9 +9,11 @@
  *   - Sizes are written directly in px where they apply (only relative units such as %
  *     or fr stay); each part keeps its resolutions right below it
  *     (styles/foundations/breakpoints.css).
- *   - Columns and the space between cards are NOT here: they come from the grid
- *     (styles/foundations/grid.css) through the classes card-featured.js puts on the list
- *     (row row-gutter-16 row-gutter-y-16) and on each cell (col-24 col-md-12 col-lg-6).
+ *   - Columns and the space between them are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-featured.js puts on each part
+ *     with columns: header (row row-middle row-gutter-16 > col + col-auto), list
+ *     (row row-gutter-16 row-gutter-y-16 > col-24 col-md-12 col-lg-6) and prices
+ *     (row row-gutter-8 > col-auto + col-auto).
  *   - The only variables are colours (styles/colors.css, --card-featured-*) plus
  *     --card-featured-rating, the rating (0-5) that each product brings from the service
  *     (the star fill is worked out here, not in JS).
@@ -25,11 +27,8 @@
      1. Header: section title (Title row) + "Ver todos" (Link row)
      ======================================================================== */
 
+  /* title and "Ver todos" are grid columns (col + col-auto), placed by card-featured.js */
   & .card-featured-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
     margin-block-end: 24px;
 
     @container style(--tablet-desktop: on) {
@@ -51,15 +50,12 @@
     }
   }
 
-  /* stays on the right also when the table has no title */
   & .card-featured-link {
-    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     block-size: 38px;
-    margin-inline-start: auto;
     padding: 0 18px;
     border: 1px solid var(--card-featured-link);
     border-radius: 10px;
@@ -268,14 +264,15 @@
     font-size: 12px;
   }
 
+  /* price and old price are grid columns (col-auto), placed by card-featured.js */
   & .card-featured-prices {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 10px;
-
     /* minimum space above the button, which is pinned to the bottom of the card */
     margin-block: 18px 12px;
+  }
+
+  /* the two prices share the text baseline (the grid aligns boxes, not text) */
+  & .card-featured-prices-row {
+    align-items: baseline;
   }
 
   & .card-featured-price {

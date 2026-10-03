@@ -195,6 +195,7 @@ quieres otra fila, lleva su propio `container-fluid`.
 | `container-fluid` | Todo el ancho, sin padding |
 | `row` | Fila: acomoda las columnas y baja a otra línea las que no caben |
 | `col` | Columna automática: las `col` de la fila se reparten el espacio en partes iguales |
+| `col-auto` | Columna del ancho de su contenido (por ejemplo un botón junto a un título en `col`) |
 | `col-1` … `col-24` | Columna de N de 24 partes (`col-12` mitad, `col-8` tercio, `col-6` cuarto) |
 | `col-0` | Oculta la columna |
 
@@ -229,6 +230,15 @@ Cada tamaño aplica desde su resolución hacia arriba, hasta que otro lo cambie.
 
 <!-- automática en mobile y tablet · 6 en desktop -->
 <div class="col col-lg-6">…</div>
+
+<!-- título que llena la fila + botón del ancho de su texto -->
+<div class="row row-middle row-gutter-16">
+  <div class="col">Título</div>
+  <div class="col-auto"><a href="…">Ver todos</a></div>
+</div>
+
+<!-- del ancho de su contenido solo desde tablet -->
+<div class="col-24 col-md-auto">…</div>
 
 <!-- se oculta desde tablet · solo aparece en desktop -->
 <div class="col-md-0">…</div>

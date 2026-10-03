@@ -26,7 +26,8 @@
  *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
  *     ├─ readFeaturedSettings(block)             endpoint, product link, alert, title, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
- *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] + "Ver todos"
+ *     ├─ buildProductsHeader(block)      buildBlockHeader() (scripts/block-utils.js) → title +
+ *     │                                  "Ver todos", placed in the grid
  *     ├─ no endpoint → renderProducts(normalizeProducts(FALLBACK_PRODUCTS))
  *     └─ endpoint    → buildProductsSkeleton() + loadProductsFromService()
  *                       (not awaited: the page keeps loading)
@@ -41,7 +42,12 @@
  *             · buildProductPrices() (formatPrice) · buildProductButton()
  *
  * Columns come from the grid (styles/foundations/grid.css), not from card-featured.css. The grid
- * is always container > row > col: div.card-featured-grid.container-fluid (no side padding: the
+ * is always container > row > col, and it is used in every part with columns:
+ *   - header: div.card-featured-header-grid.container-fluid > row (row-middle row-gutter-16) >
+ *     col (title, fills the space) + col-auto ("Ver todos", as wide as its text)
+ *   - prices: div.card-featured-prices.container-fluid > row (row-gutter-8) > col-auto (price)
+ *     + col-auto (old price)
+ *   - list: div.card-featured-grid.container-fluid (no side padding: the
  * section already has it) > the list (and the skeleton) as a row (row row-gutter-16
  * row-gutter-y-16) > each product cell a
  * column (col-24 col-md-12 col-lg-6: 1 per row on mobile, 2 on tablet, 4 on desktop).
@@ -310,21 +316,23 @@ function buildProductRating(product) {
 
 /**
  * Current price + crossed-out old price (only when higher, role=deletion), with hidden
- * labels for screen readers.
+ * labels for screen readers; each one is a grid column as wide as its text.
  * @param {Object} product Normalised product
- * @returns {Element} div.card-featured-prices
+ * @returns {Element} div.card-featured-prices.container-fluid > row > col-auto (× 1 or 2)
  */
 function buildProductPrices(product) {
-  const prices = createElementWithClass('div', 'card-featured-prices');
-  const current = createElementWithClass('div', 'card-featured-price');
+  const prices = createElementWithClass('div', 'card-featured-prices container-fluid');
+  const row = createElementWithClass('div', 'card-featured-prices-row row row-gutter-8');
+  const current = createElementWithClass('div', 'card-featured-price col-auto');
   current.append(createElementWithClass('span', 'card-featured-sr-only', `${LABELS.price}: `), formatPrice(product.price, product.currency));
-  prices.append(current);
+  row.append(current);
   if (product.oldPrice !== null) {
-    const old = createElementWithClass('div', 'card-featured-old-price');
+    const old = createElementWithClass('div', 'card-featured-old-price col-auto');
     old.setAttribute('role', 'deletion');
     old.append(createElementWithClass('span', 'card-featured-sr-only', `${LABELS.oldPrice}: `), formatPrice(product.oldPrice, product.currency));
-    prices.append(old);
+    row.append(old);
   }
+  prices.append(row);
   return prices;
 }
 
@@ -479,6 +487,36 @@ async function loadProductsFromService(block, header, settings) {
 }
 
 /**
+ * Section header from the Title and Link rows (buildBlockHeader), laid out with the grid:
+ * the title fills the row and "Ver todos" is as wide as its text; without a title the
+ * button stays on the right (row-end).
+ * @param {Element} block
+ * @returns {Element|null} div.card-featured-header > div.card-featured-header-grid.container-fluid
+ *   > row > col (title) + col-auto (link); null when there is no title nor link
+ */
+function buildProductsHeader(block) {
+  const header = buildBlockHeader(block, 'card-featured', { asDiv: true, withLink: true });
+  if (!header) return null;
+  const heading = header.querySelector('.card-featured-heading');
+  const link = header.querySelector('.card-featured-link');
+  const row = createElementWithClass('div', `card-featured-header-row row row-middle row-gutter-16${heading ? '' : ' row-end'}`);
+  if (heading) {
+    const titleColumn = createElementWithClass('div', 'card-featured-header-title col');
+    titleColumn.append(heading);
+    row.append(titleColumn);
+  }
+  if (link) {
+    const linkColumn = createElementWithClass('div', 'card-featured-header-action col-auto');
+    linkColumn.append(link);
+    row.append(linkColumn);
+  }
+  const grid = createElementWithClass('div', 'card-featured-header-grid container-fluid');
+  grid.append(row);
+  header.replaceChildren(grid);
+  return header;
+}
+
+/**
  * Card Featured: featured product cards fed by a service (Endpoint row) or the internal JSON.
  * The block name gives the main .card-featured class that scopes every style.
  * @param {Element} block The card-featured block element
@@ -486,7 +524,7 @@ async function loadProductsFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readFeaturedSettings(block);
-  const header = buildBlockHeader(block, 'card-featured', { asDiv: true, withLink: true });
+  const header = buildProductsHeader(block);
 
   if (!settings.endpoint) {
     const products = normalizeProducts(FALLBACK_PRODUCTS, settings.linkTemplate);

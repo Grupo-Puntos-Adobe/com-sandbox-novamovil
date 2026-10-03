@@ -88,8 +88,10 @@ quieta.
 
 ## HTML que genera (todo con `div`)
 
-- Título: `div.card-featured-heading` con `role="heading" aria-level="2"`; a su lado,
-  `a.card-featured-link` ("Ver todos").
+- Encabezado (grid): `div.card-featured-header > div.card-featured-header-grid.container-fluid >
+  div.row.row-middle.row-gutter-16` con el título `div.card-featured-heading` (`role="heading"
+  aria-level="2"`) en una `col` (llena la fila) y `a.card-featured-link` ("Ver todos") en una
+  `col-auto` (mide lo que su texto). Sin título, la fila lleva `row-end` y el botón queda a la derecha.
 - Grid: `div.card-featured-grid.container-fluid` > lista (`row`) > cada tarjeta (`col`). La estructura del grid
   siempre es container > row > col; va `container-fluid` (sin padding) porque la sección ya tiene
   margen lateral.
@@ -99,8 +101,9 @@ quieta.
   tarjeta `div.card-featured-item` (la celda es la columna; la tarjeta lleva borde y fondo).
 - Tarjeta: `div.card-featured-media` (`img.card-featured-image`, etiquetas `-badge` y `-promo`) y
   `div.card-featured-body` con marca (`-brand`), nombre (`-name`, `role="heading" aria-level="3"`),
-  calificación (`-rating`, `role="img"` con la etiqueta completa), precios (`-price` y
-  `-old-price` con `role="deletion"`) y el enlace `a.card-featured-button` (con `Button Text`) o
+  calificación (`-rating`, `role="img"` con la etiqueta completa), precios en el grid
+  (`div.card-featured-prices.container-fluid > div.row.row-gutter-8 >` `-price.col-auto` y
+  `-old-price.col-auto` con `role="deletion"`, alineados por la base del texto) y el enlace `a.card-featured-button` (con `Button Text`) o
   `a.card-featured-name-link` dentro del nombre (sin `Button Text`).
 - Carga: las mismas celdas del grid, cada una con un `div.card-featured-skeleton`, ×
   `SKELETON_ELEMENTS` (4, constante en `card-featured.js`). Vacío o error: `div.card-featured-empty`.

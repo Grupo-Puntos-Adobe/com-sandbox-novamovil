@@ -5,7 +5,8 @@
  *
  *   <div class="container">                      container-fluid = no side padding
  *     <div class="row row-gutter-16">            row = flex line that wraps
- *       <div class="col-24 col-md-12 col-lg-8">  col = automatic · col-N = N of 24
+ *       <div class="col-24 col-md-12 col-lg-8">  col = shares the space · col-auto = as wide
+ *                                                  as its content · col-N = N of 24
  *
  * Sizes (mobile-first: each one applies from its width up, until a bigger one changes it):
  *   sm  from 0      no prefix is the same size (col-6 = col-sm-6)
@@ -14,7 +15,7 @@
  * The pixel values live only in breakpoints.css.
  *
  * Class names: {row|col}[-{sm|md|lg}][-property][-value]
- *   col, col-0 … col-24, col-offset-0 … 23, col-order-0 … 24
+ *   col, col-auto, col-0 … col-24, col-offset-0 … 23, col-order-0 … 24
  *   row-gutter-{0,8,16,24,32,40,48}, row-gutter-y-{…}, row-start | center | end | space-between |
  *   space-around | space-evenly, row-top | middle | bottom | stretch, row-nowrap | wrap
  *
@@ -132,11 +133,19 @@
 .row-wrap { flex-wrap: wrap; }
 .row-sm-wrap { flex-wrap: wrap; }
 
-/* columns: automatic (shares the free space), hidden, 1-24 of 24 */
+/* columns: automatic (shares the free space), as wide as its content, hidden, 1-24 of 24 */
 .col,
 .col-sm {
   display: block;
   flex: 1 0 0%;
+  max-inline-size: 100%;
+}
+
+.col-auto,
+.col-sm-auto {
+  display: block;
+  flex: 0 0 auto;
+  inline-size: auto;
   max-inline-size: 100%;
 }
 
@@ -452,10 +461,17 @@
   .row-md-nowrap { flex-wrap: nowrap; }
   .row-md-wrap { flex-wrap: wrap; }
 
-  /* columns: automatic (shares the free space), hidden, 1-24 of 24 */
+  /* columns: automatic (shares the free space), as wide as its content, hidden, 1-24 of 24 */
   .col-md {
     display: block;
     flex: 1 0 0%;
+    max-inline-size: 100%;
+  }
+
+  .col-md-auto {
+    display: block;
+    flex: 0 0 auto;
+    inline-size: auto;
     max-inline-size: 100%;
   }
 
@@ -694,10 +710,17 @@
   .row-lg-nowrap { flex-wrap: nowrap; }
   .row-lg-wrap { flex-wrap: wrap; }
 
-  /* columns: automatic (shares the free space), hidden, 1-24 of 24 */
+  /* columns: automatic (shares the free space), as wide as its content, hidden, 1-24 of 24 */
   .col-lg {
     display: block;
     flex: 1 0 0%;
+    max-inline-size: 100%;
+  }
+
+  .col-lg-auto {
+    display: block;
+    flex: 0 0 auto;
+    inline-size: auto;
     max-inline-size: 100%;
   }
 
