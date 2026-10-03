@@ -1,7 +1,8 @@
 /*
  * Generic messages shared by every NovaMóvil block.
  *
- * A block uses them only when its table in Drive does not bring its own text:
+ * A block uses them only when its table in Drive does not have the row (an empty row
+ * means "no text", see readRowText in block-utils.js):
  *   | Error Response Message | …  → errorResponseMessage
  *   | Empty List Title       | …  → emptyListTitle
  *   | Empty List Description | …  → emptyListDescription

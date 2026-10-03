@@ -16,18 +16,33 @@ interno del bloque. Todas las filas son opcionales.
 | Error Response Message | No pudimos cargar las categorías. Intenta de nuevo más tarde. |
 | Empty List Title | Por ahora no hay categorías disponibles |
 | Empty List Description | Vuelve pronto para descubrir nuestras novedades. |
-| Empty List Icon | *(vacío = 🗂️)* |
+| Empty List Icon | 🗂️ |
 
 ## De dónde sale cada texto
 
-| Fila | Para qué | Si la fila no existe o está vacía |
+**Fila que no existe ≠ fila vacía** en `Title`, `Empty List Title`, `Empty List Description` y `Empty List Icon`:
+
+| La fila… | Resultado |
+|---|---|
+| no existe en la tabla | se usa el valor por defecto (columna de abajo) |
+| existe pero está vacía | esa parte se deja vacía y no se pinta |
+| tiene texto | se usa ese texto |
+
+| Fila | Para qué | Por defecto (fila que no existe) |
 |---|---|---|
-| `Title` | Título de la sección | No se muestra título |
+| `Title` | Título de la sección | `DEFAULT_TITLE = 'Categorías'` en `card-categories.js` (vacía = sin título) |
+| `Empty List Title` / `Empty List Description` | Aviso cuando no hay categorías que mostrar | `scripts/messages.js` → `emptyListTitle` / `emptyListDescription` |
+| `Empty List Icon` | Icono de ese aviso (emoji o texto corto) | `EMPTY_LIST_ICON = '🗂️'` en `card-categories.js` |
+
+Resto de filas (no existe **o** está vacía → por defecto):
+
+| Fila | Para qué | Por defecto |
+|---|---|---|
 | `Endpoint` | URL del servicio | Se usan las 6 categorías del JSON interno |
 | `Alert Duration` / `Alert Color` | Duración (segundos) y color de la alerta de error | 5 s, `error` |
 | `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
-| `Empty List Title` / `Empty List Description` | Aviso cuando no hay categorías que mostrar | `scripts/messages.js` → `emptyListTitle` / `emptyListDescription` |
-| `Empty List Icon` | Icono de ese aviso (emoji o texto corto) | `EMPTY_LIST_ICON = '🗂️'` en `card-categories.js` |
+
+La regla la aplica `readRowText(block, fila, porDefecto)` de `scripts/block-utils.js`.
 
 `scripts/messages.js` tiene los **mensajes genéricos** de todo el sitio ("No pudimos cargar la
 información…"). Lo específico de cada bloque va en su tabla.
@@ -48,7 +63,7 @@ tarjeta sube 4 px.
 - Título: `div.card-categories-heading` con `role="heading" aria-level="2"`; su fuente viene de la regla
   global `[role='heading']` de `styles/styles.css` (el bloque no define `font-family`).
 - Lista: `div.card-categories-list[role=list]`, con `aria-labelledby` apuntando al título (los lectores de
-  pantalla la anuncian como "Categorías, lista"; sin `Title` no lleva nombre), con un `div.card-categories-card[role=listitem]` por
+  pantalla la anuncian como "Categorías, lista"; con `Title` vacío no lleva nombre), con un `div.card-categories-card[role=listitem]` por
   categoría; dentro, el enlace `a.card-categories-item` (icono + nombre).
 - Carga: `div.card-categories-skeleton` × `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
 

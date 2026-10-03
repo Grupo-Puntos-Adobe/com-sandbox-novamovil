@@ -18,7 +18,7 @@ const DEFAULT_ALERT_VARIANT = 'error';
  * the page, but relative API paths must go to the API base URL).
  * @param {Element} block
  * @param {string} key Row name, case-insensitive (e.g. 'endpoint')
- * @returns {{text: string, href: string}}
+ * @returns {{text: string, href: string, found: boolean}} found = the row exists
  */
 export function readRawCell(block, key) {
   const row = [...block.querySelectorAll(':scope > div')].find(
@@ -26,13 +26,29 @@ export function readRawCell(block, key) {
   );
   const cell = row?.children[1];
   if (!cell) {
-    return { text: '', href: '' };
+    return { text: '', href: '', found: !!row };
   }
   const link = cell.querySelector('a');
   return {
     text: (link?.textContent || cell.textContent).trim(),
     href: (link?.getAttribute('href') || '').trim(),
+    found: true,
   };
+}
+
+/**
+ * Text of an optional row with three cases:
+ *   row missing          → fallback (the default)
+ *   row present, empty   → '' (the author wants that part empty)
+ *   row present, value   → the value
+ * @param {Element} block
+ * @param {string} key Row name, case-insensitive
+ * @param {string} fallback Default used only when the row does not exist
+ * @returns {string}
+ */
+export function readRowText(block, key, fallback) {
+  const cell = readRawCell(block, key);
+  return cell.found ? cell.text : fallback;
 }
 
 /**
@@ -86,10 +102,12 @@ export function safeHref(path) {
  * @param {string} prefix Block class, e.g. 'card-featured'
  * @param {Object} [options]
  * @param {boolean} [options.asDiv=false] Build the heading as a div instead of an h2
+ * @param {string} [options.title] Title already resolved by the block (e.g. with
+ *   readRowText and a default); when omitted the Title row is read as is
  * @returns {Element|null} the header, or null when there is no title nor link
  */
-export function buildBlockHeader(block, prefix, { asDiv = false } = {}) {
-  const title = readRawCell(block, 'title').text;
+export function buildBlockHeader(block, prefix, { asDiv = false, title: resolvedTitle } = {}) {
+  const title = resolvedTitle ?? readRawCell(block, 'title').text;
   const link = readRawCell(block, 'link');
   const href = link.text ? safeHref(link.href) : null;
   if (!title && !href) {
