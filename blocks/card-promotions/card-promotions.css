@@ -1,50 +1,71 @@
 /*
  * NovaMóvil promotions (block "Card Promotions").
- * Every rule lives inside .card-promotions; colours come from styles/colors.css
- * (--card-promotions-*). Each card's gradient colour comes from the service data
- * through --card-promotions-item-color. Each part keeps its responsive rules below it.
- * Breakpoint: 768px (one card per row below; up to three per row, balanced, from 768px).
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. card-promotions.js builds the block with divs
+ *     and adds the classes.
+ *   - Every rule lives inside .card-promotions, at most 2 levels deep:
+ *       .card-promotions > & .part > its state (&:hover, &::after) or its resolution.
+ *   - Sizes are written directly in px where they apply (only relative units such as %
+ *     or fr stay); each part keeps its resolutions right below it
+ *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 3 on tablet and
+ *     desktop.
+ *   - The only variables are colours (styles/colors.css, --card-promotions-*, plus
+ *     --card-promotions-item-color that each promotion brings from the service). Fonts
+ *     come from styles.css (body, and [role='heading'] for the title).
+ *
+ * Sections: 1 header · 2 list · 3 card · 4 loading skeleton · 5 empty state
  */
 
 .card-promotions {
   /* ========================================================================
-     Header: section title
+     1. Header: section title (Title row)
      ======================================================================== */
 
   & .card-promotions-header {
     margin-block-end: 24px;
 
-    @media (width >= 600px) {
+    @container style(--tablet-desktop: on) {
       margin-block-end: 32px;
     }
   }
 
   & .card-promotions-heading {
     margin: 0;
+    color: var(--heading-color);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    scroll-margin: 40px;
+
+    @container style(--desktop: on) {
+      font-size: 28px;
+      line-height: 35px;
+    }
   }
 
   /* ========================================================================
-     List (.card-grid): one card per row on mobile; from 768px balanced rows
-     of up to three cards (4 = 2 + 2, 5 = 3 + 2)
+     2. List: 1 per row on mobile, 3 equal cards on tablet and desktop
      ======================================================================== */
 
   & .card-promotions-list {
-    --card-grid-gap: 16px;
-    --card-grid-fill: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
 
-    & > li {
-      display: flex;
-    }
-
-    @media (width >= 768px) {
-      --card-grid-gap: 20px;
-      --card-grid-fit: 3;
+    @container style(--tablet-desktop: on) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
     }
   }
 
+  & .card-promotions-card {
+    display: flex;
+  }
+
   /* ========================================================================
-     Card: photo + gradient in the promotion colour (bottom → top) + texts;
-     hover only lifts it
+     3. Card: photo + gradient in the promotion colour (bottom → top) + texts;
+        hover only lifts it
      ======================================================================== */
 
   & .card-promotions-item {
@@ -63,7 +84,7 @@
     text-decoration: none;
     cursor: pointer;
 
-    /* identity transform so hover does not create a new stacking context */
+    /* identity translate so hover does not create a new stacking context */
     translate: 0 0;
     transition: translate 0.2s ease;
 
@@ -102,7 +123,7 @@
       }
     }
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       block-size: 200px;
     }
   }
@@ -122,7 +143,7 @@
     gap: 6px;
     padding: 16px 16px 18px;
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       padding: 20px 20px 24px;
     }
   }
@@ -133,7 +154,7 @@
     letter-spacing: -0.01em;
     line-height: 1.2;
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       font-size: 22px;
     }
   }
@@ -143,13 +164,13 @@
     font-size: 12px;
     line-height: 1.4;
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       font-size: 13px;
     }
   }
 
   /* ========================================================================
-     Loading skeleton and empty state
+     4. Loading skeleton: same size as the cards, gentle shine
      ======================================================================== */
 
   & .card-promotions-skeleton {
@@ -168,10 +189,14 @@
       animation: none;
     }
 
-    @media (width >= 768px) {
+    @container style(--tablet-desktop: on) {
       block-size: 200px;
     }
   }
+
+  /* ========================================================================
+     5. Empty state (empty list or service error)
+     ======================================================================== */
 
   & .card-promotions-empty {
     display: flex;
@@ -184,11 +209,7 @@
     background: var(--card-promotions-empty-surface);
     text-align: center;
 
-    & :where(p) {
-      margin: 0;
-    }
-
-    @media (width >= 600px) {
+    @container style(--tablet-desktop: on) {
       padding: 40px 24px;
     }
   }

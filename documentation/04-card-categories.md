@@ -43,6 +43,7 @@ Resto de filas (no existe **o** está vacía → por defecto):
 | `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
 
 La regla la aplica `readRowText(block, fila, porDefecto)` de `scripts/block-utils.js`.
+Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos").
 
 `scripts/messages.js` tiene los **mensajes genéricos** de todo el sitio ("No pudimos cargar la
 información…"). Lo específico de cada bloque va en su tabla.

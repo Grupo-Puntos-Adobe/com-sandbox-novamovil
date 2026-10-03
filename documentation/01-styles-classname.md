@@ -26,8 +26,10 @@ Resultado en la página:
 ```html
 <div class="card-promotions block dark compact"
      style="margin-top: 60px; margin-bottom: 40px;">
-  <div class="card-promotions-header"><h2>Promociones</h2></div>
-  <ul class="card-promotions-list">…tarjetas…</ul>
+  <div class="card-promotions-header">
+    <div class="card-promotions-heading" role="heading" aria-level="2">Promociones</div>
+  </div>
+  <div class="card-promotions-list" role="list">…tarjetas…</div>
 </div>
 ```
 
@@ -202,7 +204,7 @@ y los estilos quedaban **entre el título y las tarjetas**. Ahora cada bloque le
 
 ```
 Antes:  section > [h2 Categorías] + [div.card-categories ← estilos aquí]
-Ahora:  section > [div.card-categories ← estilos aquí > h2 Categorías + tarjetas]
+Ahora:  section > [div.card-categories ← estilos aquí > título Categorías + tarjetas]
 ```
 
 ### 6.2 `display: flow-root` (márgenes que no se pierden)

@@ -3,11 +3,13 @@
  *
  * Exports and who uses them:
  *   readRawCell(block, key)            card-* → Endpoint / Product Link / Promo Link, as authored
+ *   readRowText(block, key, fallback)  card-* → Title / Empty List * rows: missing → default,
+ *                                      present but empty → ''
  *   alertOptions(config)               card-* → Alert Duration / Alert Color → showToast options
  *   safeHref(path)                     card-* → validates every link/image URL from service data
- *   buildBlockHeader(block, prefix)    card-* → Title (+ Link) rows → div.{prefix}-header
+ *   buildBlockHeader(block, prefix)    card-* → Title row (+ Link row, card-featured) → header
  *
- * Card columns are pure CSS: .card-grid in styles/styles.css (no JS measuring).
+ * Card columns are pure CSS, written in each block's stylesheet (no JS measuring).
  */
 
 const DEFAULT_ALERT_SECONDS = 5;
@@ -97,18 +99,21 @@ export function safeHref(path) {
  * block's main class wraps title + content (Styles/Classname then apply around both).
  * Markup: div.{prefix}-header > h2.{prefix}-heading + a.{prefix}-link
  * With { asDiv: true } the heading is div.{prefix}-heading[role=heading][aria-level=2]
- * (the block CSS then sets its font, as the global h2 styles no longer apply).
+ * (the block CSS then sets its size; the font comes from the global [role='heading']).
  * @param {Element} block
  * @param {string} prefix Block class, e.g. 'card-featured'
  * @param {Object} [options]
  * @param {boolean} [options.asDiv=false] Build the heading as a div instead of an h2
  * @param {string} [options.title] Title already resolved by the block (e.g. with
  *   readRowText and a default); when omitted the Title row is read as is
+ * @param {boolean} [options.withLink=false] Also read the Link row (a.{prefix}-link)
  * @returns {Element|null} the header, or null when there is no title nor link
  */
-export function buildBlockHeader(block, prefix, { asDiv = false, title: resolvedTitle } = {}) {
+export function buildBlockHeader(block, prefix, {
+  asDiv = false, title: resolvedTitle, withLink = false,
+} = {}) {
   const title = resolvedTitle ?? readRawCell(block, 'title').text;
-  const link = readRawCell(block, 'link');
+  const link = withLink ? readRawCell(block, 'link') : { text: '', href: '' };
   const href = link.text ? safeHref(link.href) : null;
   if (!title && !href) {
     return null;

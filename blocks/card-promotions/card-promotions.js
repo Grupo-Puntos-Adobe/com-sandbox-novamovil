@@ -6,35 +6,47 @@
  * "Card Promotions" table.
  *
  * Authored rows (all optional): Styles, Classname, Title, Endpoint,
- * Promo Link ("/promociones/{id}"), Alert Duration, Alert Color.
+ * Promo Link ("/promociones/{id}"), Alert Duration, Alert Color, Error Response Message,
+ * Empty List Title, Empty List Description, Empty List Icon.
+ * Title, Empty List Title, Empty List Description and Empty List Icon follow one rule
+ * (readRowText): row missing → default; row present but empty → that part is left empty
+ * (not painted); row with a value → the value. Defaults: DEFAULT_TITLE and
+ * EMPTY_LIST_ICON (below) and the generic texts of scripts/messages.js.
+ * The other rows use their default when they are missing or empty.
+ * The list is named by the Title through aria-labelledby.
+ * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)          scripts/block-options.js → Styles / Classname rows
- *     ├─ readBlockConfig(block)            scripts/aem.js → alert-duration, alert-color
- *     ├─ readRawCell(block, 'endpoint' | 'promo link')   scripts/block-utils.js
- *     ├─ alertOptions(config)              scripts/block-utils.js → { duration, variant }
- *     ├─ buildBlockHeader(block, …)        scripts/block-utils.js → h2 from the Title row
+ *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
+ *     ├─ readSettings(block)             endpoint, promo link, alert, title, messages
+ *     │    └─ readRawCell / readRowText / alertOptions   scripts/block-utils.js
+ *     ├─ buildBlockHeader(…, asDiv)      scripts/block-utils.js → div[role=heading] from Title
  *     ├─ no endpoint → render(normalize(FALLBACK_PROMOTIONS))
  *     └─ endpoint    → buildSkeleton() + loadFromService()   (not awaited: the page keeps loading)
  *                         ├─ get(endpoint)   scripts/api/http-client.js
  *                         ├─ ok    → render(normalize(data.promotions))
- *                         └─ error → console.error + showToast() (scripts/toast.js) + render([])
- *   render(block, header, promotions)
+ *                         └─ error → console.error + showToast(errorResponseMessage) + render([])
+ *   render(block, header, promotions, settings)
  *     ├─ none → buildEmpty()
- *     └─ buildCard() per promotion (promoHref), inside ul.card-grid (card-promotions.css)
+ *     └─ div.card-promotions-list[role=list] > buildCard() per promotion (columns: CSS)
+ *
+ * Markup is all divs except each card's link (<a>) and photo (<img>). Classes used by
+ * card-promotions.css: card-promotions-header, -heading, -list, -card, -item, -image,
+ * -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title, -empty-text.
  *
  * Expected response:
  *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }
  * The gradient colour is passed to CSS as --card-promotions-item-color on each card.
- * Guide: documentation/02-integracion-endpoints.md
+ * Guides: documentation/02-integracion-endpoints.md, documentation/06-card-promotions.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
+import MESSAGES from '../../scripts/messages.js';
 import {
-  readRawCell, alertOptions, safeHref, buildBlockHeader,
+  readRawCell, readRowText, alertOptions, safeHref, buildBlockHeader,
 } from '../../scripts/block-utils.js';
 
 // used when the document has no Endpoint row
@@ -68,17 +80,46 @@ const FALLBACK_PROMOTIONS = [
   },
 ];
 
-const SKELETON_COUNT = 3;
+// grey placeholder cards painted while the service answers
+const SKELETON_ELEMENTS = 3;
+// section title, unless the table has a Title row
+const DEFAULT_TITLE = 'Promociones';
+// icon of the "no promotions" message, unless the table has an Empty List Icon row
+const EMPTY_LIST_ICON = '🏷️';
 const DEFAULT_PROMO_LINK = '/promociones/{id}';
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-const MESSAGES = {
-  error: 'No pudimos cargar las promociones. Intenta de nuevo más tarde.',
-  emptyTitle: 'Por ahora no hay promociones disponibles',
-  emptyText: 'Vuelve pronto para descubrir nuestras nuevas ofertas.',
-};
+let headingCount = 0;
 
 // service value → trimmed string ('' if not a string)
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
+
+/**
+ * Everything the block reads from its table, with the defaults applied.
+ * @param {Element} block
+ * @returns {{endpoint: string, linkTemplate: string, alert: Object, title: string,
+ *   messages: {errorResponseMessage: string, emptyListTitle: string,
+ *     emptyListDescription: string, emptyListIcon: string}}}
+ */
+function readSettings(block) {
+  const cell = (key) => readRawCell(block, key).text;
+  const endpointCell = readRawCell(block, 'endpoint');
+  return {
+    endpoint: endpointCell.href || endpointCell.text,
+    linkTemplate: cell('promo link') || DEFAULT_PROMO_LINK,
+    alert: alertOptions(readBlockConfig(block)),
+    title: readRowText(block, 'title', DEFAULT_TITLE),
+    messages: {
+      errorResponseMessage: cell('error response message') || MESSAGES.errorResponseMessage,
+      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
+      emptyListDescription: readRowText(
+        block,
+        'empty list description',
+        MESSAGES.emptyListDescription,
+      ),
+      emptyListIcon: readRowText(block, 'empty list icon', EMPTY_LIST_ICON),
+    },
+  };
+}
 
 /**
  * The promotion's own path/url, or the authored template (placeholder: {id}).
@@ -123,13 +164,13 @@ function normalize(list, linkTemplate) {
 /**
  * createElement shortcut; content is always set as text (never HTML).
  * @param {string} tag
- * @param {string} [className]
+ * @param {string} className
  * @param {string} [content]
  * @returns {Element}
  */
 function el(tag, className, content) {
   const node = document.createElement(tag);
-  if (className) node.className = className;
+  node.className = className;
   if (content !== undefined) node.textContent = content;
   return node;
 }
@@ -138,10 +179,11 @@ function el(tag, className, content) {
  * One promotion card: photo, gradient in the promotion colour (bottom → top), texts.
  * Service data is only ever set as text or validated URLs.
  * @param {Object} promo Normalised promotion
- * @returns {Element} li > a.card-promotions-item
+ * @returns {Element} div.card-promotions-card[role=listitem] > a.card-promotions-item
  */
 function buildCard(promo) {
-  const li = el('li');
+  const card = el('div', 'card-promotions-card');
+  card.setAttribute('role', 'listitem');
   const link = el('a', 'card-promotions-item');
   link.href = promo.href;
   if (promo.color) link.style.setProperty('--card-promotions-item-color', promo.color);
@@ -163,54 +205,68 @@ function buildCard(promo) {
   if (promo.sub) content.append(el('span', 'card-promotions-sub', promo.sub));
   link.append(content);
 
-  li.append(link);
-  return li;
+  card.append(link);
+  return card;
 }
 
 /**
  * Grey placeholder cards shown while the service answers (avoids layout shift).
- * @returns {Element} ul hidden from assistive technology
+ * @returns {Element} div hidden from assistive technology
  */
 function buildSkeleton() {
-  const list = el('ul', 'card-promotions-list card-grid');
+  const list = el('div', 'card-promotions-list');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < SKELETON_COUNT; i += 1) list.append(el('li', 'card-promotions-skeleton'));
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(el('div', 'card-promotions-skeleton'));
   return list;
 }
 
 /**
  * "No promotions" message: empty list or service error.
+ * @param {Object} messages Empty List Title / Description (table or scripts/messages.js)
+ *   and Empty List Icon (table or EMPTY_LIST_ICON)
  * @returns {Element} div[role=status]
  */
-function buildEmpty() {
+function buildEmpty(messages) {
   const empty = el('div', 'card-promotions-empty');
   empty.setAttribute('role', 'status');
-  const icon = el('span', 'card-promotions-empty-icon', '🏷️');
-  icon.setAttribute('aria-hidden', 'true');
-  empty.append(
-    icon,
-    el('p', 'card-promotions-empty-title', MESSAGES.emptyTitle),
-    el('p', 'card-promotions-empty-text', MESSAGES.emptyText),
-  );
+  // each part only when it has text (an authored empty row leaves it out)
+  if (messages.emptyListIcon) {
+    const icon = el('div', 'card-promotions-empty-icon', messages.emptyListIcon);
+    icon.setAttribute('aria-hidden', 'true');
+    empty.append(icon);
+  }
+  if (messages.emptyListTitle) {
+    empty.append(el('div', 'card-promotions-empty-title', messages.emptyListTitle));
+  }
+  if (messages.emptyListDescription) {
+    empty.append(el('div', 'card-promotions-empty-text', messages.emptyListDescription));
+  }
   return empty;
 }
 
 /**
- * Renders the header and the cards (or the empty message).
+ * Renders the header and the cards, or the empty message when there is nothing to show.
  * @param {Element} block
- * @param {Element|null} header Title row (buildBlockHeader)
+ * @param {Element|null} header Optional title (Title row)
  * @param {Object[]} promotions Normalised promotions
+ * @param {Object} settings readSettings() result
  */
-function render(block, header, promotions) {
+function render(block, header, promotions, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!promotions.length) {
-    block.replaceChildren(...content, buildEmpty());
+    block.replaceChildren(...content, buildEmpty(settings.messages));
     return;
   }
-  const list = el('ul', 'card-promotions-list card-grid');
-  const heading = header?.querySelector('h2');
-  if (heading) list.setAttribute('aria-label', heading.textContent);
+  const list = el('div', 'card-promotions-list');
+  list.setAttribute('role', 'list');
+  // screen readers name the list with the visible title ("Promociones, lista, 3 elementos")
+  const heading = header?.querySelector('.card-promotions-heading');
+  if (heading) {
+    headingCount += 1;
+    heading.id = heading.id || `card-promotions-heading-${headingCount}`;
+    list.setAttribute('aria-labelledby', heading.id);
+  }
   list.append(...promotions.map(buildCard));
   block.replaceChildren(...content, list);
 }
@@ -220,47 +276,43 @@ function render(block, header, promotions) {
  * the empty message.
  * @param {Element} block
  * @param {Element|null} header
- * @param {string} endpoint Full URL or path relative to API_BASE_URL
- * @param {string} linkTemplate Promo Link row
- * @param {{duration: number, variant: string}} alert showToast options
+ * @param {Object} settings readSettings() result
  */
-async function loadFromService(block, header, endpoint, linkTemplate, alert) {
+async function loadFromService(block, header, settings) {
   try {
-    const response = await get(endpoint);
+    const response = await get(settings.endpoint);
     const promotions = response?.data?.promotions;
-    if (!Array.isArray(promotions)) throw new Error('Unexpected response: data.promotions is not a list');
-    render(block, header, normalize(promotions, linkTemplate));
+    if (!Array.isArray(promotions)) {
+      throw new Error('Unexpected response: data.promotions is not a list');
+    }
+    render(block, header, normalize(promotions, settings.linkTemplate), settings);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[card-promotions] Could not load promotions from', endpoint, error);
-    showToast(MESSAGES.error, alert);
-    render(block, header, []);
+    console.error('[card-promotions] Could not load promotions from', settings.endpoint, error);
+    showToast(settings.messages.errorResponseMessage, settings.alert);
+    render(block, header, [], settings);
   }
 }
 
 /**
  * Card Promotions: promotion cards fed by a service (Endpoint row) or the internal JSON.
  * The block name gives the main .card-promotions class that scopes every style.
- * Rows (all optional): Title, Endpoint, Promo Link ("/promociones/{id}"),
- * Alert Duration (seconds), Alert Color.
  * @param {Element} block The card-promotions block element
  */
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
-  const config = readBlockConfig(block);
-  const endpointCell = readRawCell(block, 'endpoint');
-  const endpoint = endpointCell.href || endpointCell.text;
-  const linkTemplate = readRawCell(block, 'promo link').text || DEFAULT_PROMO_LINK;
-  const header = buildBlockHeader(block, 'card-promotions');
-  const alert = alertOptions(config);
+  const settings = readSettings(block);
+  const header = buildBlockHeader(block, 'card-promotions', {
+    asDiv: true, title: settings.title,
+  });
 
-  if (!endpoint) {
-    render(block, header, normalize(FALLBACK_PROMOTIONS, linkTemplate));
+  if (!settings.endpoint) {
+    render(block, header, normalize(FALLBACK_PROMOTIONS, settings.linkTemplate), settings);
     return;
   }
 
   // skeleton keeps the layout stable; the request does not block the following sections
   block.setAttribute('aria-busy', 'true');
   block.replaceChildren(...[header, buildSkeleton()].filter(Boolean));
-  loadFromService(block, header, endpoint, linkTemplate, alert);
+  loadFromService(block, header, settings);
 }

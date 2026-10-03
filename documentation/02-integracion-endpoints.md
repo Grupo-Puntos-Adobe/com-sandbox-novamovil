@@ -255,15 +255,16 @@ header fijo:
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
-Los tres bloques siguen el mismo patrón. Ejemplo real de `card-categories`, que además lee
-sus textos de la tabla (con `scripts/messages.js` como respaldo, ver `04-card-categories.md`):
+Los tres bloques siguen el mismo patrón y leen sus textos de la tabla (con `scripts/messages.js`
+como respaldo). Ejemplo real de `card-categories`; las guías de cada bloque son
+`04-card-categories.md`, `05-card-featured.md` y `06-card-promotions.md`:
 
 ```js
 import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/toast.js';
 import MESSAGES from '../../scripts/messages.js';            // mensajes genéricos
-import { readRawCell, alertOptions, safeHref, … } from '../../scripts/block-utils.js';
+import { readRawCell, readRowText, alertOptions, … } from '../../scripts/block-utils.js';
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
 const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
@@ -273,9 +274,11 @@ function readSettings(block) {       // todo lo que viene de la tabla, con sus d
   return {
     endpoint: …,                                       // fila Endpoint, tal cual
     alert: alertOptions(readBlockConfig(block)),       // Alert Duration / Alert Color
+    title: readRowText(block, 'title', DEFAULT_TITLE),  // sin fila → default; vacía → sin título
     messages: {
       errorResponseMessage: text('error response message')   // fila de la tabla…
         || MESSAGES.errorResponseMessage,                    // …o mensaje genérico
+      emptyListTitle: readRowText(block, 'empty list title', MESSAGES.emptyListTitle),
       …
     },
   };
@@ -299,7 +302,9 @@ async function loadFromService(block, header, settings) {
 export default function decorate(block) {
   applyBlockOptions(block);
   const settings = readSettings(block);
-  const header = buildBlockHeader(block, 'card-categories', { asDiv: true });
+  const header = buildBlockHeader(block, 'card-categories', {
+    asDiv: true, title: settings.title,              // card-featured añade withLink: true
+  });
 
   if (!settings.endpoint) {                                    // sin endpoint → JSON interno
     render(block, header, normalize(FALLBACK_CATEGORIES), settings);
