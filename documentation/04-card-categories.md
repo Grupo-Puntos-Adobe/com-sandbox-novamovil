@@ -60,9 +60,9 @@ Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos"
 | desktop (≥ 992 px) | 6 (`col-lg-4`) | llenan la fila, 126 px de alto |
 
 Las columnas y el espacio entre tarjetas (16 px, `row-gutter-16 row-gutter-y-16`) vienen del grid
-(`styles/foundations/grid.css`, ver su `README.md`), no del CSS del bloque. Las clases están en
-`card-categories.js`, en `LIST_GRID_CLASSES` (la lista) y `CARD_GRID_CLASSES` (cada tarjeta): para
-cambiar cuántas van por fila, se cambian ahí.
+(`styles/foundations/grid.css`, ver su `README.md`), no del CSS del bloque. Las clases se ponen en
+`card-categories.js` al crear la lista (`renderCategories` y `buildCategoriesSkeleton`) y cada
+tarjeta (`buildCategoryCard` y el esqueleto): para cambiar cuántas van por fila, se cambian ahí.
 
 Al pasar el mouse, el borde y la sombra toman el `color` de cada categoría (del servicio) y la
 tarjeta sube 4 px.

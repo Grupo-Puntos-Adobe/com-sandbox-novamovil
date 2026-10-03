@@ -62,13 +62,18 @@ Los textos que solo oyen los lectores de pantalla ("Precio", "Precio anterior", 
 
 ## Cómo se ve
 
-| Resolución | Columnas | Imagen |
+| Resolución | Columnas (clase del grid) | Imagen |
 |---|---|---|
-| mobile (< 768 px) | 1 | 168 px de alto |
-| tablet (768–991 px) | 2 | 200 px de alto |
-| desktop (≥ 992 px) | 4 | 200 px de alto |
+| mobile (< 768 px) | 1 (`col-24`) | 168 px de alto |
+| tablet (768–991 px) | 2 (`col-md-12`) | 200 px de alto |
+| desktop (≥ 992 px) | 4 (`col-lg-6`) | 200 px de alto |
 
-Todas las filas miden lo que la tarjeta más alta, y el botón queda pegado abajo. Si la tarjeta tiene
+Las columnas y el espacio entre tarjetas (16 px, `row-gutter-16 row-gutter-y-16`) vienen del grid
+(`styles/foundations/grid.css`, ver su `README.md`), no del CSS del bloque. Las clases se ponen en
+`card-featured.js` al crear la lista (`renderProducts` y `buildProductsSkeleton`) y cada celda
+(`buildProductCard` y el esqueleto): para cambiar cuántas van por fila, se cambian ahí.
+
+Las tarjetas de una misma fila miden lo que la más alta, y el botón queda pegado abajo. Si la tarjeta tiene
 enlace, toda ella es clicable (abre el producto) y al pasar el mouse sube 4 px; sin enlace se queda
 quieta.
 
@@ -85,15 +90,17 @@ quieta.
 
 - Título: `div.card-featured-heading` con `role="heading" aria-level="2"`; a su lado,
   `a.card-featured-link` ("Ver todos").
-- Lista: `div.card-featured-list[role=list]` con `aria-label` igual al texto del título (sin
-  `Title` no lleva nombre), con un `div.card-featured-item[role=listitem]` por producto.
+- Lista: `div.card-featured-list.row.row-gutter-16.row-gutter-y-16[role=list]` con `aria-label`
+  igual al texto del título (sin `Title` no lleva nombre), con una celda
+  `div.card-featured-cell.col-24.col-md-12.col-lg-6[role=listitem]` por producto y, dentro, la
+  tarjeta `div.card-featured-item` (la celda es la columna; la tarjeta lleva borde y fondo).
 - Tarjeta: `div.card-featured-media` (`img.card-featured-image`, etiquetas `-badge` y `-promo`) y
   `div.card-featured-body` con marca (`-brand`), nombre (`-name`, `role="heading" aria-level="3"`),
   calificación (`-rating`, `role="img"` con la etiqueta completa), precios (`-price` y
   `-old-price` con `role="deletion"`) y el enlace `a.card-featured-button` (con `Button Text`) o
   `a.card-featured-name-link` dentro del nombre (sin `Button Text`).
-- Carga: `div.card-featured-skeleton` × `SKELETON_ELEMENTS` (4, constante en `card-featured.js`).
-  Vacío o error: `div.card-featured-empty`.
+- Carga: las mismas celdas del grid, cada una con un `div.card-featured-skeleton`, ×
+  `SKELETON_ELEMENTS` (4, constante en `card-featured.js`). Vacío o error: `div.card-featured-empty`.
 - Tamaños: todos están en `card-featured.css`. La foto no lleva `width`/`height` en el JS (mide
   168 px de alto en móvil y 200 px desde tablet, por CSS). Las estrellas: el JS solo pasa la
   calificación del servicio (0 a 5) en `--card-featured-rating` y el CSS calcula cuánto se

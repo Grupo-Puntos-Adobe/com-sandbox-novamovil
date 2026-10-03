@@ -8,13 +8,15 @@
  *       .card-promotions > & .part > its state (&:hover, &::after) or its resolution.
  *   - Sizes are written directly in px where they apply (only relative units such as %
  *     or fr stay); each part keeps its resolutions right below it
- *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 3 on tablet and
- *     desktop.
+ *     (styles/foundations/breakpoints.css).
+ *   - Columns and the space between cards are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-promotions.js puts on the list
+ *     (row row-gutter-16 row-gutter-y-16) and on each card (col-24 col-md-8).
  *   - The only variables are colours (styles/colors.css, --card-promotions-*, plus
  *     --card-promotions-item-color that each promotion brings from the service). Fonts
  *     come from styles.css (body, and [role='heading'] for the title).
  *
- * Sections: 1 header · 2 list · 3 card · 4 loading skeleton · 5 empty state
+ * Sections: 1 header · 2 card cell · 3 card · 4 loading skeleton · 5 empty state
  */
 
 .card-promotions {
@@ -45,19 +47,8 @@
   }
 
   /* ========================================================================
-     2. List: 1 per row on mobile, 3 equal cards on tablet and desktop
+     2. Card cell: the grid column; its card (or skeleton) fills it
      ======================================================================== */
-
-  & .card-promotions-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-
-    @container style(--tablet-desktop: on) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 20px;
-    }
-  }
 
   & .card-promotions-card {
     display: flex;
@@ -173,6 +164,7 @@
      ======================================================================== */
 
   & .card-promotions-skeleton {
+    flex: 1 1 auto;
     block-size: 168px;
     border-radius: 14px;
     background: linear-gradient(

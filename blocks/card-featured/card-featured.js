@@ -36,12 +36,16 @@
  *                                    + renderProducts([])
  *   renderProducts(block, header, products, settings)
  *     ├─ none → buildEmptyListMessage()
- *     └─ div.card-featured-list[role=list] > buildProductCard() per product (columns: CSS)
+ *     └─ div.card-featured-list[role=list] > buildProductCard() per product
  *          └─ buildProductMedia() · buildProductName() · buildProductRating()
  *             · buildProductPrices() (formatPrice) · buildProductButton()
  *
+ * Columns come from the grid (styles/foundations/grid.css), not from card-featured.css: the
+ * list (and the skeleton) is a row (row row-gutter-16 row-gutter-y-16) and each product cell a
+ * column (col-24 col-md-12 col-lg-6: 1 per row on mobile, 2 on tablet, 4 on desktop).
+ *
  * Markup is all divs except the product image (<img>) and the links (<a>). Classes used by
- * card-featured.css: card-featured-header, -heading, -link, -list, -item, -media, -image,
+ * card-featured.css: card-featured-header, -heading, -link, -list, -cell, -item, -media, -image,
  * -media-fallback, -badge, -promo, -body, -brand, -name, -name-link, -rating, -stars,
  * -reviews, -prices, -price, -old-price, -button, -sr-only, -skeleton, -empty,
  * -empty-icon, -empty-title, -empty-text.
@@ -358,15 +362,16 @@ function buildProductButton(product, buttonText) {
 }
 
 /**
- * One product card; service data is only ever set as text or validated URLs.
- * The whole card opens the product through its only link (button or name).
+ * One product card inside its grid column; service data is only ever set as text or
+ * validated URLs. The whole card opens the product through its only link (button or name).
  * @param {Object} product Normalised product
  * @param {Object} settings readFeaturedSettings() result
- * @returns {Element} div.card-featured-item[role=listitem]
+ * @returns {Element} div.card-featured-cell[role=listitem] > div.card-featured-item
  */
 function buildProductCard(product, settings) {
+  const cell = createElementWithClass('div', 'card-featured-cell col-24 col-md-12 col-lg-6');
+  cell.setAttribute('role', 'listitem');
   const card = createElementWithClass('div', 'card-featured-item');
-  card.setAttribute('role', 'listitem');
   const body = createElementWithClass('div', 'card-featured-body');
   if (product.brand) body.append(createElementWithClass('div', 'card-featured-brand', product.brand));
   body.append(buildProductName(product, settings.buttonText));
@@ -377,17 +382,23 @@ function buildProductCard(product, settings) {
   if (link) body.append(link);
 
   card.append(buildProductMedia(product, settings.messages.imageErrorMessage), body);
-  return card;
+  cell.append(card);
+  return cell;
 }
 
 /**
- * Grey placeholder cards shown while the service answers (avoids layout shift).
+ * Grey placeholder cards shown while the service answers (avoids layout shift); same grid
+ * columns as the real cards.
  * @returns {Element} div hidden from assistive technology
  */
 function buildProductsSkeleton() {
-  const list = createElementWithClass('div', 'card-featured-list');
+  const list = createElementWithClass('div', 'card-featured-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(createElementWithClass('div', 'card-featured-skeleton'));
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) {
+    const cell = createElementWithClass('div', 'card-featured-cell col-24 col-md-12 col-lg-6');
+    cell.append(createElementWithClass('div', 'card-featured-skeleton'));
+    list.append(cell);
+  }
   return list;
 }
 
@@ -429,7 +440,7 @@ function renderProducts(block, header, products, settings) {
     block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
     return;
   }
-  const list = createElementWithClass('div', 'card-featured-list');
+  const list = createElementWithClass('div', 'card-featured-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Productos destacados, lista")
   const heading = header?.querySelector('.card-featured-heading');

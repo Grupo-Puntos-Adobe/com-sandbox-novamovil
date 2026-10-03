@@ -32,8 +32,9 @@
  *     ├─ none → buildEmptyListMessage()
  *     └─ div.card-categories-list[role=list] > buildCategoryCard() per category
  *
- * Columns come from the grid (styles/foundations/grid.css), not from card-categories.css:
- * the list (and the skeleton) gets LIST_GRID_CLASSES and each card CARD_GRID_CLASSES (below).
+ * Columns come from the grid (styles/foundations/grid.css), not from card-categories.css: the
+ * list (and the skeleton) is a row (row row-gutter-16 row-gutter-y-16) and each card a column
+ * (col-24 col-md-8 col-lg-4: 1 per row on mobile, 3 on tablet, 6 on desktop).
  *
  * Markup is all divs except each card's link (<a>). Classes used by card-categories.css:
  * card-categories-header, -heading, -list, -card, -item, -icon, -label, -skeleton,
@@ -76,10 +77,6 @@ const FALLBACK_CATEGORIES = [
 
 // grey placeholder cards painted while the service answers
 const SKELETON_ELEMENTS = 6;
-// grid (styles/foundations/grid.css): the list is a row with 16px between cards, and each
-// card a column that fills the width: 1 per row on mobile, 3 on tablet, 6 on desktop
-const LIST_GRID_CLASSES = ['row', 'row-gutter-16', 'row-gutter-y-16'];
-const CARD_GRID_CLASSES = ['col-24', 'col-md-8', 'col-lg-4'];
 const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 // icon of the "no categories" message, unless the table has an Empty List Icon row
 const EMPTY_LIST_ICON = '🗂️';
@@ -155,8 +152,7 @@ function createElementWithClass(tag, className, content) {
  * @returns {Element} div.card-categories-card[role=listitem]
  */
 function buildCategoryCard(category) {
-  const card = createElementWithClass('div', 'card-categories-card');
-  card.classList.add(...CARD_GRID_CLASSES);
+  const card = createElementWithClass('div', 'card-categories-card col-24 col-md-8 col-lg-4');
   card.setAttribute('role', 'listitem');
   const link = createElementWithClass('a', 'card-categories-item');
   link.href = category.href;
@@ -174,12 +170,10 @@ function buildCategoryCard(category) {
  * @returns {Element} div hidden from assistive technology
  */
 function buildCategoriesSkeleton() {
-  const list = createElementWithClass('div', 'card-categories-list');
-  list.classList.add(...LIST_GRID_CLASSES);
+  const list = createElementWithClass('div', 'card-categories-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('aria-hidden', 'true');
   for (let i = 0; i < SKELETON_ELEMENTS; i += 1) {
-    const cell = createElementWithClass('div', 'card-categories-card');
-    cell.classList.add(...CARD_GRID_CLASSES);
+    const cell = createElementWithClass('div', 'card-categories-card col-24 col-md-8 col-lg-4');
     cell.append(createElementWithClass('div', 'card-categories-skeleton'));
     list.append(cell);
   }
@@ -224,8 +218,7 @@ function renderCategories(block, header, categories, settings) {
     block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
     return;
   }
-  const list = createElementWithClass('div', 'card-categories-list');
-  list.classList.add(...LIST_GRID_CLASSES);
+  const list = createElementWithClass('div', 'card-categories-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Categorías, lista, 6 elementos")
   const heading = header?.querySelector('.card-categories-heading');

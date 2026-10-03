@@ -32,12 +32,16 @@
  *                                    + renderPromotions([])
  *   renderPromotions(block, header, promotions, settings)
  *     ├─ none → buildEmptyListMessage()
- *     └─ div.card-promotions-list[role=list] > buildPromotionCard() per promotion (columns: CSS)
+ *     └─ div.card-promotions-list[role=list] > buildPromotionCard() per promotion
+ *
+ * Columns come from the grid (styles/foundations/grid.css), not from card-promotions.css: the
+ * list (and the skeleton) is a row (row row-gutter-16 row-gutter-y-16) and each card a column
+ * (col-24 col-md-8: 1 per row on mobile, 3 on tablet and desktop).
  *
  * Markup is all divs except each card's link (<a>, a div when it has no link) and photo
- * (<img>). Classes used by
- * card-promotions.css: card-promotions-header, -heading, -list, -card, -item, -image,
- * -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title, -empty-text.
+ * (<img>). Classes used by card-promotions.css: card-promotions-header, -heading, -list,
+ * -card, -item, -image, -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title,
+ * -empty-text.
  *
  * Expected response:
  *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }
@@ -184,7 +188,7 @@ function createElementWithClass(tag, className, content) {
  *   (div.card-promotions-item when the promotion has no link)
  */
 function buildPromotionCard(promo) {
-  const card = createElementWithClass('div', 'card-promotions-card');
+  const card = createElementWithClass('div', 'card-promotions-card col-24 col-md-8');
   card.setAttribute('role', 'listitem');
   const link = createElementWithClass(promo.href ? 'a' : 'div', 'card-promotions-item');
   if (promo.href) link.href = promo.href;
@@ -210,13 +214,18 @@ function buildPromotionCard(promo) {
 }
 
 /**
- * Grey placeholder cards shown while the service answers (avoids layout shift).
+ * Grey placeholder cards shown while the service answers (avoids layout shift); same grid
+ * columns as the real cards.
  * @returns {Element} div hidden from assistive technology
  */
 function buildPromotionsSkeleton() {
-  const list = createElementWithClass('div', 'card-promotions-list');
+  const list = createElementWithClass('div', 'card-promotions-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) list.append(createElementWithClass('div', 'card-promotions-skeleton'));
+  for (let i = 0; i < SKELETON_ELEMENTS; i += 1) {
+    const cell = createElementWithClass('div', 'card-promotions-card col-24 col-md-8');
+    cell.append(createElementWithClass('div', 'card-promotions-skeleton'));
+    list.append(cell);
+  }
   return list;
 }
 
@@ -258,7 +267,7 @@ function renderPromotions(block, header, promotions, settings) {
     block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
     return;
   }
-  const list = createElementWithClass('div', 'card-promotions-list');
+  const list = createElementWithClass('div', 'card-promotions-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Promociones, lista, 3 elementos")
   const heading = header?.querySelector('.card-promotions-heading');

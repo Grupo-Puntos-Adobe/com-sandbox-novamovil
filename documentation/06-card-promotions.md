@@ -55,10 +55,15 @@ Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos"
 
 ## Cómo se ve
 
-| Resolución | Columnas | Tarjeta |
+| Resolución | Columnas (clase del grid) | Tarjeta |
 |---|---|---|
-| mobile (< 768 px) | 1 | ancho completo, 168 px de alto |
-| tablet y desktop (≥ 768 px) | 3 | se estiran para llenar la fila, 200 px de alto |
+| mobile (< 768 px) | 1 (`col-24`) | ancho completo, 168 px de alto |
+| tablet y desktop (≥ 768 px) | 3 (`col-md-8`) | llenan la fila, 200 px de alto |
+
+Las columnas y el espacio entre tarjetas (16 px, `row-gutter-16 row-gutter-y-16`) vienen del grid
+(`styles/foundations/grid.css`, ver su `README.md`), no del CSS del bloque. Las clases se ponen en
+`card-promotions.js` al crear la lista (`renderPromotions` y `buildPromotionsSkeleton`) y cada
+tarjeta (`buildPromotionCard` y el esqueleto): para cambiar cuántas van por fila, se cambian ahí.
 
 El degradado de abajo hacia arriba usa el `color` de cada promoción (del servicio); al pasar el
 mouse la tarjeta sube 4 px (solo si tiene enlace).
@@ -75,12 +80,14 @@ mouse la tarjeta sube 4 px (solo si tiene enlace).
 ## HTML que genera (todo con `div`)
 
 - Título: `div.card-promotions-heading` con `role="heading" aria-level="2"`.
-- Lista: `div.card-promotions-list[role=list]` con `aria-label` igual al texto del título (sin
-  `Title` no lleva nombre), con un `div.card-promotions-card[role=listitem]` por promoción;
+- Lista: `div.card-promotions-list.row.row-gutter-16.row-gutter-y-16[role=list]` con `aria-label`
+  igual al texto del título (sin `Title` no lleva nombre), con un
+  `div.card-promotions-card.col-24.col-md-8[role=listitem]` por promoción;
   dentro, el enlace `a.card-promotions-item` (un `div` si la promoción no tiene enlace) con la
   foto decorativa (`img.card-promotions-image`), el título (`-title`) y el texto (`-sub`).
-- Carga: `div.card-promotions-skeleton` × `SKELETON_ELEMENTS` (3, constante en
-  `card-promotions.js`). Vacío o error: `div.card-promotions-empty`.
+- Carga: las mismas columnas del grid, cada una con un `div.card-promotions-skeleton`, ×
+  `SKELETON_ELEMENTS` (3, constante en `card-promotions.js`). Vacío o error:
+  `div.card-promotions-empty`.
 - Tamaños: todos están en `card-promotions.css`. La foto no lleva `width`/`height` en el JS: cubre
   toda la tarjeta (168 px de alto en móvil, 200 px desde tablet). El color de cada promoción sí
   llega del servicio, en `--card-promotions-item-color`.

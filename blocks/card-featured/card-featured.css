@@ -8,14 +8,16 @@
  *       .card-featured > & .part > its state (&:hover, &::after) or its resolution.
  *   - Sizes are written directly in px where they apply (only relative units such as %
  *     or fr stay); each part keeps its resolutions right below it
- *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 2 on tablet and
- *     4 on desktop.
+ *     (styles/foundations/breakpoints.css).
+ *   - Columns and the space between cards are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-featured.js puts on the list
+ *     (row row-gutter-16 row-gutter-y-16) and on each cell (col-24 col-md-12 col-lg-6).
  *   - The only variables are colours (styles/colors.css, --card-featured-*) plus
  *     --card-featured-rating, the rating (0-5) that each product brings from the service
  *     (the star fill is worked out here, not in JS).
  *     Fonts come from styles.css (body, and [role='heading'] for the titles).
  *
- * Sections: 1 header · 2 list · 3 card · 4 media · 5 body · 6 loading skeleton · 7 empty state
+ * Sections: 1 header · 2 card cell · 3 card · 4 media · 5 body · 6 loading skeleton · 7 empty state
  */
 
 .card-featured {
@@ -80,23 +82,12 @@
   }
 
   /* ========================================================================
-     2. List: 1 per row on mobile, 2 on tablet, 4 on desktop; every row as tall
-        as the tallest card, so all cards stay symmetric
+     2. Card cell: the grid column; its card (or skeleton) fills it, so the cards of a
+        row are as tall as the tallest one
      ======================================================================== */
 
-  & .card-featured-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-auto-rows: 1fr;
-    gap: 20px;
-
-    @container style(--tablet: on) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    @container style(--desktop: on) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
+  & .card-featured-cell {
+    display: flex;
   }
 
   /* ========================================================================
@@ -107,6 +98,7 @@
   & .card-featured-item {
     position: relative;
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--card-featured-border);
@@ -345,6 +337,7 @@
      ======================================================================== */
 
   & .card-featured-skeleton {
+    flex: 1 1 auto;
     block-size: 380px;
     border-radius: 14px;
     background: linear-gradient(
