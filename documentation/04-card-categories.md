@@ -53,11 +53,16 @@ Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos"
 
 ## Cómo se ve
 
-| Resolución | Columnas | Tarjeta |
+| Resolución | Columnas (clase del grid) | Tarjeta |
 |---|---|---|
-| mobile (< 768 px) | 1 | ancho completo, 105 px de alto |
-| tablet (768–991 px) | 3 | se estiran para llenar la fila, 126 px de alto |
-| desktop (≥ 992 px) | 6 | 140 px fijos, alineadas a la izquierda, 126 px de alto |
+| mobile (< 768 px) | 1 (`col-24`) | ancho completo, 105 px de alto |
+| tablet (768–991 px) | 3 (`col-md-8`) | llenan la fila, 126 px de alto |
+| desktop (≥ 992 px) | 6 (`col-lg-4`) | llenan la fila, 126 px de alto |
+
+Las columnas y el espacio entre tarjetas (16 px, `row-gutter-16 row-gutter-y-16`) vienen del grid
+(`styles/foundations/grid.css`, ver su `README.md`), no del CSS del bloque. Las clases están en
+`card-categories.js`, en `LIST_GRID_CLASSES` (la lista) y `CARD_GRID_CLASSES` (cada tarjeta): para
+cambiar cuántas van por fila, se cambian ahí.
 
 Al pasar el mouse, el borde y la sombra toman el `color` de cada categoría (del servicio) y la
 tarjeta sube 4 px.
@@ -75,12 +80,13 @@ tarjeta sube 4 px.
 
 - Título: `div.card-categories-heading` con `role="heading" aria-level="2"`; su fuente viene de la regla
   global `[role='heading']` de `styles/styles.css` (el bloque no define `font-family`).
-- Lista: `div.card-categories-list[role=list]` con `aria-label` igual al texto del título (los lectores
-  de pantalla la anuncian como "Categorías, lista"; sin `Title` no lleva nombre), con un
-  `div.card-categories-card[role=listitem]` por categoría; dentro, el enlace `a.card-categories-item`
-  (icono + nombre).
+- Lista: `div.card-categories-list.row.row-gutter-16.row-gutter-y-16[role=list]` con `aria-label`
+  igual al texto del título (los lectores de pantalla la anuncian como "Categorías, lista"; sin
+  `Title` no lleva nombre), con un `div.card-categories-card.col-24.col-md-8.col-lg-4[role=listitem]`
+  por categoría; dentro, el enlace `a.card-categories-item` (icono + nombre).
 - Tamaños: todos están en `card-categories.css`; el JS no define ningún tamaño (el color de cada
   categoría sí llega del servicio, en `--card-categories-item-color`).
-- Carga: `div.card-categories-skeleton` × `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
+- Carga: las mismas columnas del grid, cada una con un `div.card-categories-skeleton`, ×
+  `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
 
 Código: `blocks/card-categories/card-categories.js` y `blocks/card-categories/card-categories.css`.

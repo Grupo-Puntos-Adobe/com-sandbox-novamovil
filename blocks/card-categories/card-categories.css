@@ -8,13 +8,15 @@
  *       .card-categories > & .part > its state (&:hover, &:focus-visible) or its resolution.
  *   - Sizes are written directly in px where they apply (only relative units such as %
  *     or fr stay); each part keeps its resolutions right below it
- *     (styles/foundations/breakpoints.css): 1 card per row on mobile, 3 on tablet and a
- *     row of 140px cards on desktop.
+ *     (styles/foundations/breakpoints.css).
+ *   - Columns and the space between cards are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-categories.js puts on the list
+ *     (row row-gutter-16 row-gutter-y-16) and on each card (col-24 col-md-8 col-lg-4).
  *   - The only variables are colours (styles/colors.css, --card-categories-*, plus
  *     --card-categories-item-color that each category brings from the service). Fonts
  *     come from styles.css (body, and [role='heading'] for the title).
  *
- * Sections: 1 header · 2 list · 3 card · 4 loading skeleton · 5 empty state
+ * Sections: 1 header · 2 card cell · 3 card · 4 loading skeleton · 5 empty state
  */
 
 .card-categories {
@@ -45,23 +47,8 @@
   }
 
   /* ========================================================================
-     2. List: 1 per row on mobile, 3 equal cards on tablet, 140px cards on desktop
+     2. Card cell: the grid column; its card (or skeleton) fills it
      ======================================================================== */
-
-  & .card-categories-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 13px;
-
-    @container style(--tablet-desktop: on) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    @container style(--desktop: on) {
-      grid-template-columns: repeat(6, 140px);
-    }
-  }
 
   & .card-categories-card {
     display: flex;
@@ -138,6 +125,7 @@
      ======================================================================== */
 
   & .card-categories-skeleton {
+    flex: 1 1 auto;
     block-size: 105px;
     border-radius: 14px;
     background: linear-gradient(
