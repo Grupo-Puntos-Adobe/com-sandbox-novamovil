@@ -106,7 +106,8 @@ quieta.
   `-old-price.col-auto` con `role="deletion"`, alineados por la base del texto) y el enlace `a.card-featured-button` (con `Button Text`) o
   `a.card-featured-name-link` dentro del nombre (sin `Button Text`).
 - Carga: las mismas celdas del grid, cada una con un `div.card-featured-skeleton`, ×
-  `SKELETON_ELEMENTS` (4, constante en `card-featured.js`). Vacío o error: `div.card-featured-empty`.
+  `SKELETON_ELEMENTS` (4, constante en `card-featured.js`). Vacío o error: el aviso compartido `div.empty-list-message` (bloque `blocks/empty-list-message`,
+  el mismo en las tres tarjetas; el bloque solo pinta el icono, el título y la descripción que le manda la tarjeta).
 - Tamaños: todos están en `card-featured.css`. La foto no lleva `width`/`height` en el JS (mide
   168 px de alto en móvil y 200 px desde tablet, por CSS). Las estrellas: el JS solo pasa la
   calificación del servicio (0 a 5) en `--card-featured-rating` y el CSS calcula cuánto se

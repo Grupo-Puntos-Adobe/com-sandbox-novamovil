@@ -9,7 +9,7 @@ Edge Delivery Services. Read a block first. Omissions are in the repo or known.
 - Authors omit and add cells. Decorate defensively.
 - No build step; devDependencies only.
 - Scope CSS to `.blockname`; `-wrapper`/`-container` are section classes.
-- `fragment/fragment.js` is the only cross-block import. Otherwise use `/scripts/`.
+- `fragment/fragment.js` and `empty-list-message/empty-list-message.js` (shared empty message of the card-* blocks) are the only cross-block imports. Otherwise use `/scripts/`.
 
 ## Outdated
 - `fstab.yaml`, `helix-query.yaml`, `paths.json` are retired. Config lives at tools.aem.live.

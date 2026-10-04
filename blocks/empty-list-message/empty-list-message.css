@@ -1,0 +1,43 @@
+/*
+ * Empty List Message (shared by the card blocks: card-categories, card-featured,
+ * card-promotions). Requested by empty-list-message.js as soon as a block imports it.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. empty-list-message.js builds the message with divs.
+ *   - Every rule lives inside .empty-list-message, at most 2 levels deep.
+ *   - Sizes in px; resolutions with the names of styles/foundations/breakpoints.css.
+ *   - The only variables are colours (styles/colors.css, --empty-list-message-*).
+ */
+
+.empty-list-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 20px;
+  border: 1px dashed var(--empty-list-message-border);
+  border-radius: 14px;
+  background: var(--empty-list-message-background);
+  text-align: center;
+
+  @container style(--tablet-desktop: on) {
+    padding: 40px 24px;
+  }
+
+  & .empty-list-message-icon {
+    margin-block-end: 6px;
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  & .empty-list-message-title {
+    color: var(--empty-list-message-title);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  & .empty-list-message-description {
+    color: var(--empty-list-message-description);
+    font-size: 14px;
+  }
+}

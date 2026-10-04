@@ -90,6 +90,7 @@ tarjeta sube 4 px.
 - Tamaños: todos están en `card-categories.css`; el JS no define ningún tamaño (el color de cada
   categoría sí llega del servicio, en `--card-categories-item-color`).
 - Carga: las mismas columnas del grid, cada una con un `div.card-categories-skeleton`, ×
-  `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: `div.card-categories-empty`.
+  `SKELETON_ELEMENTS` (6, constante en `card-categories.js`). Vacío o error: el aviso compartido `div.empty-list-message` (bloque `blocks/empty-list-message`,
+  el mismo en las tres tarjetas; el bloque solo pinta el icono, el título y la descripción que le manda la tarjeta).
 
 Código: `blocks/card-categories/card-categories.js` y `blocks/card-categories/card-categories.css`.

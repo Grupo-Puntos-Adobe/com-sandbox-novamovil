@@ -29,7 +29,7 @@
  *                         └─ error → console.error + showToast(errorResponseMessage)
  *                                    + renderCategories([])
  *   renderCategories(block, header, categories, settings)
- *     ├─ none → buildEmptyListMessage()
+ *     ├─ none → buildEmptyListMessage() (blocks/empty-list-message, shared by the card blocks)
  *     └─ div.card-categories-list[role=list] > buildCategoryCard() per category
  *
  * Columns come from the grid (styles/foundations/grid.css), not from card-categories.css. The grid
@@ -39,9 +39,9 @@
  * (col-24 col-md-8 col-lg-4: 1 per row on mobile, 3 on tablet, 6 on desktop).
  *
  * Markup is all divs except each card's link (<a>). Classes used by card-categories.css:
- * card-categories-header, -heading, -item, -icon, -label, -skeleton, -empty, -empty-icon,
- * -empty-title, -empty-text. card-categories-grid, -list and -card only name the grid levels
- * (container, row, col).
+ * card-categories-header, -heading, -item, -icon, -label, -skeleton. card-categories-grid,
+ * -list and -card only name the grid levels (container, row, col). The empty message
+ * (div.empty-list-message) comes from blocks/empty-list-message.
  *
  * Expected response: { data: { categories: [{ id, label, icon, path, color, active, order }] } }
  * Guides: documentation/02-integracion-endpoints.md, documentation/04-card-categories.md
@@ -54,6 +54,7 @@ import MESSAGES from '../../scripts/messages.js';
 import {
   readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
 } from '../../scripts/block-utils.js';
+import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
 // directly, without alert
@@ -186,30 +187,6 @@ function buildCategoriesSkeleton() {
 }
 
 /**
- * "No categories" message: empty list or service error.
- * @param {Object} messages Empty List Title / Description (table or scripts/messages.js)
- *   and Empty List Icon (table or EMPTY_LIST_ICON)
- * @returns {Element} div[role=status]
- */
-function buildEmptyListMessage(messages) {
-  const empty = createElementWithClass('div', 'card-categories-empty');
-  empty.setAttribute('role', 'status');
-  // each part only when it has text (an authored empty row leaves it out)
-  if (messages.emptyListIcon) {
-    const icon = createElementWithClass('div', 'card-categories-empty-icon', messages.emptyListIcon);
-    icon.setAttribute('aria-hidden', 'true');
-    empty.append(icon);
-  }
-  if (messages.emptyListTitle) {
-    empty.append(createElementWithClass('div', 'card-categories-empty-title', messages.emptyListTitle));
-  }
-  if (messages.emptyListDescription) {
-    empty.append(createElementWithClass('div', 'card-categories-empty-text', messages.emptyListDescription));
-  }
-  return empty;
-}
-
-/**
  * Renders the header and the cards, or the empty message when there is nothing to show.
  * @param {Element} block
  * @param {Element|null} header Optional title (Title row)
@@ -220,7 +197,11 @@ function renderCategories(block, header, categories, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!categories.length) {
-    block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
+    block.replaceChildren(...content, buildEmptyListMessage({
+      icon: settings.messages.emptyListIcon,
+      title: settings.messages.emptyListTitle,
+      description: settings.messages.emptyListDescription,
+    }));
     return;
   }
   const list = createElementWithClass('div', 'card-categories-list row row-gutter-16 row-gutter-y-16');

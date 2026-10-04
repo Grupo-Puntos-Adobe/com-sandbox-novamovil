@@ -89,8 +89,8 @@ mouse la tarjeta sube 4 px (solo si tiene enlace).
   dentro, el enlace `a.card-promotions-item` (un `div` si la promoción no tiene enlace) con la
   foto decorativa (`img.card-promotions-image`), el título (`-title`) y el texto (`-sub`).
 - Carga: las mismas columnas del grid, cada una con un `div.card-promotions-skeleton`, ×
-  `SKELETON_ELEMENTS` (3, constante en `card-promotions.js`). Vacío o error:
-  `div.card-promotions-empty`.
+  `SKELETON_ELEMENTS` (3, constante en `card-promotions.js`). Vacío o error: el aviso compartido `div.empty-list-message` (bloque `blocks/empty-list-message`,
+  el mismo en las tres tarjetas; el bloque solo pinta el icono, el título y la descripción que le manda la tarjeta).
 - Tamaños: todos están en `card-promotions.css`. La foto no lleva `width`/`height` en el JS: cubre
   toda la tarjeta (168 px de alto en móvil, 200 px desde tablet). El color de cada promoción sí
   llega del servicio, en `--card-promotions-item-color`.

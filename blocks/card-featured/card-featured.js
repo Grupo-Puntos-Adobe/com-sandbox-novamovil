@@ -36,7 +36,7 @@
  *                         └─ error → console.error + showToast(errorResponseMessage)
  *                                    + renderProducts([])
  *   renderProducts(block, header, products, settings)
- *     ├─ none → buildEmptyListMessage()
+ *     ├─ none → buildEmptyListMessage() (blocks/empty-list-message, shared by the card blocks)
  *     └─ div.card-featured-list[role=list] > buildProductCard() per product
  *          └─ buildProductMedia() · buildProductName() · buildProductRating()
  *             · buildProductPrices() (formatPrice) · buildProductButton()
@@ -55,9 +55,10 @@
  * Markup is all divs except the product image (<img>) and the links (<a>). Classes used by
  * card-featured.css: card-featured-header, -heading, -link, -item, -media, -image,
  * -media-fallback, -badge, -promo, -body, -brand, -name, -name-link, -rating, -stars,
- * -reviews, -prices, -prices-row, -price, -old-price, -button, -sr-only, -skeleton, -empty,
- * -empty-icon, -empty-title, -empty-text. card-featured-grid, -list, -cell, -header-grid,
- * -header-row, -header-title and -header-action only name the grid levels (container, row, col).
+ * -reviews, -prices, -prices-row, -price, -old-price, -button, -sr-only, -skeleton.
+ * card-featured-grid, -list, -cell, -header-grid, -header-row, -header-title and -header-action
+ * only name the grid levels (container, row, col). The empty message (div.empty-list-message)
+ * comes from blocks/empty-list-message.
  *
  * Expected response: { data: { products: [{ id, sku, brand, name, description, image, price,
  *   oldPrice, promo, currency, rating, reviews, badge, active, path? }] } }
@@ -71,6 +72,7 @@ import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/messages.js';
 import {
   readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle, formatPrice,
 } from '../../scripts/block-utils.js';
+import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
 // directly, without alert
@@ -416,30 +418,6 @@ function buildProductsSkeleton() {
 }
 
 /**
- * "No featured products" message: empty list or service error.
- * @param {Object} messages Empty List Title / Description (table or scripts/messages.js)
- *   and Empty List Icon (table or EMPTY_LIST_ICON)
- * @returns {Element} div[role=status]
- */
-function buildEmptyListMessage(messages) {
-  const empty = createElementWithClass('div', 'card-featured-empty');
-  empty.setAttribute('role', 'status');
-  // each part only when it has text (an authored empty row leaves it out)
-  if (messages.emptyListIcon) {
-    const icon = createElementWithClass('div', 'card-featured-empty-icon', messages.emptyListIcon);
-    icon.setAttribute('aria-hidden', 'true');
-    empty.append(icon);
-  }
-  if (messages.emptyListTitle) {
-    empty.append(createElementWithClass('div', 'card-featured-empty-title', messages.emptyListTitle));
-  }
-  if (messages.emptyListDescription) {
-    empty.append(createElementWithClass('div', 'card-featured-empty-text', messages.emptyListDescription));
-  }
-  return empty;
-}
-
-/**
  * Renders the header and the cards, or the empty message when there is nothing to show.
  * @param {Element} block
  * @param {Element|null} header Title / Link rows (buildProductsHeader)
@@ -450,7 +428,11 @@ function renderProducts(block, header, products, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!products.length) {
-    block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
+    block.replaceChildren(...content, buildEmptyListMessage({
+      icon: settings.messages.emptyListIcon,
+      title: settings.messages.emptyListTitle,
+      description: settings.messages.emptyListDescription,
+    }));
     return;
   }
   const list = createElementWithClass('div', 'card-featured-list row row-gutter-16 row-gutter-y-16');

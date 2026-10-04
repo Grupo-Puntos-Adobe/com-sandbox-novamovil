@@ -82,8 +82,6 @@
   --card-categories-default-color: var(--color-primary);
   --card-categories-skeleton: var(--color-gray-200);
   --card-categories-skeleton-shine: var(--color-gray-100);
-  --card-categories-empty-text: var(--text-color);
-  --card-categories-empty-border: var(--color-gray-200);
 
   /* card-featured (product cards) */
   --card-featured-surface: var(--color-white);
@@ -106,8 +104,6 @@
   --card-featured-link-hover: color-mix(in srgb, var(--color-primary) 6%, transparent);
   --card-featured-skeleton: var(--color-gray-200);
   --card-featured-skeleton-shine: var(--color-gray-100);
-  --card-featured-empty-text: var(--text-color);
-  --card-featured-empty-border: var(--color-gray-200);
 
   /* card-promotions (each card's gradient colour comes from the service data) */
   --card-promotions-text: var(--color-white);
@@ -116,10 +112,12 @@
   --card-promotions-media-background: var(--color-navy-950);
   --card-promotions-skeleton: var(--card-featured-skeleton);
   --card-promotions-skeleton-shine: var(--card-featured-skeleton-shine);
-  --card-promotions-empty-text: var(--card-featured-empty-text);
-  --card-promotions-empty-border: var(--card-featured-empty-border);
-  --card-promotions-empty-surface: var(--card-featured-surface);
-  --card-promotions-empty-title: var(--card-featured-name);
+
+  /* empty-list-message (shared "nothing to show" message of the card blocks) */
+  --empty-list-message-border: var(--color-gray-200);
+  --empty-list-message-background: var(--color-white);
+  --empty-list-message-title: var(--heading-color);
+  --empty-list-message-description: var(--text-color);
 
   /* toast (floating alerts); error/warning/success are deepened so white text passes 4.5:1 */
   --toast-text: var(--color-white);

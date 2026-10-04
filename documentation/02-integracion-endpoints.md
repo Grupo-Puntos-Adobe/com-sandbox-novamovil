@@ -46,6 +46,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `scripts/api/interceptors.js` | 🆕 | `ApiError`, `publicInterceptor`, registro de interceptores y plantilla de `auth` | `1bccaff` |
 | `scripts/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
 | `styles/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
+| `blocks/empty-list-message/` | 🆕 | Aviso "no hay elementos" compartido por las tres tarjetas: `buildEmptyListMessage({ icon, title, description })` + su CSS. Solo pinta lo que le manda la tarjeta | — |
 | `styles/colors.css` | 🆕 | Colores de la alerta (`--toast-*`) | `1bccaff` |
 | `scripts/block-utils.js` | 🆕 | `readTableCell` (leer el endpoint tal cual), `getAlertOptions`, `getSafeHref` | `70c643f` |
 | `blocks/card-categories/card-categories.js` | 🆕 | Pide `data.categories` | `1bccaff` |
@@ -78,9 +79,10 @@ blocks/card-categories/card-categories.js  (decorate)
   │               └─ interceptores response   → JSON  |  ApiError
   │
   ├─ OK con lista      → pinta tarjetas
-  ├─ OK con lista vacía → mensaje "no hay elementos"
+  ├─ OK con lista vacía → aviso "no hay elementos"   ← blocks/empty-list-message
   └─ ERROR             → console.error + showToast()   ← scripts/toast.js (+ styles/toast.css)
-                          + mensaje "no hay elementos"
+                          + aviso "no hay elementos"   ← blocks/empty-list-message
+     (la alerta la decide la tarjeta; el aviso solo pinta el icono y los textos que recibe)
 ```
 
 Ningún bloque llama a `fetch` directamente: **todo pasa por `http-client.js`**. Así, si mañana los

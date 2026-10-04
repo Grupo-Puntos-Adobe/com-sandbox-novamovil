@@ -31,7 +31,7 @@
  *                         └─ error → console.error + showToast(errorResponseMessage)
  *                                    + renderPromotions([])
  *   renderPromotions(block, header, promotions, settings)
- *     ├─ none → buildEmptyListMessage()
+ *     ├─ none → buildEmptyListMessage() (blocks/empty-list-message, shared by the card blocks)
  *     └─ div.card-promotions-list[role=list] > buildPromotionCard() per promotion
  *
  * Columns come from the grid (styles/foundations/grid.css), not from card-promotions.css. The grid
@@ -42,8 +42,9 @@
  *
  * Markup is all divs except each card's link (<a>, a div when it has no link) and photo
  * (<img>). Classes used by card-promotions.css: card-promotions-header, -heading, -item,
- * -image, -content, -title, -sub, -skeleton, -empty, -empty-icon, -empty-title, -empty-text.
- * card-promotions-grid, -list and -card only name the grid levels (container, row, col).
+ * -image, -content, -title, -sub, -skeleton.
+ * card-promotions-grid, -list and -card only name the grid levels (container, row, col). The
+ * empty message (div.empty-list-message) comes from blocks/empty-list-message.
  *
  * Expected response:
  *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }
@@ -58,6 +59,7 @@ import MESSAGES from '../../scripts/messages.js';
 import {
   readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
 } from '../../scripts/block-utils.js';
+import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message
 // directly, without alert
@@ -234,30 +236,6 @@ function buildPromotionsSkeleton() {
 }
 
 /**
- * "No promotions" message: empty list or service error.
- * @param {Object} messages Empty List Title / Description (table or scripts/messages.js)
- *   and Empty List Icon (table or EMPTY_LIST_ICON)
- * @returns {Element} div[role=status]
- */
-function buildEmptyListMessage(messages) {
-  const empty = createElementWithClass('div', 'card-promotions-empty');
-  empty.setAttribute('role', 'status');
-  // each part only when it has text (an authored empty row leaves it out)
-  if (messages.emptyListIcon) {
-    const icon = createElementWithClass('div', 'card-promotions-empty-icon', messages.emptyListIcon);
-    icon.setAttribute('aria-hidden', 'true');
-    empty.append(icon);
-  }
-  if (messages.emptyListTitle) {
-    empty.append(createElementWithClass('div', 'card-promotions-empty-title', messages.emptyListTitle));
-  }
-  if (messages.emptyListDescription) {
-    empty.append(createElementWithClass('div', 'card-promotions-empty-text', messages.emptyListDescription));
-  }
-  return empty;
-}
-
-/**
  * Renders the header and the cards, or the empty message when there is nothing to show.
  * @param {Element} block
  * @param {Element|null} header Optional title (Title row)
@@ -268,7 +246,11 @@ function renderPromotions(block, header, promotions, settings) {
   block.removeAttribute('aria-busy');
   const content = [header].filter(Boolean);
   if (!promotions.length) {
-    block.replaceChildren(...content, buildEmptyListMessage(settings.messages));
+    block.replaceChildren(...content, buildEmptyListMessage({
+      icon: settings.messages.emptyListIcon,
+      title: settings.messages.emptyListTitle,
+      description: settings.messages.emptyListDescription,
+    }));
     return;
   }
   const list = createElementWithClass('div', 'card-promotions-list row row-gutter-16 row-gutter-y-16');

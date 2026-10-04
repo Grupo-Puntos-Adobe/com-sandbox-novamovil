@@ -19,7 +19,9 @@
  *     (the star fill is worked out here, not in JS).
  *     Fonts come from styles.css (body, and [role='heading'] for the titles).
  *
- * Sections: 1 header · 2 card · 3 media · 4 body · 5 loading skeleton · 6 empty state
+ * The empty message is the shared block blocks/empty-list-message (its own CSS).
+ *
+ * Sections: 1 header · 2 card · 3 media · 4 body · 5 loading skeleton
  */
 
 .card-featured {
@@ -345,43 +347,6 @@
     @container style(--tablet-desktop: on) {
       block-size: 400px;
     }
-  }
-
-  /* ========================================================================
-     6. Empty state (empty list or service error)
-     ======================================================================== */
-
-  & .card-featured-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 32px 20px;
-    border: 1px dashed var(--card-featured-empty-border);
-    border-radius: 14px;
-    background: var(--card-featured-surface);
-    text-align: center;
-
-    @container style(--tablet-desktop: on) {
-      padding: 40px 24px;
-    }
-  }
-
-  & .card-featured-empty-icon {
-    margin-block-end: 6px;
-    font-size: 32px;
-    line-height: 1;
-  }
-
-  & .card-featured-empty-title {
-    color: var(--card-featured-name);
-    font-size: 16px;
-    font-weight: 700;
-  }
-
-  & .card-featured-empty-text {
-    color: var(--card-featured-empty-text);
-    font-size: 14px;
   }
 }
 
