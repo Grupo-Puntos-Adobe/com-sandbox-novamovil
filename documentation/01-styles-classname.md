@@ -111,10 +111,10 @@ const BARE_NUMBER = /^-?\d*\.?\d+$/;                // "60", "-4", ".5"
 - `UNSAFE_VALUE` bloquea valores que podrían cargar recursos externos o inyectar código
   (`url(…)`, `javascript:`, `@import`, `<`, `>`, `{`, `}`).
 
-### 5.2 `applyAuthorStyles(element, declarations)`
+### 5.2 `applyAuthorStyles(block, declarations)`
 
 ```js
-export function applyAuthorStyles(element, declarations) {
+export function applyAuthorStyles(block, declarations) {
   String(declarations || '')
     .split(/;|\n/)                          // 1. separa por ";" o salto de línea
     .map((declaration) => declaration.trim())
@@ -128,14 +128,16 @@ export function applyAuthorStyles(element, declarations) {
       const important = /!important$/i.test(value);
       value = value.replace(/\s*!important$/i, '');
 
-      element.style.setProperty(property, value, important ? 'important' : ''); // 4. aplica
+      block.style.setProperty(property, value, important ? 'important' : ''); // 4. aplica
       // 5. número sin unidad → reintenta con px (margin-top: 60 → 60px)
-      if (!element.style.getPropertyValue(property) && BARE_NUMBER.test(value)) {
-        element.style.setProperty(property, `${value}px`, important ? 'important' : '');
+      if (!block.style.getPropertyValue(property) && BARE_NUMBER.test(value)) {
+        block.style.setProperty(property, `${value}px`, important ? 'important' : '');
       }
     });
 }
 ```
+
+Recibe el mismo `block` que llega a `decorate(block)` (se lo pasa `applyBlockOptions`).
 
 Paso a paso:
 1. Separa por `;` (no por coma, porque la coma es parte de valores como `rgba(0, 0, 0, .5)`).
@@ -149,15 +151,15 @@ Paso a paso:
 
 También respeta `!important` y variables CSS (`--card-promotions-item-color: #f00`).
 
-### 5.3 `applyAuthorClasses(element, names)`
+### 5.3 `applyAuthorClasses(block, names)`
 
 ```js
-export function applyAuthorClasses(element, names) {
+export function applyAuthorClasses(block, names) {
   String(names || '')
     .split(/[\s,]+/)                        // separa por espacios o comas
     .map((name) => name.trim())
     .filter((name) => CLASS_NAME.test(name)) // solo nombres de clase válidos
-    .forEach((name) => element.classList.add(name));
+    .forEach((name) => block.classList.add(name));
 }
 ```
 

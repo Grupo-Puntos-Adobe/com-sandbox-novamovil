@@ -290,12 +290,12 @@ function readCategoriesSettings(block) {   // todo lo que viene de la tabla, con
 async function loadCategoriesFromService(block, header, settings) {
   try {
     const response = await get(settings.endpoint);
-    const categories = response?.data?.categories;
-    if (!Array.isArray(categories)) {
+    const rawCategories = response?.data?.categories;          // la lista tal como llega
+    if (!Array.isArray(rawCategories)) {
       throw new Error('Unexpected response: data.categories is not a list');
     }
-    // lista vacía → aviso de lista vacía
-    renderCategories(block, header, normalizeCategories(categories), settings);
+    const categories = normalizeCategories(rawCategories);       // la lista ya limpia
+    renderCategories(block, header, categories, settings);       // vacía → aviso de lista vacía
   } catch (error) {
     console.error('[card-categories] Could not load categories from', settings.endpoint, error);
     showToast(settings.messages.errorResponseMessage, settings.alert);   // alerta flotante
@@ -310,7 +310,8 @@ export default function decorate(block) {
   const header = buildSectionTitle(block, 'card-categories');
 
   if (!settings.endpoint) {                                     // sin endpoint → JSON interno
-    renderCategories(block, header, normalizeCategories(FALLBACK_CATEGORIES), settings);
+    const categories = normalizeCategories(FALLBACK_CATEGORIES);
+    renderCategories(block, header, categories, settings);
     return;
   }
   // esqueleto mientras carga; la petición NO bloquea el resto de la página
@@ -324,7 +325,10 @@ Detalles importantes:
 - **`loadCategoriesFromService` sin `await`**: el bloque termina de "decorarse" enseguida y AEM sigue
   cargando las demás secciones; los datos llegan después y reemplazan el esqueleto.
 - **Esqueleto**: tarjetas grises del mismo tamaño que las reales, para que la página no brinque (CLS).
-- **`normalizeCategories()`** (en los otros bloques `normalizeProducts()` / `normalizePromotions()`): filtra `active: false`, exige los campos mínimos, quita duplicados por `id`,
+- **Nombres**: cada dato se llama igual en quien llama y en la función que lo recibe (`block`,
+  `header`, `settings`, `messages`…). La lista tal como llega del servicio es `rawCategories`
+  (`rawProducts`, `rawPromotions`) y la lista ya limpia es `categories` (`products`, `promotions`).
+- **`normalizeCategories(rawCategories)`** (en los otros bloques `normalizeProducts(rawProducts, linkTemplate)` / `normalizePromotions(rawPromotions, linkTemplate)`): filtra `active: false`, exige los campos mínimos, quita duplicados por `id`,
   ordena por `order` y valida colores (`#hex`) y enlaces (`getSafeHref`).
 - **Pintado seguro**: todo con `createElementWithClass()` / `createElement` + `textContent`,
   **nunca `innerHTML`** con datos del servicio.
