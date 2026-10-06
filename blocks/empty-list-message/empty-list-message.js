@@ -12,6 +12,7 @@
  *
  * Markup: div.empty-list-message[role=status] > -icon (aria-hidden) + -title + -description;
  * each part only when it has text (an authored empty row in Drive leaves it out).
+ * Guide: blocks/empty-list-message/README.md
  */
 import { loadCSS } from '../../scripts/aem.js';
 
