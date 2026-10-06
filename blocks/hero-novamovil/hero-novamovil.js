@@ -31,6 +31,7 @@
  * hero-picture, hero-image.
  *
  * Output: div.hero-novamovil > div.hero-inner > (div.hero-content + div.hero-media)
+ * Guide: blocks/hero-novamovil/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 
