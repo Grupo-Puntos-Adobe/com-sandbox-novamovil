@@ -5,7 +5,7 @@
  * "Hero Novamovil" table. It is the first section, so it is loaded eagerly (LCP).
  *
  * Authoring: one row per element, every row optional and in any order:
- *   | Styles / Classname | …                          (scripts/block-options.js)
+ *   | Styles / Classname | …                          (scripts/foundations/block-options.js)
  *   | Tag                | Lanzamiento exclusivo 2026 |
  *   | Title              | El futuro de la *conectividad* está aquí |   (italic = highlight)
  *   | Description        | Los mejores smartphones…   |
@@ -17,7 +17,7 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)   scripts/block-options.js → Styles / Classname rows
+ *     ├─ applyBlockOptions(block)   scripts/foundations/block-options.js → Styles / Classname rows
  *     ├─ readHeroRows(block)            { 'tag': [cells], 'button 1': [cells], … }
  *     ├─ buildHeroText()                tag, description · buildHeroTitle() (role=heading, level 1)
  *     ├─ buildHeroButtons()             numbered "Button N" rows → a.hero-button
@@ -32,7 +32,7 @@
  *
  * Output: div.hero-novamovil > div.hero-inner > (div.hero-content + div.hero-media)
  */
-import applyBlockOptions from '../../scripts/block-options.js';
+import applyBlockOptions from '../../scripts/foundations/block-options.js';
 
 /**
  * Reads the authored rows by their name (first cell, case-insensitive).

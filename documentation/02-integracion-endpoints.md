@@ -44,11 +44,11 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 |---|---|---|---|
 | `scripts/api/http-client.js` | 🆕 | **Único punto que llama a `fetch`**: arma la URL, aplica interceptores, timeout, convierte errores | `1bccaff` |
 | `scripts/api/interceptors.js` | 🆕 | `ApiError`, `publicInterceptor`, registro de interceptores y plantilla de `auth` | `1bccaff` |
-| `scripts/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
-| `styles/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
+| `scripts/foundations/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
+| `styles/foundations/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
 | `blocks/empty-list-message/` | 🆕 | Aviso "no hay elementos" compartido por las tres tarjetas: `buildEmptyListMessage({ icon, title, description })` + su CSS. Solo pinta lo que le manda la tarjeta | — |
 | `styles/colors.css` | 🆕 | Colores de la alerta (`--toast-*`) | `1bccaff` |
-| `scripts/block-utils.js` | 🆕 | `readTableCell` (leer el endpoint tal cual), `getAlertOptions`, `getSafeHref` | `70c643f` |
+| `scripts/foundations/block-utils.js` | 🆕 | `readTableCell` (leer el endpoint tal cual), `getAlertOptions`, `getSafeHref` | `70c643f` |
 | `blocks/card-categories/card-categories.js` | 🆕 | Pide `data.categories` | `1bccaff` |
 | `blocks/card-featured/card-featured.js` | 🆕 | Pide `data.products` | `70c643f` |
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
@@ -69,7 +69,7 @@ Documento de Drive
                      │
                      ▼
 blocks/card-categories/card-categories.js  (decorate)
-  ├─ readTableCell(block, 'endpoint')          ← scripts/block-utils.js
+  ├─ readTableCell(block, 'endpoint')          ← scripts/foundations/block-utils.js
   ├─ ¿hay endpoint?
   │    ├─ NO → pinta FALLBACK_CATEGORIES (JSON interno del bloque)
   │    └─ SÍ → pinta esqueleto y llama:
@@ -80,7 +80,7 @@ blocks/card-categories/card-categories.js  (decorate)
   │
   ├─ OK con lista      → pinta tarjetas
   ├─ OK con lista vacía → aviso "no hay elementos"   ← blocks/empty-list-message
-  └─ ERROR             → console.error + showToast()   ← scripts/toast.js (+ styles/toast.css)
+  └─ ERROR             → console.error + showToast()   ← scripts/foundations/toast.js (+ styles/foundations/toast.css)
                           + aviso "no hay elementos"   ← blocks/empty-list-message
      (la alerta la decide la tarjeta; el aviso solo pinta el icono y los textos que recibe)
 ```
@@ -209,7 +209,7 @@ Opciones disponibles:
 | `interceptor` | `'public'` | `'auth'`, un objeto o una lista |
 | `signal` | — | `AbortController().signal` para cancelar |
 
-### Paso 5 · Crear la alerta flotante (`scripts/toast.js` + `styles/toast.css`)
+### Paso 5 · Crear la alerta flotante (`scripts/foundations/toast.js` + `styles/foundations/toast.css`)
 
 ```js
 showToast('No pudimos cargar las categorías…', { duration: 5000, variant: 'error' });
@@ -247,7 +247,7 @@ header fijo:
 --z-index-header: 1000;
 ```
 
-### Paso 6 · Utilidades compartidas (`scripts/block-utils.js`)
+### Paso 6 · Utilidades compartidas (`scripts/foundations/block-utils.js`)
 
 | Función | Por qué existe |
 |---|---|
@@ -255,21 +255,21 @@ header fijo:
 | `readRowTextOrDefault(block, fila, textoPorDefecto)` | Fila que no existe → el texto por defecto; fila vacía → `''` (esa parte no se pinta) |
 | `getAlertOptions(config)` | Convierte las filas `Alert Duration` (segundos) y `Alert Color` en `{ duration, variant }` para `showToast`. Por defecto 5 s y `error` |
 | `getSafeHref(path)` | Los enlaces que vienen del servicio solo se aceptan si son rutas del sitio o `http(s)`. Bloquea `javascript:` y similares |
-| `formatPrice(value, currency)` | Devuelve el precio ya formateado (`$19,999`, sin decimales) con `LOCALE` y `CURRENCY` de `scripts/messages.js`; si la moneda no es válida usa `CURRENCY`. Hoy lo usa `card-featured`; cualquier bloque con precios debe usarlo |
+| `formatPrice(value, currency)` | Devuelve el precio ya formateado (`$19,999`, sin decimales) con `LOCALE` y `CURRENCY` de `scripts/foundations/messages.js`; si la moneda no es válida usa `CURRENCY`. Hoy lo usa `card-featured`; cualquier bloque con precios debe usarlo |
 | `buildSectionTitle(block, prefijo)` | Arma el título de la sección desde la fila `Title` (`div.{prefijo}-header` con el título); sin texto no pinta nada. Sirve para cualquier bloque con fila `Title` |
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
-Los tres bloques siguen el mismo patrón y leen sus textos de la tabla (con `scripts/messages.js`
+Los tres bloques siguen el mismo patrón y leen sus textos de la tabla (con `scripts/foundations/messages.js`
 como respaldo). Ejemplo real de `card-categories`; las guías de cada bloque son
 `04-card-categories.md`, `05-card-featured.md` y `06-card-promotions.md`:
 
 ```js
 import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/toast.js';
-import MESSAGES from '../../scripts/messages.js';            // mensajes genéricos
-import { readTableCell, readRowTextOrDefault, getAlertOptions, … } from '../../scripts/block-utils.js';
+import { showToast } from '../../scripts/foundations/toast.js';
+import MESSAGES from '../../scripts/foundations/messages.js';            // mensajes genéricos
+import { readTableCell, readRowTextOrDefault, getAlertOptions, … } from '../../scripts/foundations/block-utils.js';
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
 const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
@@ -397,8 +397,8 @@ técnico queda en la consola del navegador (`[card-categories] Could not load �
 
 ```js
 import { get } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/toast.js';
-import { readTableCell, getAlertOptions } from '../../scripts/block-utils.js';
+import { showToast } from '../../scripts/foundations/toast.js';
+import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-utils.js';
 // … mismo patrón del paso 7: endpoint del documento, fallback, esqueleto, try/catch
 ```
 
@@ -429,5 +429,5 @@ await post('/api/v1/cart', { sku: 'IPH-15-128-BLK', qty: 1 });
 | `package.json` | ❌ No | No se instaló ninguna dependencia |
 | `fstab.yaml` / configuración | ❌ No | El endpoint vive en el documento, no en configuración |
 
-Todo lo demás es **nuevo** y vive en `scripts/api/`, `scripts/toast.js`, `scripts/block-utils.js`,
-`styles/toast.css`, `styles/colors.css` y los bloques `card-*`.
+Todo lo demás es **nuevo** y vive en `scripts/api/`, `scripts/foundations/toast.js`, `scripts/foundations/block-utils.js`,
+`styles/foundations/toast.css`, `styles/colors.css` y los bloques `card-*`.

@@ -58,12 +58,12 @@ Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloq
 
 | Archivo | Origen | Qué tiene |
 |---|---|---|
-| `scripts/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions` y sus dos ayudantes |
+| `scripts/foundations/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions` y sus dos ayudantes |
 | `blocks/hero-novamovil/hero-novamovil.js` | 🆕 nuevo | `import` + llamada en la 1.ª línea de `decorate` |
 | `blocks/card-categories/card-categories.js` | 🆕 nuevo | Igual |
 | `blocks/card-featured/card-featured.js` | 🆕 nuevo | Igual |
 | `blocks/card-promotions/card-promotions.js` | 🆕 nuevo | Igual |
-| `scripts/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
+| `scripts/foundations/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
 | `content-drive/index.docx` | 🆕 nuevo | Cada tabla trae las filas `Styles` y `Classname` vacías, listas para usar |
 | 🔒 `migration-work/docx_builder.py` | local | `Doc.options()` genera esas dos filas vacías en cada tabla |
 | `scripts/scripts.js` | 📦 template | **Sin cambios.** Ver sección 9 (historia) |
@@ -93,7 +93,7 @@ contenido (por ejemplo, el hero busca "la celda con texto" y encontraría `Style
 
 ## 5. El código, explicado
 
-Archivo: `scripts/block-options.js`.
+Archivo: `scripts/foundations/block-options.js`.
 
 ### 5.1 Constantes
 
@@ -202,7 +202,7 @@ export default function applyBlockOptions(block) {
 
 Antes, el título ("Categorías", "Productos destacados") era contenido suelto **fuera** de la tabla,
 y los estilos quedaban **entre el título y las tarjetas**. Ahora cada bloque lee una fila `Title`
-y la pinta dentro con `buildSectionTitle` de `scripts/block-utils.js` (destacados agrega su botón
+y la pinta dentro con `buildSectionTitle` de `scripts/foundations/block-utils.js` (destacados agrega su botón
 `Link`, "Ver todos", con su propia función `buildViewAllLink`):
 
 ```
@@ -234,7 +234,7 @@ Medido en la vista previa con `margin-top: 60; margin-bottom: 40`:
 
 ### 6.4 Una sola función compartida
 
-La lógica vive **una sola vez** en `scripts/block-options.js`. Los bloques solo la importan. Si mañana
+La lógica vive **una sola vez** en `scripts/foundations/block-options.js`. Los bloques solo la importan. Si mañana
 se agrega una opción nueva (por ejemplo una fila `Id`), se cambia en un solo archivo y la tienen
 todos los bloques que la usan.
 
@@ -243,7 +243,7 @@ todos los bloques que la usan.
 En `blocks/<nuevo-bloque>/<nuevo-bloque>.js`:
 
 ```js
-import applyBlockOptions from '../../scripts/block-options.js';
+import applyBlockOptions from '../../scripts/foundations/block-options.js';
 
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
@@ -252,7 +252,7 @@ export default function decorate(block) {
 ```
 
 Si el bloque tiene título, usar `buildSectionTitle(block, '<nuevo-bloque>')` de
-`scripts/block-utils.js` para que quede dentro del bloque.
+`scripts/foundations/block-utils.js` para que quede dentro del bloque.
 
 En el documento (`docx_builder.py` → `Doc.options()`), poner las filas vacías justo después del nombre:
 

@@ -1,22 +1,22 @@
 /*
  * NovaMóvil floating alerts (toasts), top-right, stackable.
  * Uses popover="manual" (top layer, no light dismiss) when supported and a fixed
- * element otherwise. Styles: styles/toast.css (.toast-novamovil), loaded on first use.
+ * element otherwise. Styles: styles/foundations/toast.css (.toast-novamovil), loaded on first use.
  *
  * showToast('No pudimos cargar las categorías', { duration: 5000, variant: 'error' });
  *
  * Called by: loadCategoriesFromService(), loadProductsFromService() and
  * loadPromotionsFromService() (error path of the card-* blocks), with the options built by
- * getAlertOptions() in scripts/block-utils.js.
+ * getAlertOptions() in scripts/foundations/block-utils.js.
  *
  * Flow:
  *   showToast(message, options)
- *     ├─ loadCSS(styles/toast.css)   scripts/aem.js, only on the first call
+ *     ├─ loadCSS(styles/foundations/toast.css)   scripts/aem.js, only on the first call
  *     ├─ builds div.toast-novamovil (text + close button), popover="manual" when supported
  *     ├─ restack()                   places it below the visible toasts
  *     └─ timer (paused on hover/focus) → removeToast() → restack()
  */
-import { loadCSS } from './aem.js';
+import { loadCSS } from '../aem.js';
 
 export const TOAST_VARIANTS = ['error', 'warning', 'success', 'info'];
 const DEFAULT_DURATION = 5000;
@@ -30,7 +30,7 @@ const toasts = [];
 
 /**
  * Stacks the visible toasts from the top: each one sits below the previous ones
- * (--toast-offset is read by styles/toast.css).
+ * (--toast-offset is read by styles/foundations/toast.css).
  */
 function restack() {
   let offset = 0;
@@ -70,7 +70,7 @@ function removeToast(toast) {
  * @returns {Promise<HTMLElement>} the toast element
  */
 export async function showToast(message, { duration = DEFAULT_DURATION, variant = 'error' } = {}) {
-  cssLoaded = cssLoaded || loadCSS(`${window.hlx?.codeBasePath || ''}/styles/toast.css`);
+  cssLoaded = cssLoaded || loadCSS(`${window.hlx?.codeBasePath || ''}/styles/foundations/toast.css`);
   await cssLoaded;
 
   const toast = document.createElement('div');

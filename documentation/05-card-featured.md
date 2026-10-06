@@ -41,9 +41,9 @@ foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es *
 
 | Fila | Para qué | Por defecto |
 |---|---|---|
-| `Empty List Title` / `Empty List Description` | Aviso cuando no hay productos que mostrar | `scripts/messages.js` → `emptyListTitle` / `emptyListDescription` |
+| `Empty List Title` / `Empty List Description` | Aviso cuando no hay productos que mostrar | `scripts/foundations/messages.js` → `emptyListTitle` / `emptyListDescription` |
 | `Empty List Icon` | Icono de ese aviso (emoji o texto corto) | `EMPTY_LIST_ICON = '📦'` en el JS del bloque |
-| `Image Error Message` | Texto en lugar de una foto que falta o no carga | `scripts/messages.js` → `imageErrorMessage` |
+| `Image Error Message` | Texto en lugar de una foto que falta o no carga | `scripts/foundations/messages.js` → `imageErrorMessage` |
 
 **3 · Configuración, con valor por defecto** (fila que no existe o vacía → por defecto):
 
@@ -51,11 +51,11 @@ foto) y la **configuración de la alerta** tienen valor por defecto. Lo que es *
 |---|---|---|
 | `Endpoint` | URL del servicio | Sin fila: los 4 productos del JSON interno del bloque; si ese JSON está vacío (`[]`) o sin datos (`null`), el aviso de lista vacía directo, sin alerta |
 | `Alert Duration` / `Alert Color` | Duración (segundos) y color de la alerta de error | 5 s, `error` |
-| `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/messages.js` → `errorResponseMessage` |
+| `Error Response Message` | Texto de la alerta cuando el servicio falla o no responde | `scripts/foundations/messages.js` → `errorResponseMessage` |
 
-Los mensajes genéricos están en `scripts/messages.js` (junto con `LOCALE` y `CURRENCY`, el idioma
+Los mensajes genéricos están en `scripts/foundations/messages.js` (junto con `LOCALE` y `CURRENCY`, el idioma
 y la moneda de los precios); la regla de "fila que no existe ≠ fila vacía" la aplica
-`readRowTextOrDefault(block, fila, porDefecto)` de `scripts/block-utils.js`.
+`readRowTextOrDefault(block, fila, porDefecto)` de `scripts/foundations/block-utils.js`.
 
 Los textos que solo oyen los lectores de pantalla ("Precio", "Precio anterior", "Calificación 4.6 de
 5, 2,341 reseñas") no van en la tabla: están en `LABELS` de `card-featured.js`.

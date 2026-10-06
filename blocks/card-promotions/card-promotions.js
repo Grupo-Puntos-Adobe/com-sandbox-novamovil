@@ -12,17 +12,18 @@
  *   - Title and Promo Link have no default: without text in the table there is no title,
  *     and a promotion without its own path has no link (the card is not clickable).
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
- *     (scripts/messages.js, EMPTY_LIST_ICON below); row present but empty → not painted.
+ *     (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present but empty →
+ *     not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * The list is named by the Title (aria-label with the title text).
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
+ *     ├─ applyBlockOptions(block)        Styles / Classname rows (foundations/block-options.js)
  *     ├─ readPromotionsSettings(block)             endpoint, promo link, alert, messages
- *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
- *     ├─ buildSectionTitle(block, prefix) scripts/block-utils.js → div[role=heading] from Title
+ *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions (foundations/block-utils.js)
+ *     ├─ buildSectionTitle(block, prefix) div[role=heading] from Title (foundations/block-utils.js)
  *     ├─ no endpoint → renderPromotions(normalizePromotions(FALLBACK_PROMOTIONS))
  *     └─ endpoint    → buildPromotionsSkeleton() + loadPromotionsFromService()
  *                       (not awaited: the page keeps loading)
@@ -52,13 +53,13 @@
  * Guides: documentation/02-integracion-endpoints.md, documentation/06-card-promotions.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
-import applyBlockOptions from '../../scripts/block-options.js';
+import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/toast.js';
-import MESSAGES from '../../scripts/messages.js';
+import { showToast } from '../../scripts/foundations/toast.js';
+import MESSAGES from '../../scripts/foundations/messages.js';
 import {
   readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
-} from '../../scripts/block-utils.js';
+} from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message

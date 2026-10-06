@@ -129,7 +129,8 @@ export function buildSectionTitle(block, prefix) {
 
 /**
  * Formats a price in LOCALE without decimals ($19,999); an unknown currency code falls
- * back to CURRENCY (both from scripts/messages.js). Any block that shows prices uses it.
+ * back to CURRENCY (both from scripts/foundations/messages.js). Any block that shows prices
+ * uses it.
  * @param {number} value
  * @param {string} currency ISO 4217 code, e.g. 'MXN'
  * @returns {string}

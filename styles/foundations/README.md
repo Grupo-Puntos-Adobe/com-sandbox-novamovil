@@ -1,4 +1,4 @@
-# Foundations · Breakpoints y Grid
+# Foundations · Breakpoints, Grid y alerta
 
 Bases de CSS **portables**: copias la carpeta `foundations/` a cualquier proyecto y funcionan
 igual. Contiene:
@@ -7,8 +7,11 @@ igual. Contiene:
 |---|---|
 | `breakpoints.css` | Las 3 resoluciones del sitio (**mobile, tablet, desktop**) con nombre, para usarlas en cualquier CSS sin repetir números |
 | `grid.css` | Sistema de grid: `container`, `row` y columnas de 24 partes por resolución (`sm`, `md`, `lg`). Usa los nombres de `breakpoints.css` (ver sección 8) |
+| `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css` |
 
-Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build.
+Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.css`, que es el CSS
+de la alerta de `scripts/foundations/`). Los JavaScript portables están en `scripts/foundations/`
+(ver su `README.md`).
 
 ---
 

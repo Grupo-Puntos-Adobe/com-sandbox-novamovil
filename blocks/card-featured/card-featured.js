@@ -13,20 +13,20 @@
  *     table that part is not painted. Without Button Text the product name is the link;
  *     without Product Link (and no path from the service) the card has no link.
  *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault): row
- *     missing → default (scripts/messages.js, EMPTY_LIST_ICON below); row present but
+ *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present but
  *     empty → not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
- * Prices use formatPrice (scripts/block-utils.js) with LOCALE and CURRENCY from
- * scripts/messages.js.
+ * Prices use formatPrice (scripts/foundations/block-utils.js) with LOCALE and CURRENCY from
+ * scripts/foundations/messages.js.
  * The list is named by the Title (aria-label with the title text).
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)        scripts/block-options.js → Styles / Classname rows
+ *     ├─ applyBlockOptions(block)        Styles / Classname rows (foundations/block-options.js)
  *     ├─ readFeaturedSettings(block)             endpoint, product link, alert, title, messages
- *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions   scripts/block-utils.js
- *     ├─ buildProductsHeader(block)      title: buildSectionTitle() (scripts/block-utils.js)
+ *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions (foundations/block-utils.js)
+ *     ├─ buildProductsHeader(block)      title: buildSectionTitle() (foundations/block-utils.js)
  *     │                                  + "Ver todos": buildViewAllLink(), placed in the grid
  *     ├─ no endpoint → renderProducts(normalizeProducts(FALLBACK_PRODUCTS))
  *     └─ endpoint    → buildProductsSkeleton() + loadProductsFromService()
@@ -65,13 +65,13 @@
  * Guides: documentation/02-integracion-endpoints.md, documentation/05-card-featured.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
-import applyBlockOptions from '../../scripts/block-options.js';
+import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { get } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/toast.js';
-import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/messages.js';
+import { showToast } from '../../scripts/foundations/toast.js';
+import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
 import {
   readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle, formatPrice,
-} from '../../scripts/block-utils.js';
+} from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // used when the document has no Endpoint row; [] or null (no data) → the empty message

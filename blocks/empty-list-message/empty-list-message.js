@@ -1,7 +1,7 @@
 /*
  * Empty List Message: the "nothing to show" message of the card blocks (empty list or
  * service error). It only paints what the caller sends; the floating alert and the
- * defaults (texts of scripts/messages.js, the icon of each block) stay in the caller.
+ * defaults (texts of scripts/foundations/messages.js, the icon of each block) stay in the caller.
  *
  * Called by card-categories, card-featured and card-promotions:
  *   import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
