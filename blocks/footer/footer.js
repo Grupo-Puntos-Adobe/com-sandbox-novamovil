@@ -22,6 +22,7 @@
  * footer-payments, footer-payment, footer-inline-link (links inside tagline/copyright).
  *
  * Output: div.footer-novamovil > div.footer-inner > (div.footer-grid + div.footer-bottom)
+ * Guide: blocks/footer/README.md
  */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';

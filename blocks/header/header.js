@@ -27,6 +27,7 @@
  * and has-header-menu-open on <body> while the mobile menu is open.
  *
  * Output: header > div.header.header-novamovil > div.nav-wrapper > nav#nav.nav-bar
+ * Guide: blocks/header/README.md
  */
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
