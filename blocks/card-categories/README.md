@@ -24,6 +24,37 @@ Las categorías llegan de un **servicio** (fila `Endpoint`) o, si no hay endpoin
 bloque. Se acomoda solo a cada resolución con el grid del proyecto: 1 tarjeta por fila en móvil,
 3 en tablet y 6 en desktop.
 
+### Estructura / Descripción de clases
+
+El componente usa el nombre del bloque como prefijo de todas sus clases (`card-categories-*`) y las
+clases del grid para las columnas. Todo se construye con `div` y roles ARIA, excepto el enlace de
+cada tarjeta (`a`).
+
+- `card-categories` – Contenedor principal del componente (el bloque)
+- `card-categories-header` – Contenedor del título de la sección
+- `card-categories-heading` – Título de la sección (`role="heading"`, `aria-level="2"`)
+- `card-categories-grid` + `container-fluid` – Contenedor del grid (sin padding lateral)
+- `card-categories-list` + `row row-gutter-16 row-gutter-y-16` – Lista de tarjetas (`role="list"`),
+  16 px entre tarjetas
+- `card-categories-card` + `col-24 col-md-8 col-lg-4` – Columna de cada tarjeta (`role="listitem"`)
+- `card-categories-item` – Tarjeta y enlace a la categoría (`a`)
+- `card-categories-icon` – Icono de la categoría (decorativo, `aria-hidden="true"`)
+- `card-categories-label` – Nombre de la categoría
+- `card-categories-skeleton` – Tarjeta gris de carga
+- `empty-list-message` – Aviso de lista vacía (bloque compartido `blocks/empty-list-message`)
+
+```text
+div.card-categories
+├─ div.card-categories-header
+│  └─ div.card-categories-heading[role=heading][aria-level=2]
+└─ div.card-categories-grid.container-fluid
+   └─ div.card-categories-list.row.row-gutter-16.row-gutter-y-16[role=list][aria-label]
+      └─ div.card-categories-card.col-24.col-md-8.col-lg-4[role=listitem]   × cada categoría
+         └─ a.card-categories-item
+            ├─ span.card-categories-icon[aria-hidden=true]
+            └─ span.card-categories-label
+```
+
 ### Características
 
 - Categorías desde un servicio (`Endpoint`) o desde el JSON interno del bloque
@@ -42,8 +73,8 @@ bloque. Se acomoda solo a cada resolución con el grid del proyecto: 1 tarjeta p
 
 ### Estructura de la tabla en Drive
 
-En Edge Delivery Services el autor no usa un diálogo: escribe una tabla **Card Categories** en el
-documento de Drive. Todas las filas son opcionales y pueden ir en cualquier orden.
+El autor escribe una tabla **Card Categories** en el documento de Drive. Todas las filas son
+opcionales y pueden ir en cualquier orden.
 
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
@@ -106,38 +137,19 @@ documento de Drive. Todas las filas son opcionales y pueden ir en cualquier orde
     - **Por defecto:** `🗂️` (`EMPTY_LIST_ICON` en `card-categories.js`). Si la fila existe pero está
       vacía, no se pinta
 
-### Estructura / Descripción de clases
+### Vista previa Drive
 
-El componente usa el nombre del bloque como prefijo de todas sus clases (`card-categories-*`) y las
-clases del grid para las columnas. Todo se construye con `div` y roles ARIA, excepto el enlace de
-cada tarjeta (`a`).
+La tabla en Drive permite al autor configurar:
 
-- `card-categories` – Contenedor principal del componente (el bloque)
-- `card-categories-header` – Contenedor del título de la sección
-- `card-categories-heading` – Título de la sección (`role="heading"`, `aria-level="2"`)
-- `card-categories-grid` + `container-fluid` – Contenedor del grid (sin padding lateral)
-- `card-categories-list` + `row row-gutter-16 row-gutter-y-16` – Lista de tarjetas (`role="list"`),
-  16 px entre tarjetas
-- `card-categories-card` + `col-24 col-md-8 col-lg-4` – Columna de cada tarjeta (`role="listitem"`)
-- `card-categories-item` – Tarjeta y enlace a la categoría (`a`)
-- `card-categories-icon` – Icono de la categoría (decorativo, `aria-hidden="true"`)
-- `card-categories-label` – Nombre de la categoría
-- `card-categories-skeleton` – Tarjeta gris de carga
-- `empty-list-message` – Aviso de lista vacía (bloque compartido `blocks/empty-list-message`)
+- El **título** de la sección
+- El **servicio** de donde llegan las categorías
+- La **duración**, el **color** y el **texto** de la alerta de error
+- El **título**, la **descripción** y el **icono** del aviso de lista vacía
+- **Estilos** y **clases** extra del bloque
 
-```text
-div.card-categories
-├─ div.card-categories-header
-│  └─ div.card-categories-heading[role=heading][aria-level=2]
-└─ div.card-categories-grid.container-fluid
-   └─ div.card-categories-list.row.row-gutter-16.row-gutter-y-16[role=list][aria-label]
-      └─ div.card-categories-card.col-24.col-md-8.col-lg-4[role=listitem]   × cada categoría
-         └─ a.card-categories-item
-            ├─ span.card-categories-icon[aria-hidden=true]
-            └─ span.card-categories-label
-```
+![Vista Tabla en Drive](../../documentation/readme/card-categories/drive-table.png)
 
-### Propiedades del Componente
+### Propiedades del JSON
 
 Cada categoría que llega del servicio (o del JSON interno) dentro de
 `{ data: { categories: [ … ] } }`:
@@ -176,31 +188,19 @@ Cada categoría que llega del servicio (o del JSON interno) dentro de
 | tablet (768–991 px) | 3 (`col-md-8`) | 126 px |
 | desktop (≥ 992 px) | 6 (`col-lg-4`) | 126 px |
 
-### Diálogo
-
-La tabla de Drive permite al autor configurar:
-
-- El **título** de la sección
-- El **servicio** de donde llegan las categorías
-- La **duración**, el **color** y el **texto** de la alerta de error
-- El **título**, la **descripción** y el **icono** del aviso de lista vacía
-- **Estilos** y **clases** extra del bloque
-
-![Vista Tabla en Drive](./readme/dialog-table.png)
-
 ### Vista previa
 
 Desktop:
 
-![Vista Componente desktop](./readme/component-desktop.png)
+![Vista Componente desktop](../../documentation/readme/card-categories/component-desktop.png)
 
 Tablet:
 
-![Vista Componente tablet](./readme/component-tablet.png)
+![Vista Componente tablet](../../documentation/readme/card-categories/component-tablet.png)
 
 Móvil:
 
-![Vista Componente móvil](./readme/component-mobile.png)
+![Vista Componente móvil](../../documentation/readme/card-categories/component-mobile.png)
 
 ### Archivos y dependencias
 
