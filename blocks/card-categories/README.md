@@ -24,6 +24,22 @@ Las categorías llegan de un **servicio** (fila `Endpoint`) o, si no hay endpoin
 bloque. Se acomoda solo a cada resolución con el grid del proyecto: 1 tarjeta por fila en móvil,
 3 en tablet y 6 en desktop.
 
+### Características
+
+- Categorías desde un servicio (`Endpoint`) o desde el JSON interno del bloque
+- Título de la sección personalizable (sin título no se pinta)
+- Solo muestra categorías activas, con nombre y enlace válido, sin repetidas y ordenadas por `order`
+- Color propio de cada categoría al pasar el mouse (borde, sombra y la tarjeta sube 4 px)
+- Esqueleto de carga mientras responde el servicio (la página no salta)
+- Alerta flotante configurable (duración y color) cuando el servicio falla
+- Aviso de lista vacía configurable (título, descripción e icono)
+- Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
+- Accesible: lista con nombre para lectores de pantalla, título con `role="heading"`, foco visible y
+  sin animación si el usuario pide menos movimiento
+- Pintado seguro: lo que llega del servicio se pone siempre como texto (nunca HTML) y solo se
+  aceptan enlaces del mismo sitio o `http(s)`
+
 ### Estructura / Descripción de clases
 
 El componente usa el nombre del bloque como prefijo de todas sus clases (`card-categories-*`) y las
@@ -55,21 +71,15 @@ div.card-categories
             └─ span.card-categories-label
 ```
 
-### Características
+### Resoluciones
 
-- Categorías desde un servicio (`Endpoint`) o desde el JSON interno del bloque
-- Título de la sección personalizable (sin título no se pinta)
-- Solo muestra categorías activas, con nombre y enlace válido, sin repetidas y ordenadas por `order`
-- Color propio de cada categoría al pasar el mouse (borde, sombra y la tarjeta sube 4 px)
-- Esqueleto de carga mientras responde el servicio (la página no salta)
-- Alerta flotante configurable (duración y color) cuando el servicio falla
-- Aviso de lista vacía configurable (título, descripción e icono)
-- Estilos y clases extra del autor con las filas `Styles` y `Classname`
-- Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
-- Accesible: lista con nombre para lectores de pantalla, título con `role="heading"`, foco visible y
-  sin animación si el usuario pide menos movimiento
-- Pintado seguro: lo que llega del servicio se pone siempre como texto (nunca HTML) y solo se
-  aceptan enlaces del mismo sitio o `http(s)`
+El grid acomoda las tarjetas solas en cada resolución:
+
+| Resolución | Columnas (clase del grid) | Alto de la tarjeta |
+|---|---|---|
+| mobile (< 768 px) | 1 (`col-24`) | 105 px |
+| tablet (768–991 px) | 3 (`col-md-8`) | 126 px |
+| desktop (≥ 992 px) | 6 (`col-lg-4`) | 126 px |
 
 ### Estructura de la tabla en Drive
 
@@ -137,7 +147,7 @@ opcionales y pueden ir en cualquier orden.
     - **Por defecto:** `🗂️` (`EMPTY_LIST_ICON` en `card-categories.js`). Si la fila existe pero está
       vacía, no se pinta
 
-### Vista previa Drive
+### Vista previa de la tabla en Drive
 
 La tabla en Drive permite al autor configurar:
 
@@ -147,7 +157,7 @@ La tabla en Drive permite al autor configurar:
 - El **título**, la **descripción** y el **icono** del aviso de lista vacía
 - **Estilos** y **clases** extra del bloque
 
-![Vista Tabla en Drive](../../documentation/readme/card-categories/drive-table.png)
+![Vista Tabla en Drive](/documentation/readme/card-categories/drive-table.png)
 
 ### Propiedades del JSON
 
@@ -182,25 +192,19 @@ Cada categoría que llega del servicio (o del JSON interno) dentro de
 | El servicio responde la lista vacía (o sin categorías activas) | Aviso de lista vacía, sin alerta |
 | El servicio falla, no responde o la respuesta no trae la lista | Alerta (`Error Response Message`) + aviso de lista vacía |
 
-| Resolución | Columnas (clase del grid) | Alto de la tarjeta |
-|---|---|---|
-| mobile (< 768 px) | 1 (`col-24`) | 105 px |
-| tablet (768–991 px) | 3 (`col-md-8`) | 126 px |
-| desktop (≥ 992 px) | 6 (`col-lg-4`) | 126 px |
-
 ### Vista previa
 
 Desktop:
 
-![Vista Componente desktop](../../documentation/readme/card-categories/component-desktop.png)
+![Vista Componente desktop](/documentation/readme/card-categories/component-desktop.png)
 
 Tablet:
 
-![Vista Componente tablet](../../documentation/readme/card-categories/component-tablet.png)
+![Vista Componente tablet](/documentation/readme/card-categories/component-tablet.png)
 
 Móvil:
 
-![Vista Componente móvil](../../documentation/readme/card-categories/component-mobile.png)
+![Vista Componente móvil](/documentation/readme/card-categories/component-mobile.png)
 
 ### Archivos y dependencias
 
