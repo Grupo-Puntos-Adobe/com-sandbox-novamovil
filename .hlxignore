@@ -8,6 +8,7 @@
 .renovaterc.json
 .stylelintrc.json
 *.md
+blocks/*/readme/
 karma.config.js
 LICENSE
 package.json
