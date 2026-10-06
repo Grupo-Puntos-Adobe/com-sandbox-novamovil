@@ -216,5 +216,4 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-categories-*`)
 
-Guía de autor: `documentation/04-card-categories.md`. Integración del servicio:
-`documentation/02-integracion-endpoints.md`.
+Integración del servicio: `documentation/02-integracion-endpoints.md`.

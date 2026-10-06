@@ -261,8 +261,8 @@ header fijo:
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
 
 Los tres bloques siguen el mismo patrón y leen sus textos de la tabla (con `scripts/foundations/messages.js`
-como respaldo). Ejemplo real de `card-categories`; las guías de cada bloque son
-`04-card-categories.md`, `05-card-featured.md` y `06-card-promotions.md`:
+como respaldo). Ejemplo real de `card-categories`; las guías de cada bloque
+están en su `README.md` (`blocks/card-categories/`, `blocks/card-featured/` y `blocks/card-promotions/`):
 
 ```js
 import { readBlockConfig } from '../../scripts/aem.js';

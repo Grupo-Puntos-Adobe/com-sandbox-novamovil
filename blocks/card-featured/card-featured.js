@@ -62,7 +62,7 @@
  *
  * Expected response: { data: { products: [{ id, sku, brand, name, description, image, price,
  *   oldPrice, promo, currency, rating, reviews, badge, active, path? }] } }
- * Guides: documentation/02-integracion-endpoints.md, documentation/05-card-featured.md
+ * Guides: blocks/card-featured/README.md, documentation/02-integracion-endpoints.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/foundations/block-options.js';

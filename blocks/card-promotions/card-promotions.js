@@ -50,7 +50,7 @@
  * Expected response:
  *   { data: { promotions: [{ id, title, sub, color, img, active, order, path? }] } }
  * The gradient colour is passed to CSS as --card-promotions-item-color on each card.
- * Guides: documentation/02-integracion-endpoints.md, documentation/06-card-promotions.md
+ * Guides: blocks/card-promotions/README.md, documentation/02-integracion-endpoints.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/foundations/block-options.js';

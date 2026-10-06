@@ -45,7 +45,7 @@
  * (div.empty-list-message) comes from blocks/empty-list-message.
  *
  * Expected response: { data: { categories: [{ id, label, icon, path, color, active, order }] } }
- * Guides: documentation/02-integracion-endpoints.md, documentation/04-card-categories.md
+ * Guides: blocks/card-categories/README.md, documentation/02-integracion-endpoints.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
