@@ -1,0 +1,67 @@
+/*
+ * NovaMóvil breadcrumb (block "Breadcrumb").
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. breadcrumb.js builds the trail with divs and links.
+ *   - Every rule lives inside .breadcrumb, at most 2 levels deep.
+ *   - Sizes in px; resolutions with the names of styles/foundations/breakpoints.css.
+ *   - The only variables are colours (styles/colors.css, --breadcrumb-*).
+ *
+ * Sections: 1 trail · 2 levels and separator
+ */
+
+.breadcrumb {
+  /* ========================================================================
+     1. Trail: one line that wraps when the levels do not fit
+     ======================================================================== */
+
+  padding-block: 16px 0;
+
+  & .breadcrumb-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* ========================================================================
+     2. Levels: links in grey, the current page dark and bold; "›" between levels
+     ======================================================================== */
+
+  & .breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &:not(:last-child)::after {
+      content: '›';
+      color: var(--breadcrumb-separator);
+      font-size: 14px;
+    }
+  }
+
+  & .breadcrumb-link,
+  & .breadcrumb-text {
+    color: var(--breadcrumb-link);
+    text-decoration: none;
+  }
+
+  & .breadcrumb-link {
+    &:hover {
+      color: var(--breadcrumb-link-hover);
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--breadcrumb-link-hover);
+      outline-offset: 2px;
+    }
+  }
+
+  & .breadcrumb-current {
+    color: var(--breadcrumb-current);
+    font-weight: 600;
+  }
+}

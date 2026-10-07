@@ -1,0 +1,705 @@
+/*
+ * NovaMóvil product catalog (block "Product Catalog"): toolbar, filters, phone cards and
+ * pagination.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. product-catalog.js builds the block with divs, links,
+ *     buttons and native form controls, and adds the classes.
+ *   - Every rule lives inside .product-catalog, at most 2 levels deep:
+ *       .product-catalog > & .part > its state (&:hover, &.is-open) or its resolution.
+ *   - Sizes are written directly in px where they apply; each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css): the filters are a full-screen panel on
+ *     mobile (opened with the toggle) and a box beside the list on tablet and desktop.
+ *   - Columns and the space between them are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes product-catalog.js puts on the toolbar,
+ *     the layout (filters + results), the list of phones and the brand/status row.
+ *   - The only variables are colours (styles/colors.css, --product-catalog-*), plus
+ *     --nav-height and --z-index-panel (styles/styles.css) for the mobile panel.
+ *     Fonts come from styles.css (body, and [role='heading'] for the titles).
+ *
+ * The empty message is the shared block blocks/empty-list-message (its own CSS).
+ *
+ * Sections: 1 toolbar · 2 filters · 3 phone card · 4 pagination · 5 loading skeletons ·
+ *           6 page scroll lock
+ */
+
+.product-catalog {
+  /* ========================================================================
+     1. Toolbar: title + results count, mobile filters toggle and sort select
+     ======================================================================== */
+
+  & .product-catalog-toolbar {
+    margin-block: 16px 20px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block: 18px 28px;
+    }
+  }
+
+  & .product-catalog-title {
+    margin: 0;
+    color: var(--product-catalog-title);
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+
+    @container style(--desktop: on) {
+      font-size: 30px;
+    }
+  }
+
+  & .product-catalog-count {
+    margin-block-start: 4px;
+    color: var(--product-catalog-muted);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* controls take their own row on mobile, under the title */
+  & .product-catalog-col-controls {
+    margin-block-start: 12px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-start: 0;
+    }
+  }
+
+  & .product-catalog-sort-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  & .product-catalog-sort-label {
+    color: var(--product-catalog-muted);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  & .product-catalog-sort {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    block-size: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--product-catalog-border);
+    border-radius: 8px;
+    background: var(--product-catalog-surface);
+    color: var(--product-catalog-control-text);
+    font-size: 14px;
+    accent-color: var(--product-catalog-accent);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-accent);
+      outline-offset: 2px;
+    }
+
+    @container style(--tablet-desktop: on) {
+      flex: 0 0 auto;
+      inline-size: 180px;
+      block-size: 32px;
+    }
+  }
+
+  /* the toggle only exists on mobile, where the filters are a panel */
+  & .product-catalog-toggle-field {
+    @container style(--tablet-desktop: on) {
+      display: none;
+    }
+  }
+
+  & .product-catalog-filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    block-size: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--product-catalog-border);
+    border-radius: 8px;
+    background: var(--product-catalog-toggle-background);
+    color: var(--product-catalog-control-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* number of active filters; hidden while there is none */
+  & .product-catalog-filters-toggle-badge {
+    display: grid;
+    place-items: center;
+    min-inline-size: 20px;
+    block-size: 20px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--product-catalog-toggle-badge-background);
+    color: var(--product-catalog-toggle-badge-text);
+    font-size: 12px;
+    line-height: 1;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  /* ========================================================================
+     2. Filters: full-screen panel on mobile (below the header), box on tablet/desktop
+     ======================================================================== */
+
+  & .product-catalog-filters {
+    box-sizing: border-box;
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    z-index: var(--z-index-panel);
+    inset: var(--nav-height) 0 0;
+    overflow-y: auto;
+    padding: 20px 16px 0;
+    background: var(--product-catalog-surface);
+
+    &.is-open {
+      display: flex;
+    }
+
+    @container style(--tablet-desktop: on) {
+      display: block;
+      position: static;
+      z-index: auto;
+      overflow: visible;
+      padding: 22px 20px 26px;
+      border: 1px solid var(--product-catalog-border);
+      border-radius: 14px;
+    }
+  }
+
+  & .product-catalog-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  & .product-catalog-filters-title {
+    margin: 0;
+    color: var(--product-catalog-title);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+
+    @container style(--tablet-desktop: on) {
+      font-size: 16px;
+    }
+  }
+
+  & .product-catalog-filters-close {
+    display: grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    margin-inline-start: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--product-catalog-control-text);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-accent);
+      outline-offset: 2px;
+    }
+
+    @container style(--tablet-desktop: on) {
+      display: none;
+    }
+  }
+
+  & .product-catalog-filters-body {
+    flex: 1 1 auto;
+  }
+
+  & .product-catalog-filter-group {
+    display: block;
+    margin-block-start: 22px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-start: 24px;
+    }
+  }
+
+  & .product-catalog-filter-label {
+    display: block;
+    margin-block-end: 12px;
+    color: var(--product-catalog-filter-label);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  & .product-catalog-filter-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  & .product-catalog-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-block-size: 24px;
+    color: var(--product-catalog-filter-option);
+    font-size: 13px;
+    line-height: 1.3;
+    cursor: pointer;
+  }
+
+  & .product-catalog-checkbox {
+    flex: 0 0 auto;
+    inline-size: 16px;
+    block-size: 16px;
+    margin: 0;
+    accent-color: var(--product-catalog-accent);
+    cursor: pointer;
+  }
+
+  /* light track and blue thumb, as in the design (each engine has its own pseudo-elements) */
+  & .product-catalog-range {
+    display: block;
+    inline-size: 100%;
+    block-size: 18px;
+    margin: 8px 0 0;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+
+    &::-webkit-slider-runnable-track {
+      block-size: 4px;
+      border-radius: 999px;
+      background: var(--product-catalog-range-track);
+    }
+
+    &::-moz-range-track {
+      block-size: 4px;
+      border-radius: 999px;
+      background: var(--product-catalog-range-track);
+    }
+
+    &::-webkit-slider-thumb {
+      inline-size: 16px;
+      block-size: 16px;
+      margin-block-start: -6px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--product-catalog-accent);
+      appearance: none;
+    }
+
+    &::-moz-range-thumb {
+      inline-size: 16px;
+      block-size: 16px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--product-catalog-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-accent);
+      outline-offset: 4px;
+    }
+  }
+
+  & .product-catalog-range-limits {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-block-start: 8px;
+  }
+
+  & .product-catalog-range-min {
+    color: var(--product-catalog-muted);
+    font-size: 12px;
+  }
+
+  & .product-catalog-range-value {
+    color: var(--product-catalog-accent);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  /* "Ver resultados": only in the mobile panel, pinned to its bottom */
+  & .product-catalog-filters-footer {
+    position: sticky;
+    inset-block-end: 0;
+    margin-block-start: 24px;
+    padding-block: 12px 16px;
+    background: var(--product-catalog-surface);
+
+    @container style(--tablet-desktop: on) {
+      display: none;
+    }
+  }
+
+  & .product-catalog-filters-apply {
+    inline-size: 100%;
+    block-size: 46px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--product-catalog-accent);
+    color: var(--product-catalog-surface);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     3. Phone card: photo with tags, brand + availability, name, chips, prices and the
+        button; the whole card opens the phone and hover lifts it
+     ======================================================================== */
+
+  & .product-catalog-card {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    overflow: hidden;
+    border: 1px solid var(--product-catalog-border);
+    border-radius: 14px;
+    background: var(--product-catalog-surface);
+
+    /* identity translate so hover does not create a new stacking context */
+    translate: 0 0;
+    transition: translate 0.2s ease;
+
+    &:has(:any-link):hover,
+    &:focus-within {
+      translate: 0 -4px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &:has(:any-link):hover,
+      &:focus-within {
+        translate: 0 0;
+      }
+    }
+  }
+
+  & .product-catalog-media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    overflow: hidden;
+    block-size: 160px;
+    background: var(--product-catalog-media-background);
+  }
+
+  & .product-catalog-image {
+    display: block;
+    inline-size: min(100%, 152px);
+    block-size: 152px;
+    object-fit: cover;
+
+    @container style(--desktop: on) {
+      inline-size: min(100%, 140px);
+      block-size: 140px;
+    }
+  }
+
+  & .product-catalog-media-fallback {
+    color: var(--product-catalog-muted);
+    font-size: 13px;
+  }
+
+  & .product-catalog-badge,
+  & .product-catalog-promo {
+    position: absolute;
+    inset-block-start: 10px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  & .product-catalog-badge {
+    inset-inline-start: 10px;
+    background: var(--product-catalog-badge-background);
+    color: var(--product-catalog-badge-text);
+  }
+
+  & .product-catalog-promo {
+    inset-inline-end: 10px;
+    background: var(--product-catalog-promo-background);
+    color: var(--product-catalog-promo-text);
+  }
+
+  & .product-catalog-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  & .product-catalog-brand {
+    min-inline-size: 0;
+    overflow: hidden;
+    color: var(--product-catalog-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* "● Disponible" / "Agotado" */
+  & .product-catalog-status {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &.is-available {
+      color: var(--product-catalog-available);
+    }
+
+    &.is-sold-out {
+      color: var(--product-catalog-sold-out);
+    }
+
+    &.is-available::before {
+      content: '● ';
+    }
+  }
+
+  /* two lines at most, so long names do not break the card symmetry */
+  & .product-catalog-name {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 4px 0 0;
+    color: var(--product-catalog-name);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* name as the phone link when the table has no Button Text (stretched over the card) */
+  & .product-catalog-name-link {
+    color: inherit;
+    text-decoration: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-button-text);
+      outline-offset: 2px;
+    }
+  }
+
+  & .product-catalog-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-block-start: 6px;
+  }
+
+  & .product-catalog-chip {
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--product-catalog-chip-background);
+    color: var(--product-catalog-chip-text);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  & .product-catalog-prices {
+    margin-block: 14px 12px;
+  }
+
+  & .product-catalog-price {
+    color: var(--product-catalog-price);
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  & .product-catalog-old-price {
+    color: var(--product-catalog-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    text-decoration: line-through;
+  }
+
+  & .product-catalog-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    block-size: 36px;
+    margin-block-start: auto;
+    border-radius: 8px;
+    background: var(--product-catalog-button-background);
+    color: var(--product-catalog-button-text);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    /* stretched link: the whole card opens the phone */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:hover {
+      background: var(--product-catalog-button-hover);
+      color: var(--product-catalog-button-text);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-button-text);
+      outline-offset: 2px;
+    }
+  }
+
+  & .product-catalog-sr-only {
+    position: absolute;
+    overflow: hidden;
+    inline-size: 1px;
+    block-size: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ========================================================================
+     4. Pagination: ‹ 1 2 3 › centred under the list
+     ======================================================================== */
+
+  & .product-catalog-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-block-start: 28px;
+  }
+
+  & .product-catalog-page {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    min-inline-size: 36px;
+    block-size: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--product-catalog-border);
+    border-radius: 8px;
+    background: var(--product-catalog-surface);
+    color: var(--product-catalog-control-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover:not(:disabled, [aria-current]) {
+      background: var(--product-catalog-page-hover);
+    }
+
+    &[aria-current='page'] {
+      border-color: var(--product-catalog-page-current-background);
+      background: var(--product-catalog-page-current-background);
+      color: var(--product-catalog-page-current-text);
+      cursor: default;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-catalog-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  & .product-catalog-page-gap {
+    color: var(--product-catalog-muted);
+    font-size: 14px;
+  }
+
+  /* ========================================================================
+     5. Loading skeletons: filters box (tablet/desktop) and phone cards
+     ======================================================================== */
+
+  & .product-catalog-skeleton,
+  & .product-catalog-filters-skeleton {
+    border-radius: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--product-catalog-skeleton) 25%,
+      var(--product-catalog-skeleton-shine) 50%,
+      var(--product-catalog-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: product-catalog-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  & .product-catalog-skeleton {
+    block-size: 340px;
+  }
+
+  & .product-catalog-filters-skeleton {
+    block-size: 560px;
+  }
+}
+
+@keyframes product-catalog-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+/* ==========================================================================
+   6. Page scroll lock: the page does not scroll behind the open mobile filters panel
+      (product-catalog.js toggles .has-product-catalog-filters-open on <body>)
+   ========================================================================== */
+
+@container style(--mobile: on) {
+  .has-product-catalog-filters-open {
+    overflow-y: hidden;
+  }
+}

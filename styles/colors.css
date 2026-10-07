@@ -113,6 +113,45 @@
   --card-promotions-skeleton: var(--card-featured-skeleton);
   --card-promotions-skeleton-shine: var(--card-featured-skeleton-shine);
 
+  /* breadcrumb */
+  --breadcrumb-link: var(--color-gray-500);
+  --breadcrumb-link-hover: var(--color-primary);
+  --breadcrumb-current: var(--heading-color);
+  --breadcrumb-separator: var(--color-gray-400);
+
+  /* product-catalog (toolbar, filters, phone cards, pagination) */
+  --product-catalog-title: var(--heading-color);
+  --product-catalog-muted: var(--color-gray-500);
+  --product-catalog-surface: var(--color-white);
+  --product-catalog-border: var(--border-color);
+  --product-catalog-accent: var(--color-primary);
+  --product-catalog-control-text: var(--color-gray-900);
+  --product-catalog-filter-label: var(--color-gray-500);
+  --product-catalog-filter-option: var(--color-gray-700);
+  --product-catalog-range-track: var(--color-gray-200);
+  --product-catalog-toggle-background: var(--color-white);
+  --product-catalog-toggle-badge-background: var(--color-primary);
+  --product-catalog-toggle-badge-text: var(--color-white);
+  --product-catalog-media-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+  --product-catalog-badge-background: var(--gradient-brand);
+  --product-catalog-badge-text: var(--color-white);
+  --product-catalog-promo-background: var(--color-yellow-100);
+  --product-catalog-promo-text: var(--color-yellow-800);
+  --product-catalog-name: var(--heading-color);
+  --product-catalog-available: color-mix(in srgb, var(--color-success) 80%, var(--color-gray-900));
+  --product-catalog-sold-out: var(--color-gray-500);
+  --product-catalog-chip-background: var(--color-gray-100);
+  --product-catalog-chip-text: var(--color-gray-500);
+  --product-catalog-price: var(--color-primary);
+  --product-catalog-button-background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+  --product-catalog-button-hover: color-mix(in srgb, var(--color-primary) 16%, var(--color-white));
+  --product-catalog-button-text: var(--color-primary);
+  --product-catalog-page-current-background: var(--color-primary);
+  --product-catalog-page-current-text: var(--color-white);
+  --product-catalog-page-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
+  --product-catalog-skeleton: var(--color-gray-200);
+  --product-catalog-skeleton-shine: var(--color-gray-100);
+
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);
   --empty-list-message-background: var(--color-white);

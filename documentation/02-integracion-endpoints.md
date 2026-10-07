@@ -53,6 +53,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `blocks/card-featured/card-featured.js` | 🆕 | Pide `data.products` | `70c643f` |
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
 | `blocks/card-*/card-*.css` | 🆕 | Esqueleto de carga y mensaje de "no hay elementos" | mismos commits |
+| `blocks/product-catalog/product-catalog.js` | 🆕 | Pide los filtros con `get` (`data.brands`, `operatingSystems`, `storages`, `priceRange`) y busca con `post` (`data` con los filtros elegidos; `pagination` + lista en `data`), cancelando la búsqueda anterior. Guía: `blocks/product-catalog/README.md` | — |
 | `content-drive/index.docx` | 🆕 | Filas `Endpoint`, `Alert Duration`, `Alert Color` en cada tabla | mismos commits |
 | `styles/styles.css` | 📦 ✏️ | Agrega `--z-index-toast: 900` (la alerta queda bajo el header, `1000`) | `db5a73d` |
 | `head.html` | 📦 ✏️ | Ya cargaba `styles/colors.css` desde el header; **no se cambió para esto** | `5fa25e7` (header) |
@@ -417,6 +418,23 @@ import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-
 import { post } from '../../scripts/api/http-client.js';
 await post('/api/v1/cart', { sku: 'IPH-15-128-BLK', qty: 1 });
 ```
+
+Ejemplo real: la búsqueda de `blocks/product-catalog/product-catalog.js`. El objeto se manda como
+JSON y una búsqueda nueva cancela la anterior con `AbortController` (opción `signal` del cliente):
+
+```js
+state.controller?.abort();                      // cancela la búsqueda anterior
+const controller = new AbortController();
+state.controller = controller;
+const response = await post(settings.searchEndpoint, buildSearchRequest(state, settings), {
+  signal: controller.signal,
+});
+if (controller.signal.aborted) return;          // llegó tarde: ya hay otra búsqueda
+```
+
+> Un `POST` con JSON hace que el navegador mande antes una consulta `OPTIONS` (CORS). El mock de
+> Postman la contesta (`access-control-allow-headers: content-type,accept`); un servicio nuevo
+> también debe contestarla, o la llamada falla en el navegador aunque funcione con curl.
 
 ## 8. Resumen de cambios al template de AEM Edge Delivery
 
