@@ -11,10 +11,12 @@
  *     below it (styles/foundations/breakpoints.css): the filters are a full-screen panel on
  *     mobile (opened with the toggle) and a box beside the list on tablet and desktop.
  *   - Columns and the space between them are NOT here: they come from the grid
- *     (styles/foundations/grid.css) through the classes product-catalog.js puts on the toolbar,
- *     the layout (filters + results), the list of phones and the brand/status row.
+ *     (styles/foundations/grid.css) through the classes product-catalog.js puts on
+ *     the frame (title + controls + layout), the layout (filters + results), the list of
+ *     phones and the brand/status row.
  *   - The only variables are colours (styles/colors.css, --product-catalog-*), plus
- *     --nav-height and --z-index-panel (styles/styles.css) for the mobile panel.
+ *     --nav-height and --z-index-panel (styles/styles.css) for the mobile panel and the
+ *     stuck controls.
  *     Fonts come from styles.css (body, and [role='heading'] for the titles).
  *
  * The empty message is the shared block blocks/empty-list-message (its own CSS).
@@ -28,11 +30,20 @@
      1. Toolbar: title + results count, mobile filters toggle and sort select
      ======================================================================== */
 
-  & .product-catalog-toolbar {
-    margin-block: 16px 20px;
+  /* one grid row for the whole block: title + controls, then the layout (filters + results) */
+  & .product-catalog-frame {
+    margin-block-start: 16px;
 
     @container style(--tablet-desktop: on) {
-      margin-block: 18px 28px;
+      margin-block-start: 18px;
+    }
+  }
+
+  & .product-catalog-col-layout {
+    margin-block-start: 12px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-start: 28px;
     }
   }
 
@@ -55,12 +66,24 @@
     line-height: 1.4;
   }
 
-  /* controls take their own row on mobile, under the title */
+  /* mobile: the controls take their own line under the title and stay stuck under the
+     header while the list scrolls (the frame row spans the whole list), so the filters panel
+     and the sort are always at hand; tablet/desktop: beside the title, not stuck */
   & .product-catalog-col-controls {
-    margin-block-start: 12px;
+    position: sticky;
+    z-index: 2;
+    inset-block-start: var(--nav-height);
+    margin-block-start: 4px;
+    padding-block: 8px;
+    background: var(--product-catalog-sticky-background);
+    box-shadow: 0 8px 8px -8px var(--product-catalog-sticky-shadow);
 
     @container style(--tablet-desktop: on) {
+      position: static;
       margin-block-start: 0;
+      padding-block: 0;
+      background: none;
+      box-shadow: none;
     }
   }
 

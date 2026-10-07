@@ -47,6 +47,8 @@ a la izquierda; en móvil se abren en un panel con el botón **Filtros**.
 - Texto en lugar de la foto si falta o no carga (`Image Error Message`)
 - Móvil: botón **Filtros** con el número de filtros activos, panel a pantalla completa, botón
   **Ver resultados**, cierre con × o `Escape`, y la página no se desplaza detrás del panel
+- Móvil: la barra con **Filtros** y **Ordenar por** se queda fija debajo del header mientras se
+  recorre la lista, así se pueden abrir los filtros o cambiar el orden desde cualquier parte
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: título principal con `role="heading"` y `aria-level="1"`, contador con `role="status"`,
@@ -64,12 +66,15 @@ y `select`).
 
 **Barra superior**
 
-- `product-catalog-toolbar` + `container-fluid` – Grid de la barra
-- `product-catalog-toolbar-row` + `row row-middle row-gutter-16` – Fila de la barra
+- `product-catalog-frame` + `container-fluid` – Grid de todo el bloque (barra + contenido)
+- `product-catalog-frame-row` + `row row-middle row-gutter-16` – Una sola fila: título y controles
+  en la primera línea y el contenido debajo; por eso en móvil los controles pueden quedarse fijos a
+  lo largo de toda la lista
 - `product-catalog-col-title` + `col-24 col-md` – Columna del título y el contador
 - `product-catalog-title` – Título (`role="heading"`, `aria-level="1"`)
 - `product-catalog-count` – Contador de resultados (`role="status"`)
-- `product-catalog-col-controls` + `col-24 col-md-auto` – Columna de los controles
+- `product-catalog-col-controls` + `col-24 col-md-auto` – Columna de los controles (fija debajo del
+  header en móvil)
 - `product-catalog-controls` + `container-fluid` > `product-catalog-controls-row` +
   `row row-middle row-gutter-8` – Grid de los controles
 - `product-catalog-toggle-field` + `col-auto` – Columna del botón Filtros (solo móvil)
@@ -81,6 +86,7 @@ y `select`).
 
 **Filtros**
 
+- `product-catalog-col-layout` + `col-24` – Columna del contenido (filtros + resultados)
 - `product-catalog-layout` + `container-fluid` > `product-catalog-layout-row` + `row row-gutter-32`
   – Grid de filtros + resultados
 - `product-catalog-col-filters` + `col-24 col-md-8 col-lg-5` – Columna de los filtros
@@ -137,43 +143,44 @@ y `select`).
 
 ```text
 div.product-catalog
-├─ div.product-catalog-toolbar.container-fluid
-│  └─ div.row.row-middle.row-gutter-16
-│     ├─ div.product-catalog-col-title.col-24.col-md
-│     │  ├─ div.product-catalog-title[role=heading][aria-level=1]
-│     │  └─ div.product-catalog-count[role=status]
-│     └─ div.product-catalog-col-controls.col-24.col-md-auto
-│        └─ div.product-catalog-controls.container-fluid > div.row.row-middle.row-gutter-8
-│           ├─ div.col-auto > button.product-catalog-filters-toggle   (solo móvil)
-│           └─ div.product-catalog-sort-field.col.col-md-auto
-│              ├─ label.product-catalog-sort-label
-│              └─ select.product-catalog-sort
-└─ div.product-catalog-layout.container-fluid
-   └─ div.row.row-gutter-32
-      ├─ div.product-catalog-col-filters.col-24.col-md-8.col-lg-5
-      │  └─ div.product-catalog-filters[role=region]
-      │     ├─ div.product-catalog-filters-header (título + ×)
-      │     ├─ div.product-catalog-filters-body
-      │     │  ├─ div.product-catalog-filter-group[role=group]   × marca, sistema, capacidad
-      │     │  │  └─ label.product-catalog-option > input.product-catalog-checkbox + span
-      │     │  └─ div.product-catalog-filter-group.product-catalog-price-group
-      │     │     └─ input.product-catalog-range + div.product-catalog-range-limits
-      │     └─ div.product-catalog-filters-footer > button.product-catalog-filters-apply
-      └─ div.product-catalog-col-results.col-24.col-md-16.col-lg-19
-         └─ div.product-catalog-results
-            ├─ div.product-catalog-grid.container-fluid
-            │  └─ div.product-catalog-list.row.row-gutter-16.row-gutter-y-16[role=list]
-            │     └─ div.product-catalog-cell.col-24.col-lg-6[role=listitem]   × cada celular
-            │        └─ div.product-catalog-card
-            │           ├─ div.product-catalog-media (img + badge + promo)
-            │           └─ div.product-catalog-body
-            │              ├─ div.product-catalog-meta.container-fluid > row > brand.col + status.col-auto
-            │              ├─ div.product-catalog-name[role=heading][aria-level=2]
-            │              ├─ div.product-catalog-chips[role=list]
-            │              ├─ div.product-catalog-prices (price + old-price)
-            │              └─ a.product-catalog-button
-            └─ div.product-catalog-pagination[role=navigation]
-               └─ button.product-catalog-page   × ‹, cada página, ›
+└─ div.product-catalog-frame.container-fluid
+   └─ div.product-catalog-frame-row.row.row-middle.row-gutter-16
+      ├─ div.product-catalog-col-title.col-24.col-md
+      │  ├─ div.product-catalog-title[role=heading][aria-level=1]
+      │  └─ div.product-catalog-count[role=status]
+      ├─ div.product-catalog-col-controls.col-24.col-md-auto   (fija en móvil)
+      │  └─ div.product-catalog-controls.container-fluid > div.row.row-middle.row-gutter-8
+      │     ├─ div.col-auto > button.product-catalog-filters-toggle   (solo móvil)
+      │     └─ div.product-catalog-sort-field.col.col-md-auto
+      │        ├─ label.product-catalog-sort-label
+      │        └─ select.product-catalog-sort
+      └─ div.product-catalog-col-layout.col-24
+         └─ div.product-catalog-layout.container-fluid
+            └─ div.row.row-gutter-32
+               ├─ div.product-catalog-col-filters.col-24.col-md-8.col-lg-5
+               │  └─ div.product-catalog-filters[role=region]
+               │     ├─ div.product-catalog-filters-header (título + ×)
+               │     ├─ div.product-catalog-filters-body
+               │     │  ├─ div.product-catalog-filter-group[role=group]   × marca, sistema, capacidad
+               │     │  │  └─ label.product-catalog-option > input.product-catalog-checkbox + span
+               │     │  └─ div.product-catalog-filter-group.product-catalog-price-group
+               │     │     └─ input.product-catalog-range + div.product-catalog-range-limits
+               │     └─ div.product-catalog-filters-footer > button.product-catalog-filters-apply
+               └─ div.product-catalog-col-results.col-24.col-md-16.col-lg-19
+                  └─ div.product-catalog-results
+                     ├─ div.product-catalog-grid.container-fluid
+                     │  └─ div.product-catalog-list.row.row-gutter-16.row-gutter-y-16[role=list]
+                     │     └─ div.product-catalog-cell.col-24.col-lg-6[role=listitem]   × cada celular
+                     │        └─ div.product-catalog-card
+                     │           ├─ div.product-catalog-media (img + badge + promo)
+                     │           └─ div.product-catalog-body
+                     │              ├─ div.product-catalog-meta.container-fluid > row > brand.col + status.col-auto
+                     │              ├─ div.product-catalog-name[role=heading][aria-level=2]
+                     │              ├─ div.product-catalog-chips[role=list]
+                     │              ├─ div.product-catalog-prices (price + old-price)
+                     │              └─ a.product-catalog-button
+                     └─ div.product-catalog-pagination[role=navigation]
+                        └─ button.product-catalog-page   × ‹, cada página, ›
 ```
 
 ### Resoluciones
@@ -408,6 +415,7 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 | Sin `Search Endpoint` | Los 6 celulares del JSON interno, filtrados y ordenados en el navegador |
 | Tablet o desktop: bajar por la lista | La caja de filtros se queda fija 16 px debajo del header y se detiene al final de la lista; al subir vuelve a su lugar |
 | Ventana más baja que la caja de filtros | La caja mide lo que cabe y sus filtros se desplazan por dentro |
+| Móvil: bajar por la lista | La barra con **Filtros** y **Ordenar por** se queda fija debajo del header hasta el final del catálogo; al subir vuelve a su lugar |
 | Móvil: abrir **Filtros** | Panel a pantalla completa; se cierra con **Ver resultados**, × o `Escape` |
 
 ### Vista previa
@@ -423,6 +431,10 @@ Tablet:
 Móvil:
 
 ![Vista Componente móvil](/documentation/readme/product-catalog/component-mobile.png)
+
+Móvil a media lista (barra de Filtros y Ordenar por fija):
+
+![Vista Componente móvil con barra fija](/documentation/readme/product-catalog/component-mobile-sticky.png)
 
 Móvil con el panel de filtros abierto:
 

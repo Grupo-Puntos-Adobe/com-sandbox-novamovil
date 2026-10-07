@@ -28,7 +28,7 @@
  *   decorate(block)
  *     ├─ applyBlockOptions(block)                  Styles / Classname rows
  *     ├─ readCatalogSettings(block)                texts, endpoints, alert, messages
- *     ├─ buildCatalogToolbar() · buildCatalogLayout() + skeletons
+ *     ├─ buildCatalogToolbar() · buildCatalogLayout() + skeletons → buildCatalogFrame()
  *     └─ startCatalog()
  *          ├─ loadFiltersFromService()   get(Filters Endpoint) → normalizeFilters()
  *          │                             (error → alert + FALLBACK_FILTERS)
@@ -41,8 +41,9 @@
  * No resolution logic here: product-catalog.css decides what each resolution shows (the
  * filters are a box on tablet/desktop and a full-screen panel on mobile). JS only toggles
  * is-open / aria-expanded. Columns come from the grid (styles/foundations/grid.css):
- *   toolbar  container-fluid > row row-middle row-gutter-16 > col-24 col-md (title) + col-24
+ *   frame    container-fluid > row row-middle row-gutter-16 > col-24 col-md (title) + col-24
  *            col-md-auto (controls: container-fluid > row row-middle row-gutter-8 > col-auto ×2)
+ *            + col-24 (layout); on mobile the controls column stays stuck under the header
  *   layout   container-fluid > row row-gutter-32 > col-24 col-md-8 col-lg-5 (filters)
  *            + col-24 col-md-16 col-lg-19 (results)
  *   results  container-fluid > row row-gutter-16 row-gutter-y-16 > col-24 col-lg-6 (each phone:
@@ -341,11 +342,12 @@ function searchFallbackPhones(state, settings) {
 }
 
 /**
- * Title (main heading of the page), results count and the controls (filters toggle for
- * mobile + sort select), laid out with the grid.
+ * Title column (main heading of the page + results count) and controls column (filters
+ * toggle for mobile + sort select); buildCatalogFrame() puts them in the grid.
  * @param {Object} settings readCatalogSettings() result
  * @param {string} idPrefix Unique prefix of this instance
- * @returns {{toolbar: Element, count: Element, toggle: Element, sort: Element}}
+ * @returns {{titleColumn: Element, controlsColumn: Element, count: Element, toggle: Element,
+ *   sort: Element}}
  */
 function buildCatalogToolbar(settings, idPrefix) {
   const { texts } = settings;
@@ -390,14 +392,29 @@ function buildCatalogToolbar(settings, idPrefix) {
   controls.append(controlsRow);
   const controlsColumn = createElementWithClass('div', 'product-catalog-col-controls col-24 col-md-auto');
   controlsColumn.append(controls);
-
-  const row = createElementWithClass('div', 'product-catalog-toolbar-row row row-middle row-gutter-16');
-  row.append(heading, controlsColumn);
-  const toolbar = createElementWithClass('div', 'product-catalog-toolbar container-fluid');
-  toolbar.append(row);
   return {
-    toolbar, count, toggle, sort,
+    titleColumn: heading, controlsColumn, count, toggle, sort,
   };
+}
+
+/**
+ * One grid row for the whole block: title + controls on the first line (one under the other
+ * on mobile) and the layout (filters + results) below, full width. Being in the same row as
+ * the results lets the controls stay stuck under the header on mobile (product-catalog.css)
+ * along the whole list.
+ * @param {Element} titleColumn
+ * @param {Element} controlsColumn
+ * @param {Element} layout buildCatalogLayout() result
+ * @returns {Element} div.product-catalog-frame.container-fluid
+ */
+function buildCatalogFrame(titleColumn, controlsColumn, layout) {
+  const layoutColumn = createElementWithClass('div', 'product-catalog-col-layout col-24');
+  layoutColumn.append(layout);
+  const row = createElementWithClass('div', 'product-catalog-frame-row row row-middle row-gutter-16');
+  row.append(titleColumn, controlsColumn, layoutColumn);
+  const frame = createElementWithClass('div', 'product-catalog-frame container-fluid');
+  frame.append(row);
+  return frame;
 }
 
 /**
@@ -717,7 +734,7 @@ function renderCatalogResults(catalog, phones, pageInfo) {
     state.page = page;
     // eslint-disable-next-line no-use-before-define
     searchPhones(catalog);
-    catalog.toolbar.scrollIntoView({ block: 'start' });
+    catalog.titleColumn.scrollIntoView({ block: 'start' });
   });
   results.replaceChildren(...[grid, pagination].filter(Boolean));
 }
@@ -894,15 +911,15 @@ export default function decorate(block) {
   const idPrefix = `product-catalog-${catalogCount}`;
 
   const {
-    toolbar, count, toggle, sort,
+    titleColumn, controlsColumn, count, toggle, sort,
   } = buildCatalogToolbar(settings, idPrefix);
   const { layout, filters, results } = buildCatalogLayout(settings, idPrefix);
-  block.replaceChildren(toolbar, layout);
+  block.replaceChildren(buildCatalogFrame(titleColumn, controlsColumn, layout));
 
   const catalog = {
     settings,
     idPrefix,
-    toolbar,
+    titleColumn,
     count,
     toggle,
     filters,

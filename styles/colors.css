@@ -130,6 +130,8 @@
   --product-catalog-filter-option: var(--color-gray-700);
   --product-catalog-range-track: var(--color-gray-200);
   --product-catalog-toggle-background: var(--color-white);
+  --product-catalog-sticky-background: var(--page-background);
+  --product-catalog-sticky-shadow: color-mix(in srgb, var(--color-navy-950) 14%, transparent);
   --product-catalog-toggle-badge-background: var(--color-primary);
   --product-catalog-toggle-badge-text: var(--color-white);
   --product-catalog-media-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
