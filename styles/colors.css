@@ -1,0 +1,143 @@
+/*
+ * NovaMóvil colour tokens.
+ * This is the only file with colour values: every stylesheet and block
+ * references these variables, so changing one here updates the whole site.
+ */
+
+:root {
+  /* brand palette */
+  --color-primary: #1a4fd8; /* Azul profundo: primary actions, buttons, links */
+  --color-accent: #0b9ef0; /* Cian vibrante: gradients, highlights, hover */
+  --color-white: #fff; /* Backgrounds, card surfaces */
+  --color-gray-100: #f5f7fa; /* Page backgrounds, input fills */
+  --color-gray-200: #e5e7eb; /* Borders, dividers */
+  --color-gray-300: #b4b8c5; /* Secondary text on dark backgrounds */
+  --color-gray-400: #9ca3af; /* Placeholder text, secondary labels */
+  --color-gray-500: #6b7280; /* Small secondary text on white (brand, old price, reviews) */
+  --color-gray-700: #374151; /* Body text */
+  --color-gray-900: #111827; /* Headings */
+  --color-navy-950: #0f172a; /* Header gradient start */
+  --color-navy-800: #1b2e5a; /* Header gradient end */
+  --color-navy-700: #163a6e; /* Hero gradient end */
+  --color-slate-300: #b3c1dc; /* Body text on navy backgrounds */
+  --color-success: #10b981; /* Order confirmation, stock badges */
+  --color-error: #ef4444; /* Form validation, alerts */
+  --color-warning: #d97706; /* Warnings */
+  --color-amber-500: #f59e0b; /* Rating stars */
+  --color-yellow-100: #fef9c3; /* Promo tag background */
+  --color-yellow-800: #854d0e; /* Promo tag text */
+
+  /* gradients */
+  --gradient-brand: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  --gradient-header: linear-gradient(90deg, var(--color-navy-950) 0%, var(--color-navy-800) 100%);
+
+  /* site */
+  --page-background: var(--color-gray-100); /* body; blocks keep their own surfaces */
+  --background-color: var(--color-white);
+  --light-color: var(--color-gray-100);
+  --dark-color: var(--color-gray-700);
+  --border-color: var(--color-gray-200);
+  --text-color: var(--color-gray-700);
+  --heading-color: var(--color-gray-900);
+  --link-color: var(--color-primary);
+  --link-hover-color: var(--color-accent);
+
+  /* brand logo (shared by header and footer) */
+  --brand-logo-background: var(--gradient-brand);
+  --brand-logo-mark: var(--color-white);
+
+  /* header */
+  --header-background: var(--gradient-header);
+  --header-text: var(--color-white);
+  --header-text-muted: color-mix(in srgb, var(--color-white) 82%, transparent);
+  --header-accent: var(--color-accent);
+  --header-border: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --header-surface: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --header-surface-hover: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --header-shadow: color-mix(in srgb, var(--color-navy-950) 30%, transparent);
+  --header-logo-background: var(--brand-logo-background);
+  --header-logo-mark: var(--brand-logo-mark);
+  --header-badge-background: var(--color-accent);
+  --header-badge-text: var(--color-white);
+  --header-search-background: var(--color-gray-100);
+  --header-search-text: var(--color-gray-900);
+  --header-search-muted: var(--color-gray-400);
+  --header-search-focus: var(--color-accent);
+
+  /* hero-novamovil (plain colours use the palette directly; only hero-specific values here) */
+  --hero-novamovil-background: linear-gradient(135deg, var(--color-navy-950) 0%, var(--color-navy-800) 55%, var(--color-navy-700) 100%);
+  --hero-novamovil-glow: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  --hero-novamovil-tag-border: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  --hero-novamovil-tag-background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --hero-novamovil-button-glow: color-mix(in srgb, var(--color-primary) 45%, transparent);
+  --hero-novamovil-button-secondary-background: color-mix(in srgb, var(--color-white) 10%, transparent);
+  --hero-novamovil-button-secondary-hover: color-mix(in srgb, var(--color-white) 16%, transparent);
+  --hero-novamovil-button-secondary-border: color-mix(in srgb, var(--color-white) 20%, transparent);
+  --hero-novamovil-media-shadow: color-mix(in srgb, var(--color-navy-950) 55%, transparent);
+
+  /* card-categories (each card's hover colour comes from the service data) */
+  --card-categories-surface: var(--color-white);
+  --card-categories-border: var(--border-color);
+  --card-categories-label: var(--heading-color);
+  --card-categories-default-color: var(--color-primary);
+  --card-categories-skeleton: var(--color-gray-200);
+  --card-categories-skeleton-shine: var(--color-gray-100);
+
+  /* card-featured (product cards) */
+  --card-featured-surface: var(--color-white);
+  --card-featured-border: var(--border-color);
+  --card-featured-media-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+  --card-featured-badge-background: var(--gradient-brand);
+  --card-featured-badge-text: var(--color-white);
+  --card-featured-promo-background: var(--color-yellow-100);
+  --card-featured-promo-text: var(--color-yellow-800);
+  --card-featured-brand: var(--color-gray-500);
+  --card-featured-name: var(--heading-color);
+  --card-featured-star: var(--color-amber-500);
+  --card-featured-star-empty: var(--color-gray-200);
+  --card-featured-muted: var(--color-gray-500);
+  --card-featured-price: var(--color-primary);
+  --card-featured-button-background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+  --card-featured-button-hover: color-mix(in srgb, var(--color-primary) 16%, var(--color-white));
+  --card-featured-button-text: var(--color-primary);
+  --card-featured-link: var(--color-primary);
+  --card-featured-link-hover: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  --card-featured-skeleton: var(--color-gray-200);
+  --card-featured-skeleton-shine: var(--color-gray-100);
+
+  /* card-promotions (each card's gradient colour comes from the service data) */
+  --card-promotions-text: var(--color-white);
+  --card-promotions-text-muted: color-mix(in srgb, var(--color-white) 88%, transparent);
+  --card-promotions-default-color: var(--color-primary);
+  --card-promotions-media-background: var(--color-navy-950);
+  --card-promotions-skeleton: var(--card-featured-skeleton);
+  --card-promotions-skeleton-shine: var(--card-featured-skeleton-shine);
+
+  /* empty-list-message (shared "nothing to show" message of the card blocks) */
+  --empty-list-message-border: var(--color-gray-200);
+  --empty-list-message-background: var(--color-white);
+  --empty-list-message-title: var(--heading-color);
+  --empty-list-message-description: var(--text-color);
+
+  /* toast (floating alerts); error/warning/success are deepened so white text passes 4.5:1 */
+  --toast-text: var(--color-white);
+  --toast-error-background: color-mix(in srgb, var(--color-error) 75%, var(--color-gray-900));
+  --toast-warning-background: color-mix(in srgb, var(--color-warning) 70%, var(--color-gray-900));
+  --toast-success-background: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --toast-info-background: var(--color-primary);
+  --toast-close-hover: color-mix(in srgb, var(--color-white) 18%, transparent);
+  --toast-shadow: color-mix(in srgb, var(--color-navy-950) 25%, transparent);
+
+  /* footer */
+  --footer-background: var(--color-navy-950);
+  --footer-heading: var(--color-white);
+  --footer-text: var(--color-gray-300);
+  --footer-link: var(--color-gray-400);
+  --footer-link-hover: var(--color-white);
+  --footer-accent: var(--color-accent);
+  --footer-border: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --footer-chip-background: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --footer-chip-text: var(--color-gray-400);
+  --footer-logo-background: var(--brand-logo-background);
+  --footer-logo-mark: var(--brand-logo-mark);
+}

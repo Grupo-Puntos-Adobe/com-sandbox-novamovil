@@ -1,0 +1,356 @@
+/*
+ * NovaMóvil featured products (block "Card Featured").
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. card-featured.js builds the block with divs
+ *     and adds the classes.
+ *   - Every rule lives inside .card-featured, at most 2 levels deep:
+ *       .card-featured > & .part > its state (&:hover, &::after) or its resolution.
+ *   - Sizes are written directly in px where they apply (only relative units such as %
+ *     or fr stay); each part keeps its resolutions right below it
+ *     (styles/foundations/breakpoints.css).
+ *   - Columns and the space between them are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-featured.js puts on each part
+ *     with columns: header (row row-middle row-gutter-16 > col + col-auto), list
+ *     (row row-gutter-16 row-gutter-y-16 > col-24 col-md-12 col-lg-6) and prices
+ *     (row row-gutter-8 > col-auto + col-auto).
+ *   - The only variables are colours (styles/colors.css, --card-featured-*) plus
+ *     --card-featured-rating, the rating (0-5) that each product brings from the service
+ *     (the star fill is worked out here, not in JS).
+ *     Fonts come from styles.css (body, and [role='heading'] for the titles).
+ *
+ * The empty message is the shared block blocks/empty-list-message (its own CSS).
+ *
+ * Sections: 1 header · 2 card · 3 media · 4 body · 5 loading skeleton
+ */
+
+.card-featured {
+  /* ========================================================================
+     1. Header: section title (Title row) + "Ver todos" (Link row)
+     ======================================================================== */
+
+  /* title and "Ver todos" are grid columns (col + col-auto), placed by card-featured.js */
+  & .card-featured-header {
+    margin-block-end: 24px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-end: 32px;
+    }
+  }
+
+  & .card-featured-heading {
+    margin: 0;
+    color: var(--heading-color);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    scroll-margin: 40px;
+
+    @container style(--desktop: on) {
+      font-size: 28px;
+      line-height: 35px;
+    }
+  }
+
+  & .card-featured-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    block-size: 38px;
+    padding: 0 18px;
+    border: 1px solid var(--card-featured-link);
+    border-radius: 10px;
+    color: var(--card-featured-link);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: var(--card-featured-link-hover);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-featured-link);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     2. Card: image area + body; with a link (button or name) the whole card opens
+        the product and hover lifts it; without a link it stays still. It fills the
+        height of its grid column, so the cards of a row are as tall as the tallest one
+     ======================================================================== */
+
+  & .card-featured-item {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    overflow: hidden;
+    border: 1px solid var(--card-featured-border);
+    border-radius: 14px;
+    background: var(--card-featured-surface);
+
+    /* identity translate so hover does not create a new stacking context */
+    translate: 0 0;
+    transition: translate 0.2s ease;
+
+    &:has(:any-link):hover,
+    &:focus-within {
+      translate: 0 -4px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &:has(:any-link):hover,
+      &:focus-within {
+        translate: 0 0;
+      }
+    }
+  }
+
+  /* ========================================================================
+     3. Media: product image centred on a light background, badge and promo tags
+     ======================================================================== */
+
+  & .card-featured-media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    overflow: hidden;
+    block-size: 168px;
+    background: var(--card-featured-media-background);
+
+    @container style(--tablet-desktop: on) {
+      block-size: 200px;
+    }
+  }
+
+  /* square crop centred on the light background, as in the design; any photo
+     shape (portrait, landscape) stays inside the image area */
+  & .card-featured-image {
+    display: block;
+    inline-size: min(100%, 168px);
+    block-size: 168px;
+    object-fit: cover;
+
+    @container style(--tablet-desktop: on) {
+      inline-size: min(100%, 200px);
+      block-size: 200px;
+    }
+  }
+
+  & .card-featured-media-fallback {
+    color: var(--card-featured-muted);
+    font-size: 13px;
+  }
+
+  & .card-featured-badge,
+  & .card-featured-promo {
+    position: absolute;
+    inset-block-start: 12px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  & .card-featured-badge {
+    inset-inline-start: 12px;
+    background: var(--card-featured-badge-background);
+    color: var(--card-featured-badge-text);
+  }
+
+  & .card-featured-promo {
+    inset-inline-end: 12px;
+    background: var(--card-featured-promo-background);
+    color: var(--card-featured-promo-text);
+  }
+
+  /* ========================================================================
+     4. Body: brand, name, rating, prices and the button pinned to the bottom
+     ======================================================================== */
+
+  & .card-featured-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    padding: 18px;
+
+    @container style(--tablet-desktop: on) {
+      padding: 20px 18px 18px;
+    }
+  }
+
+  & .card-featured-brand {
+    color: var(--card-featured-brand);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* two lines at most, so long names do not break the card symmetry */
+  & .card-featured-name {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 2px 0 0;
+    color: var(--card-featured-name);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* name as the product link when the table has no Button Text (stretched over the card) */
+  & .card-featured-name-link {
+    color: inherit;
+    text-decoration: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-featured-button-text);
+      outline-offset: 2px;
+    }
+  }
+
+  & .card-featured-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-block-start: 6px;
+  }
+
+  /* five stars filled up to the rating: 4.6 of 5 → 92% gold */
+  & .card-featured-stars {
+    background: linear-gradient(
+      90deg,
+      var(--card-featured-star) calc(var(--card-featured-rating, 0) / 5 * 100%),
+      var(--card-featured-star-empty) calc(var(--card-featured-rating, 0) / 5 * 100%)
+    );
+    background-clip: text;
+    color: transparent;
+    font-size: 14px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  & .card-featured-reviews {
+    color: var(--card-featured-muted);
+    font-size: 12px;
+  }
+
+  /* price and old price are grid columns (col-auto), placed by card-featured.js */
+  & .card-featured-prices {
+    /* minimum space above the button, which is pinned to the bottom of the card */
+    margin-block: 18px 12px;
+  }
+
+  /* the two prices share the text baseline (the grid aligns boxes, not text) */
+  & .card-featured-prices-row {
+    align-items: baseline;
+  }
+
+  & .card-featured-price {
+    color: var(--card-featured-price);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  & .card-featured-old-price {
+    color: var(--card-featured-muted);
+    font-size: 14px;
+    text-decoration: line-through;
+  }
+
+  & .card-featured-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    block-size: 40px;
+    margin-block-start: auto;
+    border-radius: 10px;
+    background: var(--card-featured-button-background);
+    color: var(--card-featured-button-text);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    /* stretched link: the whole card opens the product */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:hover {
+      background: var(--card-featured-button-hover);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-featured-button-text);
+      outline-offset: 2px;
+    }
+  }
+
+  & .card-featured-sr-only {
+    position: absolute;
+    overflow: hidden;
+    inline-size: 1px;
+    block-size: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ========================================================================
+     5. Loading skeleton: about the height of a card, gentle shine
+     ======================================================================== */
+
+  & .card-featured-skeleton {
+    block-size: 380px;
+    border-radius: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--card-featured-skeleton) 25%,
+      var(--card-featured-skeleton-shine) 50%,
+      var(--card-featured-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: card-featured-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    @container style(--tablet-desktop: on) {
+      block-size: 400px;
+    }
+  }
+}
+
+@keyframes card-featured-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

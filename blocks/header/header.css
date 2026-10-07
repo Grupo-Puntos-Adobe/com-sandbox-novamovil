@@ -1,272 +1,505 @@
-/* header and nav layout */
-header .nav-wrapper {
-  background-color: var(--background-color);
-  width: 100%;
-  z-index: 2;
+/*
+ * NovaMóvil header.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. header.js adds the classes.
+ *   - Every rule lives inside .header-novamovil, at most 2 levels deep:
+ *       .header-novamovil > & .part > its state (&.is-open, &:hover) or its resolution.
+ *   - Sizes are written directly in px where they apply (only viewport units such as
+ *     vw / dvh stay, because they depend on the screen); each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css: mobile and tablet use the hamburger
+ *     menu, desktop the horizontal one).
+ *   - The only variables are colours (styles/colors.css, --header-*) and the site tokens
+ *     shared with the rest of the page (--nav-height, --body-font-*, --z-index-header).
+ *
+ * Sections: 1 root · 2 bar · 3 brand · 4 menu · 5 tools · 6 cart · 7 search ·
+ *           8 hamburger · 9 page scroll lock
+ */
+
+.header-novamovil {
+  /* ========================================================================
+     1. Root (always fixed at the top, above everything; the <header>
+        keeps --nav-height so the page does not jump under it)
+     ======================================================================== */
+
+  /* smooth height animation to the intrinsic size of the mobile menu */
+  interpolate-size: allow-keywords;
   position: fixed;
-}
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: var(--z-index-header);
+  color: var(--header-text);
 
-header nav {
-  box-sizing: border-box;
-  display: grid;
-  grid-template:
-    'hamburger brand tools' var(--nav-height)
-    'sections sections sections' 1fr / auto 1fr auto;
-  align-items: center;
-  gap: 0 24px;
-  margin: auto;
-  max-width: 1248px;
-  height: var(--nav-height);
-  padding: 0 24px;
-  font-family: var(--body-font-family);
-}
-
-header nav[aria-expanded='true'] {
-  grid-template:
-    'hamburger brand' var(--nav-height)
-    'sections sections' 1fr
-    'tools tools' var(--nav-height) / auto 1fr;
-  overflow-y: auto;
-  min-height: 100dvh;
-}
-
-@media (width >= 900px) {
-  header .nav-wrapper {
-    position: relative;
+  /* links of the header: no global link colours or underline (each one has its own :focus-visible) */
+  & .nav-brand-link,
+  & .nav-menu-link,
+  & .nav-tool {
+    color: inherit;
+    text-decoration: none;
   }
 
-  header nav {
-    display: flex;
-    justify-content: space-between;
-    gap: 0 32px;
+  /* ========================================================================
+     2. Bar: background wrapper + grid (brand | tools, menu below on mobile)
+     ======================================================================== */
+
+  /* the background sits on the wrapper so it grows with the open mobile menu */
+  & .nav-wrapper {
+    background: var(--header-background);
+    box-shadow: 0 2px 12px var(--header-shadow);
+  }
+
+  & .nav-bar {
+    box-sizing: border-box;
+    display: grid;
+    grid-template:
+      'brand tools' var(--nav-height)
+      'sections sections' 1fr / auto 1fr;
+    align-items: center;
+    gap: 0 16px;
     max-width: 1264px;
-    padding: 0 32px;
+    height: var(--nav-height);
+    margin: auto;
+    padding: 0 16px;
+
+    /* mobile menu open: grows with its content, never taller than the screen */
+    &.is-open {
+      height: auto;
+      min-height: var(--nav-height);
+      max-block-size: 100dvh;
+      overflow-y: auto;
+    }
+
+    /* phones: tighter so brand + tools fit on one row */
+    @container style(--mobile: on) {
+      gap: 0 8px;
+    }
+
+    @container style(--desktop: on) {
+      grid-template: 'brand sections tools' var(--nav-height) / auto 1fr auto;
+      gap: 0 32px;
+      padding: 0 24px;
+
+      /* a menu left open on mobile/tablet is ignored on desktop */
+      &.is-open {
+        height: var(--nav-height);
+        min-height: unset;
+        max-block-size: none;
+        overflow-y: visible;
+      }
+    }
   }
 
-  header nav[aria-expanded='true'] {
-    min-height: 0;
-    overflow: visible;
-  }
-}
+  /* ========================================================================
+     3. Brand: logo (authored image or default icon) + wordmark
+     ======================================================================== */
 
-header nav p {
-  margin: 0;
-  line-height: 1;
-}
-
-header nav a:any-link {
-  color: currentcolor;
-}
-
-/* hamburger */
-header nav .nav-hamburger {
-  grid-area: hamburger;
-  height: 22px;
-  display: flex;
-  align-items: center;
-}
-
-header nav .nav-hamburger button {
-  height: 22px;
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background-color: var(--background-color);
-  color: inherit;
-  overflow: initial;
-  text-overflow: initial;
-  white-space: initial;
-}
-
-header nav .nav-hamburger-icon,
-header nav .nav-hamburger-icon::before,
-header nav .nav-hamburger-icon::after {
-  box-sizing: border-box;
-  display: block;
-  position: relative;
-  width: 20px;
-}
-
-header nav .nav-hamburger-icon::before,
-header nav .nav-hamburger-icon::after {
-  content: '';
-  position: absolute;
-  background: currentcolor;
-}
-
-header nav[aria-expanded='false'] .nav-hamburger-icon,
-header nav[aria-expanded='false'] .nav-hamburger-icon::before,
-header nav[aria-expanded='false'] .nav-hamburger-icon::after {
-  height: 2px;
-  border-radius: 2px;
-  background: currentcolor;
-}
-
-header nav[aria-expanded='false'] .nav-hamburger-icon::before {
-  top: -6px;
-}
-
-header nav[aria-expanded='false'] .nav-hamburger-icon::after {
-  top: 6px;
-}
-
-header nav[aria-expanded='true'] .nav-hamburger-icon {
-  height: 22px;
-}
-
-header nav[aria-expanded='true'] .nav-hamburger-icon::before,
-header nav[aria-expanded='true'] .nav-hamburger-icon::after {
-  top: 3px;
-  left: 1px;
-  transform: rotate(45deg);
-  transform-origin: 2px 1px;
-  width: 24px;
-  height: 2px;
-  border-radius: 2px;
-}
-
-header nav[aria-expanded='true'] .nav-hamburger-icon::after {
-  top: unset;
-  bottom: 3px;
-  transform: rotate(-45deg);
-}
-
-@media (width >= 900px) {
-  header nav .nav-hamburger {
-    display: none;
-    visibility: hidden;
-  }
-}
-
-/* brand */
-header .nav-brand {
-  grid-area: brand;
-  flex-basis: 128px;
-  font-size: var(--heading-font-size-s);
-  font-weight: 700;
-  line-height: 1;
-}
-
-header nav .nav-brand img {
-  width: 128px;
-  height: auto;
-}
-
-/* sections */
-header nav .nav-sections {
-  grid-area: sections;
-  flex: 1 1 auto;
-  display: none;
-  visibility: hidden;
-}
-
-header nav[aria-expanded='true'] .nav-sections {
-  display: block;
-  visibility: visible;
-  align-self: start;
-}
-
-header nav .nav-sections ul {
-  list-style: none;
-  padding-left: 0;
-  font-size: var(--body-font-size-s);
-}
-
-header nav .nav-sections ul > li {
-  font-weight: 500;
-}
-
-header nav .nav-sections ul > li > ul {
-  margin-top: 0;
-}
-
-header nav .nav-sections ul > li > ul > li {
-  font-weight: 400;
-}
-
-@media (width >= 900px) {
-  header nav .nav-sections {
-    display: block;
-    visibility: visible;
-    white-space: nowrap;
-  }
-
-  header nav[aria-expanded='true'] .nav-sections {
-    align-self: unset;
-  }
-
-  header nav .nav-sections .nav-drop {
-    position: relative;
-    padding-right: 16px;
-    cursor: pointer;
-  }
-
-  header nav .nav-sections .nav-drop::after {
-    content: '';
-    display: inline-block;
-    position: absolute;
-    top: 0.5em;
-    right: 2px;
-    transform: rotate(135deg);
-    width: 6px;
-    height: 6px;
-    border: 2px solid currentcolor;
-    border-radius: 0 1px 0 0;
-    border-width: 2px 2px 0 0;
-  }
-
-  header nav .nav-sections .nav-drop[aria-expanded='true']::after {
-    top: unset;
-    bottom: 0.5em;
-    transform: rotate(315deg);
-  }
-
-  header nav .nav-sections ul {
+  & .nav-brand {
+    grid-area: brand;
     display: flex;
-    gap: 24px;
-    margin: 0;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.18px;
+
+    @container style(--mobile: on) {
+      font-size: 16px;
+      letter-spacing: -0.16px;
+    }
+
+    @container style(--desktop: on) {
+      font-size: 20px;
+      letter-spacing: -0.2px;
+    }
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li {
-    flex: 0 1 auto;
-    position: relative;
+  & .nav-brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 9.6px;
+    white-space: nowrap;
+
+    @container style(--mobile: on) {
+      gap: 8px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
+    }
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li > ul {
-    display: none;
-    position: relative;
-  }
-
-  header nav .nav-sections .default-content-wrapper > ul > li[aria-expanded='true'] > ul {
+  & .nav-brand-logo {
     display: block;
-    position: absolute;
-    left: -24px;
-    width: 200px;
-    top: 150%;
-    padding: 16px;
-    background-color: var(--light-color);
-    white-space: initial;
+    flex: 0 0 auto;
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li > ul::before {
-    content: '';
+  /* authored image: keep its proportions, cap the height */
+  & .nav-brand-image {
+    display: block;
+    width: auto;
+    max-width: 180px;
+    height: 34px;
+    object-fit: contain;
+  }
+
+  /* default logo: gradient tile with the layers mark on top */
+  & .icon-logo {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--header-logo-background);
+
+    @container style(--mobile: on) {
+      width: 30px;
+      height: 30px;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      background-color: var(--header-logo-mark);
+      mask: url('../../icons/logo.svg') center / contain no-repeat;
+    }
+  }
+
+  /* the "Móvil" accent */
+  & .nav-brand-accent {
+    color: var(--header-accent);
+    font-style: normal;
+  }
+
+  /* ========================================================================
+     4. Menu: stacked list on mobile/tablet, centred row with underline on desktop
+     ======================================================================== */
+
+  & .nav-sections {
+    grid-area: sections;
+    display: none;
+
+    @container style(--desktop: on) {
+      display: block;
+    }
+  }
+
+  & .nav-bar.is-open .nav-sections {
+    display: block;
+    padding: 8px 0 16px;
+
+    @container style(--desktop: on) {
+      padding: 0;
+    }
+  }
+
+  & .nav-menu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @container style(--desktop: on) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+  }
+
+  /* items may be plain text while the author has not linked them yet */
+  & .nav-menu-item {
+    padding: 14.4px 4px;
+    border-top: 1px solid var(--header-border);
+    color: var(--header-text);
+    font-size: var(--body-font-size-s);
+    font-weight: 600;
+
+    @container style(--desktop: on) {
+      position: relative;
+      padding: 8px 0;
+      border: 0;
+      color: var(--header-text-muted);
+      font-size: var(--body-font-size-xs);
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: var(--header-text);
+      }
+
+      /* underline indicator on hover (linked items only) */
+      &.has-link::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--header-accent);
+        transform: scaleX(0);
+        transition: transform 0.2s ease;
+      }
+
+      &.has-link:hover::after {
+        transform: scaleX(1);
+      }
+    }
+  }
+
+  & .nav-menu-link {
+    display: block;
+
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     5. Tools: search, user, cart, hamburger
+     ======================================================================== */
+
+  & .nav-tools {
+    grid-area: tools;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+
+    @container style(--desktop: on) {
+      gap: 8px;
+    }
+  }
+
+  /* mono icons painted with currentcolor through a mask, so they follow the text colour */
+  & .nav-icon {
+    display: block;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    background-color: currentcolor;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+  }
+
+  & .icon-search { mask-image: url('../../icons/search.svg'); }
+  & .icon-user { mask-image: url('../../icons/user.svg'); }
+  & .icon-cart { mask-image: url('../../icons/cart.svg'); }
+  & .icon-close { mask-image: url('../../icons/close.svg'); }
+
+  /* square icon buttons: user, cart, search toggle, hamburger */
+  & .nav-tool,
+  & .nav-search-toggle,
+  & .nav-hamburger-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--header-text);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--header-surface-hover);
+    }
+
+    @container style(--mobile: on) {
+      width: 36px;
+      height: 36px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     6. Cart: square with corner badge on mobile/tablet, pill on desktop
+     ======================================================================== */
+
+  & .nav-tool-cart {
+    position: relative;
+    gap: 8px;
+    border: 1px solid var(--header-border);
+    background: var(--header-surface);
+
+    & .nav-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    @container style(--desktop: on) {
+      width: auto;
+      padding: 0 12px;
+    }
+  }
+
+  & .nav-tool-badge {
     position: absolute;
-    top: -8px;
-    left: 16px;
+    top: -6px;
+    right: -6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--header-badge-background);
+    color: var(--header-badge-text);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+
+    @container style(--desktop: on) {
+      position: static;
+    }
+  }
+
+  /* ========================================================================
+     7. Search: the magnifier expands a field from right to left (.is-open)
+     ======================================================================== */
+
+  & .nav-search-field {
+    display: flex;
+    align-items: center;
+    gap: 6.4px;
     width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid var(--light-color);
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: var(--header-search-background);
+    color: var(--header-search-muted);
+    opacity: 0;
+    transition: width 0.3s ease, opacity 0.2s ease, padding 0.3s ease, border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: var(--header-search-focus);
+    }
   }
 
-  header nav .nav-sections .default-content-wrapper > ul > li > ul > li {
-    padding: 8px 0;
+  & .nav-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    color: var(--header-search-text);
+    font-size: var(--body-font-size-xs);
+    outline: none;
+
+    &::placeholder {
+      color: var(--header-search-muted);
+    }
+
+    /* hide the native clear button so only ours shows */
+    &::-webkit-search-cancel-button {
+      appearance: none;
+    }
+  }
+
+  & .nav-search-clear {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--header-search-muted);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--header-search-text);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--header-text);
+      outline-offset: 2px;
+    }
+
+    & .nav-icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  /* wrapper and open state (after its parts, so the state rules win) */
+  & .nav-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    &.is-open .nav-search-field {
+      width: min(320px, 60vw);
+      padding: 0 8px 0 12px;
+      opacity: 1;
+    }
+
+    &.is-open .nav-search-toggle {
+      display: none;
+    }
+  }
+
+  /* ========================================================================
+     8. Hamburger (mobile and tablet)
+     ======================================================================== */
+
+  & .nav-hamburger {
+    display: flex;
+
+    @container style(--desktop: on) {
+      display: none;
+    }
+  }
+
+  & .nav-hamburger-icon {
+    position: relative;
+    box-sizing: border-box;
+    display: block;
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentcolor;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      box-sizing: border-box;
+      display: block;
+      width: 20px;
+      height: 2px;
+      border-radius: 2px;
+      background: currentcolor;
+    }
+
+    &::before {
+      top: -6px;
+    }
+
+    &::after {
+      top: 6px;
+    }
   }
 }
 
-/* tools */
-header nav .nav-tools {
-  grid-area: tools;
+/* ==========================================================================
+   9. Page scroll lock: the page does not scroll behind the open mobile/tablet
+      menu (header.js toggles .has-header-menu-open on <body>)
+   ========================================================================== */
+
+@container style(--mobile-tablet: on) {
+  .has-header-menu-open {
+    overflow-y: hidden;
+  }
 }

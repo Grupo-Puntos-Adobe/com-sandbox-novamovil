@@ -11,17 +11,11 @@
  */
 
 :root {
-  /* colors */
-  --background-color: white;
-  --light-color: #f8f8f8;
-  --dark-color: #505050;
-  --text-color: #131313;
-  --link-color: #3b63fb;
-  --link-hover-color: #1d3ecf;
+  /* colors live in styles/colors.css */
 
   /* fonts */
-  --body-font-family: roboto, roboto-fallback, sans-serif;
-  --heading-font-family: roboto-condensed, roboto-condensed-fallback, sans-serif;
+  --body-font-family: plus-jakarta-sans, plus-jakarta-sans-fallback, sans-serif;
+  --heading-font-family: plus-jakarta-sans, plus-jakarta-sans-bold-fallback, sans-serif;
 
   /* body sizes */
   --body-font-size-m: 22px;
@@ -30,7 +24,7 @@
 
   /* heading sizes */
   --heading-font-size-xxl: 55px;
-  --heading-font-size-xl: 44px;
+  --heading-font-size-xl: 24px; /* section titles (h2), as in the design */
   --heading-font-size-l: 34px;
   --heading-font-size-m: 27px;
   --heading-font-size-s: 24px;
@@ -38,19 +32,29 @@
 
   /* nav height */
   --nav-height: 64px;
+
+  /* stacking order (z-index scale): the header stays above everything */
+  --z-index-toast: 900;
+  --z-index-header: 1000;
+}
+
+/* anchors (#id) are not hidden under the fixed header */
+html {
+  scroll-padding-top: var(--nav-height);
 }
 
 /* fallback fonts */
 @font-face {
-  font-family: roboto-condensed-fallback;
-  size-adjust: 88.82%;
+  font-family: plus-jakarta-sans-fallback;
+  size-adjust: 92.58%;
   src: local('Arial');
 }
 
 @font-face {
-  font-family: roboto-fallback;
-  size-adjust: 99.529%;
-  src: local('Arial');
+  font-family: plus-jakarta-sans-bold-fallback;
+  size-adjust: 84.6%;
+  src: local('Arial Bold'), local('Arial');
+  font-weight: 700;
 }
 
 @media (width >= 900px) {
@@ -62,7 +66,7 @@
 
     /* heading sizes */
     --heading-font-size-xxl: 45px;
-    --heading-font-size-xl: 36px;
+    --heading-font-size-xl: 28px;
     --heading-font-size-l: 28px;
     --heading-font-size-m: 22px;
     --heading-font-size-s: 20px;
@@ -73,7 +77,7 @@
 body {
   display: none;
   margin: 0;
-  background-color: var(--background-color);
+  background-color: var(--page-background);
   color: var(--text-color);
   font-family: var(--body-font-family);
   font-size: var(--body-font-size-m);
@@ -106,10 +110,17 @@ h5,
 h6 {
   margin-top: 0.8em;
   margin-bottom: 0.25em;
+  color: var(--heading-color);
   font-family: var(--heading-font-family);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.25;
   scroll-margin: 40px;
+}
+
+/* headings built with divs (role="heading", e.g. the hero and block titles) use the
+   same font as h1-h6; blocks never set font-family themselves */
+[role='heading'] {
+  font-family: var(--heading-font-family);
 }
 
 h1 { font-size: var(--heading-font-size-xxl); }
@@ -182,7 +193,7 @@ button.button {
   border-radius: 2.4em;
   padding: 0.5em 1.2em;
   font: inherit;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.25;
   text-decoration: none;
   cursor: pointer;

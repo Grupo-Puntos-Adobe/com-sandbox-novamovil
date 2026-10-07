@@ -1,0 +1,185 @@
+/*
+ * NovaMóvil promotions (block "Card Promotions").
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. card-promotions.js builds the block with divs
+ *     and adds the classes.
+ *   - Every rule lives inside .card-promotions, at most 2 levels deep:
+ *       .card-promotions > & .part > its state (&:hover, &::after) or its resolution.
+ *   - Sizes are written directly in px where they apply (only relative units such as %
+ *     or fr stay); each part keeps its resolutions right below it
+ *     (styles/foundations/breakpoints.css).
+ *   - Columns and the space between cards are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-promotions.js puts on the list
+ *     (row row-gutter-16 row-gutter-y-16) and on each card (col-24 col-md-8).
+ *   - The only variables are colours (styles/colors.css, --card-promotions-*, plus
+ *     --card-promotions-item-color that each promotion brings from the service). Fonts
+ *     come from styles.css (body, and [role='heading'] for the title).
+ *
+ * The empty message is the shared block blocks/empty-list-message (its own CSS).
+ *
+ * Sections: 1 header · 2 card · 3 loading skeleton
+ */
+
+.card-promotions {
+  /* ========================================================================
+     1. Header: section title (Title row)
+     ======================================================================== */
+
+  & .card-promotions-header {
+    margin-block-end: 24px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-end: 32px;
+    }
+  }
+
+  & .card-promotions-heading {
+    margin: 0;
+    color: var(--heading-color);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    scroll-margin: 40px;
+
+    @container style(--desktop: on) {
+      font-size: 28px;
+      line-height: 35px;
+    }
+  }
+
+  /* ========================================================================
+     2. Card: photo + gradient in the promotion colour (bottom → top) + texts;
+        hover lifts it only when it is a link. It sits in its grid column
+        (div.card-promotions-card) and fills its width
+     ======================================================================== */
+
+  & .card-promotions-item {
+    --card-promotions-item-color: var(--card-promotions-default-color);
+
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+    block-size: 168px;
+    border-radius: 14px;
+    background: var(--card-promotions-media-background);
+    color: var(--card-promotions-text);
+    text-decoration: none;
+
+    /* identity translate so hover does not create a new stacking context */
+    translate: 0 0;
+    transition: translate 0.2s ease;
+
+    /* gradient: almost solid colour at the bottom, fading out by ~80% of the height */
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        color-mix(in srgb, var(--card-promotions-item-color) 92%, transparent) 0%,
+        color-mix(in srgb, var(--card-promotions-item-color) 60%, transparent) 40%,
+        transparent 80%
+      );
+    }
+
+    &:any-link:hover,
+    &:focus-visible {
+      color: var(--card-promotions-text);
+      text-decoration: none;
+      translate: 0 -4px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-promotions-item-color);
+      outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      &:any-link:hover,
+      &:focus-visible {
+        translate: 0 0;
+      }
+    }
+
+    @container style(--tablet-desktop: on) {
+      block-size: 200px;
+    }
+  }
+
+  & .card-promotions-image {
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  & .card-promotions-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 16px 18px;
+
+    @container style(--tablet-desktop: on) {
+      padding: 20px 20px 24px;
+    }
+  }
+
+  & .card-promotions-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+
+    @container style(--tablet-desktop: on) {
+      font-size: 22px;
+    }
+  }
+
+  & .card-promotions-sub {
+    color: var(--card-promotions-text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+
+    @container style(--tablet-desktop: on) {
+      font-size: 13px;
+    }
+  }
+
+  /* ========================================================================
+     3. Loading skeleton: same size as the cards, gentle shine
+     ======================================================================== */
+
+  & .card-promotions-skeleton {
+    block-size: 168px;
+    border-radius: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--card-promotions-skeleton) 25%,
+      var(--card-promotions-skeleton-shine) 50%,
+      var(--card-promotions-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: card-promotions-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    @container style(--tablet-desktop: on) {
+      block-size: 200px;
+    }
+  }
+}
+
+@keyframes card-promotions-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

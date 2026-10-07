@@ -1,20 +1,232 @@
-footer {
-  background-color: var(--light-color);
-  font-size: var(--body-font-size-xs);
-}
+/*
+ * NovaMóvil footer.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. footer.js adds the classes.
+ *   - Every rule lives inside .footer-novamovil, at most 2 levels deep:
+ *       .footer-novamovil > & .part > its state (&:hover, &:focus-visible) or its resolution.
+ *   - Sizes are written directly in px where they apply (only viewport units such as
+ *     vw / dvh stay, because they depend on the screen); each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css: one column on mobile, brand + three
+ *     link columns from tablet up).
+ *   - The only variables are colours (styles/colors.css, --footer-*). Fonts come from
+ *     styles.css (body and headings).
+ *
+ * Sections: 1 root · 2 container & grid · 3 brand · 4 link columns · 5 bottom
+ */
 
-footer .footer > div {
-  margin: auto;
-  max-width: 1200px;
-  padding: 40px 24px 24px;
-}
+.footer-novamovil {
+  /* ========================================================================
+     1. Root
+     ======================================================================== */
 
-footer .footer p {
-  margin: 0;
-}
+  background: var(--footer-background);
+  color: var(--footer-text);
+  font-size: 14px;
+  line-height: 1.6;
 
-@media (width >= 900px) {
-  footer .footer > div {
-    padding: 40px 32px 24px;
+  /* ========================================================================
+     2. Container & grid: one column on mobile, brand + three columns from tablet
+     ======================================================================== */
+
+  & .footer-inner {
+    box-sizing: border-box;
+    max-width: 1264px;
+    margin: auto;
+    padding: 40px 20px 32px;
+
+    @container style(--tablet-desktop: on) {
+      padding: 48px 16px 40px;
+    }
+  }
+
+  & .footer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+
+    @container style(--tablet-desktop: on) {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+    }
+  }
+
+  /* ========================================================================
+     3. Brand: logo (authored image or default icon) + wordmark + tagline
+     ======================================================================== */
+
+  & .footer-brand-link {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 9.6px;
+    color: var(--footer-heading);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:focus-visible {
+      outline: 2px solid var(--footer-heading);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+
+  & .footer-brand-logo {
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  /* authored image: keep its proportions, cap the height */
+  & .footer-brand-image {
+    display: block;
+    width: auto;
+    max-width: 180px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  /* default logo: gradient tile with the layers mark on top */
+  & .icon-logo {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--footer-logo-background);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      background-color: var(--footer-logo-mark);
+      mask: url('../../icons/logo.svg') center / contain no-repeat;
+    }
+  }
+
+  /* the "Móvil" accent */
+  & .footer-brand-accent {
+    color: var(--footer-accent);
+    font-style: normal;
+  }
+
+  & .footer-tagline {
+    max-width: 348px;
+    margin: 20px 0 0;
+    color: var(--footer-text);
+
+    @container style(--tablet-desktop: on) {
+      max-width: 307px;
+    }
+  }
+
+  /* ========================================================================
+     4. Link columns: white title, grey links, white on hover
+     ======================================================================== */
+
+  & .footer-column-title {
+    margin: 0 0 12px;
+    color: var(--footer-heading);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+
+    @container style(--tablet-desktop: on) {
+      font-size: 15px;
+    }
+  }
+
+  & .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .footer-link {
+    color: var(--footer-link);
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--footer-link-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--footer-heading);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+  }
+
+  & .footer-column-text {
+    margin: 0;
+  }
+
+  /* ========================================================================
+     5. Bottom: divider, copyright and payment chips
+     ======================================================================== */
+
+  & .footer-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--footer-border);
+
+    @container style(--tablet-desktop: on) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 44px;
+    }
+  }
+
+  & .footer-copyright {
+    margin: 0;
+    color: var(--footer-text);
+    font-size: 13px;
+  }
+
+  & .footer-payments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @container style(--tablet-desktop: on) {
+      gap: 18px;
+    }
+  }
+
+  & .footer-payment {
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: var(--footer-chip-background);
+    color: var(--footer-chip-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.44px;
+    line-height: 1.6;
+    text-transform: uppercase;
+  }
+
+  /* links inside the tagline or the copyright: same colour as their text */
+  & .footer-inline-link {
+    color: currentcolor;
+    text-decoration: none;
+
+    &:focus-visible {
+      outline: 2px solid var(--footer-heading);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
   }
 }

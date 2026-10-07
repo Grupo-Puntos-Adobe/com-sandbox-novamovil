@@ -1,0 +1,146 @@
+/*
+ * NovaMóvil category cards (block "Card Categories").
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. card-categories.js builds the block with divs
+ *     and adds the classes.
+ *   - Every rule lives inside .card-categories, at most 2 levels deep:
+ *       .card-categories > & .part > its state (&:hover, &:focus-visible) or its resolution.
+ *   - Sizes are written directly in px where they apply (only relative units such as %
+ *     or fr stay); each part keeps its resolutions right below it
+ *     (styles/foundations/breakpoints.css).
+ *   - Columns and the space between cards are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes card-categories.js puts on the list
+ *     (row row-gutter-16 row-gutter-y-16) and on each card (col-24 col-md-8 col-lg-4).
+ *   - The only variables are colours (styles/colors.css, --card-categories-*, plus
+ *     --card-categories-item-color that each category brings from the service). Fonts
+ *     come from styles.css (body, and [role='heading'] for the title).
+ *
+ * The empty message is the shared block blocks/empty-list-message (its own CSS).
+ *
+ * Sections: 1 header · 2 card · 3 loading skeleton
+ */
+
+.card-categories {
+  /* ========================================================================
+     1. Header: section title (Title row)
+     ======================================================================== */
+
+  & .card-categories-header {
+    margin-block-end: 20px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-end: 24px;
+    }
+  }
+
+  & .card-categories-heading {
+    margin: 0;
+    color: var(--heading-color);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 30px;
+    scroll-margin: 40px;
+
+    @container style(--desktop: on) {
+      font-size: 28px;
+      line-height: 35px;
+    }
+  }
+
+  /* ========================================================================
+     2. Card: white surface, icon + label centred; hover in the category colour.
+        It sits in its grid column (div.card-categories-card) and fills its width
+     ======================================================================== */
+
+  & .card-categories-item {
+    --card-categories-item-color: var(--card-categories-default-color);
+
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    block-size: 105px;
+    padding: 12px;
+    border: 1px solid var(--card-categories-border);
+    border-radius: 14px;
+    background: var(--card-categories-surface);
+    color: var(--card-categories-label);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+
+    /* identity translate so hover does not create a new stacking context */
+    translate: 0 0;
+    transition: translate 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--card-categories-item-color);
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--card-categories-item-color) 18%, transparent);
+      text-decoration: none;
+      translate: 0 -4px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--card-categories-item-color);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover,
+      &:focus-visible {
+        translate: 0 0;
+      }
+    }
+
+    @container style(--tablet-desktop: on) {
+      block-size: 126px;
+    }
+  }
+
+  & .card-categories-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  & .card-categories-label {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  /* ========================================================================
+     3. Loading skeleton: same size as the cards, gentle shine
+     ======================================================================== */
+
+  & .card-categories-skeleton {
+    block-size: 105px;
+    border-radius: 14px;
+    background: linear-gradient(
+      90deg,
+      var(--card-categories-skeleton) 25%,
+      var(--card-categories-skeleton-shine) 50%,
+      var(--card-categories-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: card-categories-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    @container style(--tablet-desktop: on) {
+      block-size: 126px;
+    }
+  }
+}
+
+@keyframes card-categories-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
