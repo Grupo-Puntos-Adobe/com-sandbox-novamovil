@@ -34,13 +34,13 @@
  * Guide: documentation/01-styles-classname.md
  */
 
-const STYLE_KEYS = ["styles", "style"];
+const STYLE_KEYS = ['styles', 'style'];
 const CLASS_KEYS = [
-  "classname",
-  "classnames",
-  "class name",
-  "class names",
-  "class",
+  'classname',
+  'classnames',
+  'class name',
+  'class names',
+  'class',
 ];
 const PROPERTY = /^-{0,2}[a-z][a-z0-9-]*$/i;
 const CLASS_NAME = /^-?[_a-z][_a-z0-9-]*$/i;
@@ -62,12 +62,12 @@ const CLASS_SEPARATOR = /[\s,;]+/;
  * @param {string} declarations
  */
 export function applyAuthorStyles(block, declarations) {
-  String(declarations || "")
+  String(declarations || '')
     .split(STYLE_SEPARATOR) // VALIDOS: ";"  "\n"
     .map((declaration) => declaration.trim())
     .filter(Boolean)
     .forEach((declaration) => {
-      const separator = declaration.indexOf(":");
+      const separator = declaration.indexOf(':');
       if (separator < 1) {
         return;
       }
@@ -77,15 +77,15 @@ export function applyAuthorStyles(block, declarations) {
         return;
       }
       const important = /!important$/i.test(value);
-      value = value.replace(/\s*!important$/i, "");
+      value = value.replace(/\s*!important$/i, '');
 
-      block.style.setProperty(property, value, important ? "important" : "");
+      block.style.setProperty(property, value, important ? 'important' : '');
       // unitless numbers are invalid for lengths: retry as px (padding-left: 20 → 20px)
       if (!block.style.getPropertyValue(property) && BARE_NUMBER.test(value)) {
         block.style.setProperty(
           property,
           `${value}px`,
-          important ? "important" : "",
+          important ? 'important' : '',
         );
       }
     });
@@ -97,7 +97,7 @@ export function applyAuthorStyles(block, declarations) {
  * @param {string} names
  */
 export function applyAuthorClasses(block, names) {
-  String(names || "")
+  String(names || '')
     .split(CLASS_SEPARATOR) // VALIDOS: espacio  tab  "\n"  ","  ";"
     .map((name) => name.trim())
     .filter((name) => CLASS_NAME.test(name))
@@ -109,13 +109,13 @@ export function applyAuthorClasses(block, names) {
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
-  [...block.querySelectorAll(":scope > div")].forEach((row) => {
+  [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     // name | value; extra cells are allowed only if empty (tables with 3+ columns)
     if (
-      !keyCell ||
-      !valueCell ||
-      extraCells.some((cell) => cell.textContent.trim())
+      !keyCell
+      || !valueCell
+      || extraCells.some((cell) => cell.textContent.trim())
     ) {
       return;
     }
@@ -123,8 +123,8 @@ export default function applyBlockOptions(block) {
     if (STYLE_KEYS.includes(key)) {
       applyAuthorStyles(block, valueCell.textContent);
       // authored margins add to the section spacing instead of collapsing into it
-      if (block.getAttribute("style") && block.parentElement) {
-        block.parentElement.style.display = "flow-root";
+      if (block.getAttribute('style') && block.parentElement) {
+        block.parentElement.style.display = 'flow-root';
       }
       row.remove();
     } else if (CLASS_KEYS.includes(key)) {
