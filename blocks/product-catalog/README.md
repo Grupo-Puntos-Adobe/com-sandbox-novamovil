@@ -38,6 +38,8 @@ a la izquierda; en móvil se abren en un panel con el botón **Filtros**.
   precio, precio anterior tachado y botón; toda la tarjeta abre el producto y sube 4 px al pasar el
   mouse
 - Enlace de cada celular armado con una plantilla (`/productos/{sku}`) si el servicio no trae `path`
+- En tablet y desktop la caja de filtros sigue el scroll debajo del header y se detiene donde
+  acaba la lista; si la ventana es más baja que la caja, los filtros se desplazan por dentro
 - Esqueleto de carga mientras responde el servicio (la página no salta)
 - Alerta flotante configurable (duración y color) cuando un servicio falla; una sola alerta si fallan
   los dos al cargar
@@ -404,6 +406,8 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 | La foto de un celular falta o no carga | `Image Error Message` en lugar de la foto |
 | Celular sin stock | "Agotado" en gris |
 | Sin `Search Endpoint` | Los 6 celulares del JSON interno, filtrados y ordenados en el navegador |
+| Tablet o desktop: bajar por la lista | La caja de filtros se queda fija 16 px debajo del header y se detiene al final de la lista; al subir vuelve a su lugar |
+| Ventana más baja que la caja de filtros | La caja mide lo que cabe y sus filtros se desplazan por dentro |
 | Móvil: abrir **Filtros** | Panel a pantalla completa; se cierra con **Ver resultados**, × o `Escape` |
 
 ### Vista previa
