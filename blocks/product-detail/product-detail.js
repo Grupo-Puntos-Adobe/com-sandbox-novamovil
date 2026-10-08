@@ -1,5 +1,5 @@
 /*
- * Product Detail block: the page of one phone (/celulares/producto?sku=iph-15-128-blk), fed
+ * Product Detail block: the page of one phone (/celulares/iph-15-128-blk), fed
  * only by a POST service (Endpoint row). There is no internal JSON: without Endpoint, or when
  * the service fails or has no product, the block shows the "not available" message.
  *
@@ -21,8 +21,10 @@
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  *   - Catalog Link: missing → the folder of the page (/celulares for /celulares/producto).
  *
- * The phone comes from the URL: ?sku=iph-15-128-blk (readSkuFromUrl). Without it the page
- * goes back to Catalog Link (location.replace, so "back" does not return to the empty page).
+ * The phone comes from the URL: /celulares/iph-15-128-blk (or ?sku=iph-15-128-blk), see
+ * readSkuFromUrl. /celulares/{sku} is served by the celulares/producto document through folder
+ * mapping in the site configuration. Without sku the page goes back to Catalog Link
+ * (location.replace, so "back" does not return to the empty page).
  * Detail request: only data.productId changes; meta and security are fixed
  * (DETAIL_REQUEST_META, DETAIL_REQUEST_SECURITY), as the service expects.
  *
@@ -82,8 +84,10 @@ const DETAIL_REQUEST_SECURITY = {
   signature: '{{hmac_signature}}',
 };
 
-// URL parameter with the phone identifier (the sku in lower case)
+// URL parameter with the phone identifier (the sku in lower case), still accepted
 const SKU_PARAM = 'sku';
+// name of the Drive document that holds this block: not a sku when the URL is the document itself
+const DETAIL_PAGE_NAME = 'producto';
 // quantity limit when the service does not send the stock
 const MAX_QUANTITY = 10;
 // icon of the "not available" message, unless the table has an Empty List Icon row
@@ -185,12 +189,16 @@ function readDetailSettings(block) {
 }
 
 /**
- * The phone identifier of the page: ?sku=iph-15-128-blk. The only place that reads the URL, so
- * a future /celulares/{sku} (path mapping) only changes this function.
+ * The phone identifier of the page: the last part of the URL (/celulares/iph-15-128-blk) or,
+ * still accepted, ?sku=iph-15-128-blk. The document itself (/celulares/producto) and a folder
+ * (/celulares/) have no sku.
  * @returns {string} '' when the URL has none
  */
 function readSkuFromUrl() {
-  return (new URLSearchParams(window.location.search).get(SKU_PARAM) || '').trim().toLowerCase();
+  const fromParam = new URLSearchParams(window.location.search).get(SKU_PARAM) || '';
+  if (fromParam.trim()) return fromParam.trim().toLowerCase();
+  const lastPart = decodeURIComponent(window.location.pathname.split('/').pop() || '');
+  return lastPart && lastPart !== DETAIL_PAGE_NAME ? lastPart.trim().toLowerCase() : '';
 }
 
 /**
