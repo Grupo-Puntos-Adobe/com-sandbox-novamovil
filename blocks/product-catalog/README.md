@@ -244,8 +244,9 @@ opcionales y pueden ir en cualquier orden.
 9. **`Search Endpoint`**
     - **Tipo:** URL (texto o enlace)
     - **Descripción:** Servicio POST de la búsqueda de celulares
-    - **Por defecto:** sin fila, los 6 celulares del JSON interno (`FALLBACK_PHONES`), filtrados,
-      ordenados y paginados en el navegador
+    - **Por defecto:** sin fila, los 4 celulares básicos del JSON interno (`FALLBACK_PHONES`), tal
+      cual, como en las tarjetas de la home (los filtros y el orden no cambian esa lista); si ese
+      JSON está vacío, el aviso de lista vacía directo
 
 10. **`Category`**
     - **Tipo:** Texto
@@ -374,9 +375,8 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 11. `promo` / `badge` – Descuento y etiqueta sobre la foto
 12. `available` / `stock` – `available: false` o `stock: 0` → "Agotado"
 13. `image` (o `imageUrl`) y `description` – Foto y su texto alternativo
-14. `rating` – Calificación (ordena "Mejor calificados" sin endpoint)
-15. `active` – `false` oculta el celular
-16. `path` – Enlace propio del celular (opcional; tiene prioridad sobre `Product Link`)
+14. `active` – `false` oculta el celular
+15. `path` – Enlace propio del celular (opcional; tiene prioridad sobre `Product Link`)
 
 ```json
 {
@@ -387,7 +387,7 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
       "name": "iPhone 15", "storage": "128 GB", "ram": "6 GB", "os": "iOS",
       "price": 19999, "salePrice": 19999, "oldPrice": 22999, "promo": "13% OFF",
       "badge": "Más vendido", "currency": "MXN", "stock": 18, "available": true, "active": true,
-      "rating": 4.6, "image": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80"
+      "image": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80"
     }
   ]
 }
@@ -412,7 +412,8 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 | Una sola página de resultados | No se pinta el paginador |
 | La foto de un celular falta o no carga | `Image Error Message` en lugar de la foto |
 | Celular sin stock | "Agotado" en gris |
-| Sin `Search Endpoint` | Los 6 celulares del JSON interno, filtrados y ordenados en el navegador |
+| Sin `Search Endpoint` | Los 4 celulares básicos del JSON interno, tal cual (como las tarjetas de la home) |
+| Sin `Filters Endpoint` | Los filtros completos del JSON interno (5 marcas, 2 sistemas, 3 capacidades y precio de $5,000 a $40,000) |
 | Tablet o desktop: bajar por la lista | La caja de filtros se queda fija 16 px debajo del header y se detiene al final de la lista; al subir vuelve a su lugar |
 | Ventana más baja que la caja de filtros | La caja mide lo que cabe y sus filtros se desplazan por dentro |
 | Móvil: bajar por la lista | La barra con **Filtros** y **Ordenar por** se queda fija debajo del header hasta el final del catálogo; al subir vuelve a su lugar |

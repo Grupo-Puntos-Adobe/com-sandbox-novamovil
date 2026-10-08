@@ -34,7 +34,7 @@
  *          │                             (error → alert + FALLBACK_FILTERS)
  *          ├─ renderFiltersPanel()       checkboxes + price range; change → searchPhones()
  *          └─ searchPhones()             post(Search Endpoint, buildSearchRequest())
- *                                        (no endpoint → searchFallbackPhones())
+ *                                        (no endpoint → FALLBACK_PHONES as is, like the cards)
  *               ├─ ok    → renderCatalogResults(): buildPhoneCard() per phone + buildPagination()
  *               └─ error → console.error + showToast(errorResponseMessage) + empty message
  *
@@ -58,7 +58,7 @@
  *   filters: { data: { brands: [], operatingSystems: [], storages: [], priceRange: { min, max } } }
  *   search:  { pagination: { page, pageSize, totalItems, totalPages }, data: [{ id, sku, brand,
  *            name, storage, ram, os, price, salePrice, oldPrice, promo, badge, stock,
- *            available, active, rating, image, path? }] }
+ *            available, active, image, path? }] }
  * Guide: blocks/product-catalog/README.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
@@ -101,25 +101,20 @@ const FALLBACK_FILTERS = {
   priceRange: { min: 5000, max: 40000 },
 };
 
-// used when the document has no Search Endpoint row (filtered and sorted in the browser)
+// used when the document has no Search Endpoint row (painted as is, like the card blocks);
+// [] or null (no data) → the empty message directly, without alert
 const FALLBACK_PHONES = [
   {
-    id: 'PROD-101', sku: 'IPH-15P-256', brand: 'Apple', name: 'iPhone 15 Pro', os: 'iOS', storage: '256 GB', ram: '8 GB', salePrice: 29999, oldPrice: 34999, promo: '14% OFF', badge: 'Más vendido', rating: 4.8, stock: 12, available: true, image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80',
+    id: 'PROD-101', sku: 'IPH-15-128', brand: 'Apple', name: 'iPhone 15', storage: '128 GB', ram: '6 GB', price: 19999, oldPrice: 22999, image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80',
   },
   {
-    id: 'PROD-102', sku: 'SAM-S24U-512', brand: 'Samsung', name: 'Galaxy S24 Ultra', os: 'Android', storage: '512 GB', ram: '12 GB', salePrice: 32999, oldPrice: 37999, promo: '13% OFF', badge: 'Nuevo', rating: 4.7, stock: 9, available: true, image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&q=80',
+    id: 'PROD-102', sku: 'SAM-S24-256', brand: 'Samsung', name: 'Galaxy S24', storage: '256 GB', ram: '8 GB', price: 16999, oldPrice: 19999, image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=400&q=80',
   },
   {
-    id: 'PROD-103', sku: 'MOT-E50P-256', brand: 'Motorola', name: 'Edge 50 Pro', os: 'Android', storage: '256 GB', ram: '12 GB', salePrice: 14999, oldPrice: 17999, promo: '17% OFF', rating: 4.5, stock: 14, available: true, image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=400&q=80',
+    id: 'PROD-103', sku: 'MOT-E50P-256', brand: 'Motorola', name: 'Edge 50 Pro', storage: '256 GB', ram: '12 GB', price: 14999, oldPrice: 17999, image: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=400&q=80',
   },
   {
-    id: 'PROD-104', sku: 'XIA-14U-512', brand: 'Xiaomi', name: '14 Ultra', os: 'Android', storage: '512 GB', ram: '16 GB', salePrice: 27999, oldPrice: 29999, promo: '7% OFF', badge: 'Premium', rating: 4.6, stock: 6, available: true, image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
-  },
-  {
-    id: 'PROD-105', sku: 'GOO-P8P-256', brand: 'Google', name: 'Pixel 8 Pro', os: 'Android', storage: '256 GB', ram: '12 GB', salePrice: 22999, oldPrice: 24999, promo: '8% OFF', rating: 4.6, stock: 7, available: true, image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80',
-  },
-  {
-    id: 'PROD-106', sku: 'IPH-15-128', brand: 'Apple', name: 'iPhone 15', os: 'iOS', storage: '128 GB', ram: '6 GB', salePrice: 19999, oldPrice: 22999, promo: '13% OFF', rating: 4.6, stock: 18, available: true, image: 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=400&q=80',
+    id: 'PROD-104', sku: 'XIA-RN14-256', brand: 'Xiaomi', name: 'Redmi Note 14', storage: '256 GB', ram: '8 GB', price: 5499, oldPrice: 6999, image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
   },
 ];
 
@@ -278,7 +273,6 @@ function normalizePhones(rawPhones, linkTemplate) {
         currency: /^[A-Z]{3}$/.test(toTrimmedText(item.currency)) ? toTrimmedText(item.currency) : CURRENCY,
         promo: toTrimmedText(item.promo),
         badge: toTrimmedText(item.badge),
-        rating: toNumberOrNull(item.rating),
         isAvailable: item.available !== false && (stock === null || stock > 0),
         href: buildPhoneHref(item, linkTemplate),
       };
@@ -309,36 +303,6 @@ function buildSearchRequest(state, settings) {
   };
   if (settings.category) data.category = settings.category;
   return { meta: SEARCH_REQUEST_META, security: SEARCH_REQUEST_SECURITY, data };
-}
-
-/**
- * Without Search Endpoint: filters, sorts and pages the internal JSON in the browser,
- * answering like the service does.
- * @param {Object} state Catalog state
- * @param {Object} settings readCatalogSettings() result
- * @returns {{phones: Object[], totalItems: number, totalPages: number}}
- */
-function searchFallbackPhones(state, settings) {
-  const { brands, os, storage } = state.selected;
-  const matches = normalizePhones(FALLBACK_PHONES, settings.linkTemplate).filter((phone) => (
-    (!brands.size || brands.has(phone.brand))
-    && (!os.size || os.has(phone.os))
-    && (!storage.size || storage.has(phone.storage))
-    && phone.price <= state.maxPrice
-  ));
-  const sorters = {
-    'precio-asc': (first, second) => first.price - second.price,
-    'precio-desc': (first, second) => second.price - first.price,
-    'mejor-calificados': (first, second) => (second.rating ?? 0) - (first.rating ?? 0),
-  };
-  if (sorters[state.sortBy]) matches.sort(sorters[state.sortBy]);
-  const totalPages = Math.max(1, Math.ceil(matches.length / settings.pageSize));
-  const start = (state.page - 1) * settings.pageSize;
-  return {
-    phones: matches.slice(start, start + settings.pageSize),
-    totalItems: matches.length,
-    totalPages,
-  };
 }
 
 /**
@@ -741,7 +705,8 @@ function renderCatalogResults(catalog, phones, pageInfo) {
 
 /**
  * Searches with the current selection: the service (POST) or, without Search Endpoint, the
- * internal JSON. A new search cancels the previous one; any error logs it, shows the alert
+ * internal JSON as it is (no filtering, like the card blocks). A new search cancels the
+ * previous one; any error logs it, shows the alert
  * and the empty message.
  * @param {Object} catalog Elements and state of this instance
  */
@@ -755,8 +720,8 @@ async function searchPhones(catalog) {
   renderResultsCount(catalog.count, settings.texts, null);
 
   if (!settings.searchEndpoint) {
-    const { phones, totalItems, totalPages } = searchFallbackPhones(state, settings);
-    renderCatalogResults(catalog, phones, { totalItems, totalPages });
+    const phones = normalizePhones(FALLBACK_PHONES, settings.linkTemplate);
+    renderCatalogResults(catalog, phones, { totalItems: phones.length, totalPages: 1 });
     return;
   }
   try {
