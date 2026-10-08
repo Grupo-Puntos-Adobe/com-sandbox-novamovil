@@ -5,7 +5,7 @@
  * "Card Featured" table.
  *
  * Authored rows (all optional): Styles, Classname, Title, Link ("Ver todos"), Endpoint,
- * Product Link ("/productos/{sku}"), Button Text, Alert Duration, Alert Color,
+ * Product Link ("/celulares/producto?sku={sku}"), Button Text, Alert Duration, Alert Color,
  * Error Response Message, Empty List Title, Empty List Description, Empty List Icon,
  * Image Error Message.
  * Defaults only for messages and the alert:
@@ -199,7 +199,7 @@ function readFeaturedSettings(block) {
 
 /**
  * Builds the product link from the item's own path/url or the authored template,
- * e.g. "/productos/{sku}" (placeholders: {sku}, {productId}, {id}).
+ * e.g. "/celulares/producto?sku={sku}" (placeholders: {sku}, {productId}, {id}).
  * @param {Object} item Raw product
  * @param {string} linkTemplate Product Link row ('' when the table has none)
  * @returns {string|null} null without template or when a placeholder could not be filled

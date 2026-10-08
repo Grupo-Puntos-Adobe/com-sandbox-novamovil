@@ -154,6 +154,32 @@
   --product-catalog-skeleton: var(--color-gray-200);
   --product-catalog-skeleton-shine: var(--color-gray-100);
 
+  /* product-detail (gallery, purchase options, benefits, specs) */
+  --product-detail-title: var(--heading-color);
+  --product-detail-text: var(--text-color);
+  --product-detail-muted: var(--color-gray-500);
+  --product-detail-surface: var(--color-white);
+  --product-detail-border: var(--border-color);
+  --product-detail-accent: var(--color-primary);
+  --product-detail-media-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+  --product-detail-badge-background: var(--gradient-brand);
+  --product-detail-badge-text: var(--color-white);
+  --product-detail-promo-background: var(--color-yellow-100);
+  --product-detail-promo-text: var(--color-yellow-800);
+  --product-detail-star: var(--color-amber-500);
+  --product-detail-star-empty: var(--color-gray-200);
+  --product-detail-price: var(--color-primary);
+  --product-detail-positive: color-mix(in srgb, var(--color-success) 80%, var(--color-gray-900));
+  --product-detail-option-selected-background: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
+  --product-detail-button-background: var(--gradient-brand);
+  --product-detail-button-text: var(--color-white);
+  --product-detail-button-glow: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --product-detail-favorite: var(--color-error);
+  --product-detail-benefits-background: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
+  --product-detail-spec-stripe: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
+  --product-detail-skeleton: var(--color-gray-200);
+  --product-detail-skeleton-shine: var(--color-gray-100);
+
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);
   --empty-list-message-background: var(--color-white);

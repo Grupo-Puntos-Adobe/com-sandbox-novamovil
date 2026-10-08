@@ -37,7 +37,7 @@ a la izquierda; en móvil se abren en un panel con el botón **Filtros**.
 - Tarjeta de celular: foto con etiqueta y descuento, marca, disponibilidad, nombre, capacidad y RAM,
   precio, precio anterior tachado y botón; toda la tarjeta abre el producto y sube 4 px al pasar el
   mouse
-- Enlace de cada celular armado con una plantilla (`/productos/{sku}`) si el servicio no trae `path`
+- Enlace de cada celular armado con una plantilla (`/celulares/producto?sku={sku}`) si el servicio no trae `path`
 - En tablet y desktop la caja de filtros sigue el scroll debajo del header y se detiene donde
   acaba la lista; si la ventana es más baja que la caja, los filtros se desplazan por dentro
 - Esqueleto de carga mientras responde el servicio (la página no salta)

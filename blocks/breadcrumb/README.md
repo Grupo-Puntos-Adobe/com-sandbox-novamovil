@@ -28,6 +28,8 @@ Solo sale en las páginas que agregan la tabla **Breadcrumb** en Drive. Cada niv
 - Niveles numerados (`Level 1`, `Level 2`…) en cualquier orden: se muestran por número
 - Los niveles con enlace llevan a su página; el último es la página actual, sin enlace
 - Separador `›` entre niveles (lo pinta el CSS)
+- Nivel dinámico `{product}`: se llena con el nombre que pone otro bloque al cargar (por ejemplo
+  product-detail con el nombre del celular); mientras no llega, ese nivel no se pinta
 - Si una fila de nivel está vacía no se pinta; sin niveles, el bloque no pinta nada
 - Solo acepta enlaces del mismo sitio o `http(s)`
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
@@ -83,6 +85,8 @@ las filas son opcionales y pueden ir en cualquier orden.
     - **Descripción:** Cada nivel de la ruta, ordenado por número. El último es la página actual y,
       aunque tenga enlace, se muestra como texto
     - **Por defecto:** ninguno. Un nivel vacío no se pinta
+    - **Nivel dinámico:** si el texto es `{product}`, se cambia por el nombre de la página que pone
+      otro bloque con `setCurrentPageName` (`scripts/foundations/page-context.js`)
 
 ### Vista previa de la tabla en Drive
 
@@ -102,6 +106,7 @@ La tabla en Drive permite al autor configurar:
 | El último nivel con enlace | Texto oscuro en negrita, sin enlace (es la página actual) |
 | Una fila de nivel vacía | No se pinta |
 | Sin filas de nivel | El bloque queda vacío |
+| Nivel `{product}` | No se pinta hasta que otro bloque pone el nombre; luego sale como página actual ("Inicio › Celulares › Apple iPhone 15 Pro") |
 
 ### Vista previa
 
@@ -123,5 +128,7 @@ Móvil:
 - `breadcrumb.css` – Estilos de la ruta (tamaños, colores y separador)
 - `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
 - `scripts/foundations/block-utils.js` – `getSafeHref` para validar los enlaces
+- `scripts/foundations/page-context.js` – Nombre de la página para el nivel `{product}`
 - Colores en `styles/colors.css` (`--breadcrumb-*`)
-- Se usa en: la página Celulares (junto con `blocks/product-catalog/`)
+- Se usa en: la página Celulares (junto con `blocks/product-catalog/`) y la de detalle (junto con
+  `blocks/product-detail/`)
