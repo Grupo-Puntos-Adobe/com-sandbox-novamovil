@@ -220,9 +220,12 @@ La tabla en Drive permite al autor configurar:
 }
 ```
 
-> **Folder mapping:** para que `/celulares/{sku}` abra este documento en el sitio publicado hay
-> que mapear `/celulares/` → `/celulares/producto` en la configuración del sitio. La documentación de
-> aem.live indica que está detrás de un feature flag que activa Adobe.
+> **Cómo existe `/celulares/{sku}`:** en Edge Delivery cada URL es un documento y no hay uno por
+> celular. Hoy lo resuelve la página 404 del sitio: `404.html` usa `scripts/fallback-routes.js` para
+> cargar el documento `celulares/producto` cuando la URL es `/celulares/{sku}`, y el usuario ve el
+> detalle normal (el servidor responde 404, que no es ideal para SEO). Cuando Adobe active el
+> *folder mapping* (`/celulares/` → `/celulares/producto`), el servidor responderá esa página
+> directamente y la página 404 ya no se usará para estas URLs.
 
 > **Mock de Postman:** hoy devuelve siempre el iPhone 15 Pro, con una sola foto, una capacidad y
 > colores sin nombre. El bloque ya acepta `images[]`, `storages[]`, colores con nombre y `stock` para
@@ -270,6 +273,7 @@ Móvil:
 - `scripts/api/http-client.js` – `post` al servicio de detalle
 - `blocks/empty-list-message/` – Aviso "no disponible"
 - `blocks/breadcrumb/` – Ruta con el nivel `{product}`
+- `404.html` + `scripts/fallback-routes.js` – Pintan `celulares/producto` para `/celulares/{sku}`
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-detail-*`)
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
