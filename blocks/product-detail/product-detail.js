@@ -1,38 +1,38 @@
 /*
  * Product Detail block: the page of one phone (/celulares/?sku=iph-15-128-blk), fed
- * only by a POST service (Endpoint row). There is no internal JSON: without Endpoint, or when
- * the service fails or has no product, the block shows the "not available" message.
+ * only by a POST service (Endpoint row). There is no internal JSON: without Endpoint, with an
+ * invalid sku, or when the service fails or has no product, the block shows only the empty list
+ * message (no alert).
  *
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
  * "Product Detail" table.
  *
- * Authored rows (all optional): Styles, Classname, Endpoint, Preview Sku, Catalog Link, Back Text,
+ * Authored rows (all optional): Styles, Classname, Endpoint, Catalog Link, Back Text,
  * Color Label, Storage Label, Quantity Label, Reviews Text ("({count} reseñas)"),
  * Savings Text ("Ahorras {amount}"), Installments Text ("O {months} MSI de {amount}/mes sin
  * intereses"), Installments Months, In Stock Text, Sold Out Text, Button Text, Benefit N
- * (icon | text), Specs Title, Alert Duration, Alert Color, Error Response Message,
- * Empty List Title, Empty List Description, Empty List Icon, Image Error Message.
+ * (icon | text), Specs Title, Empty List Title, Empty List Description, Empty List Icon,
+ * Image Error Message.
  * Defaults only for messages and configuration:
  *   - Content (labels, texts, button, benefits, Specs Title) has no default: without text in
  *     the table that part is not painted.
  *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault):
  *     row missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below);
  *     row present but empty → not painted.
- *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  *   - Catalog Link: missing → the folder of the page (/celulares for /celulares/).
  *
  * The block lives in the index document of the celulares folder (celulares/index, URL
  * /celulares/) and the phone comes from the URL parameter: /celulares/?sku=iph-15-128-blk (see
- * readSkuFromUrl). Without sku the page goes back to Catalog Link (/celulares, with
- * location.replace so "back" does not return to the empty page) on the live site (LIVE_HOSTS);
- * on any preview it shows the Preview Sku phone instead, so authors see the detail.
+ * readSkuFromUrl). Without sku the page always goes back to Catalog Link (/celulares, with
+ * location.replace so "back" does not return to the empty page). A sku that does not match
+ * SKU_PATTERN is not sent to the service: the empty list message is shown.
  * Detail request: only data.productId changes; meta and security are fixed
  * (DETAIL_REQUEST_META, DETAIL_REQUEST_SECURITY), as the service expects.
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)          Styles / Classname rows
- *     ├─ readDetailSettings(block)         texts, endpoint, alert, messages, benefits
+ *     ├─ readDetailSettings(block)         texts, endpoint, messages, benefits
  *     ├─ readSkuFromUrl()                  none → location.replace(catalogLink)
  *     ├─ buildDetailSkeleton()
  *     └─ loadProductFromService()          post(Endpoint, { meta, security, data: { productId } })
@@ -41,7 +41,7 @@
  *          │            ├─ buildBenefits() · buildSpecs()
  *          │            └─ setCurrentPageName() (breadcrumb "{product}") + document.title
  *          ├─ no product → renderNotAvailable()
- *          └─ error → console.error + showToast(errorResponseMessage) + renderNotAvailable()
+ *          └─ error → console.error + renderNotAvailable() (no alert)
  *
  * "Agregar al carrito" is painted but does nothing yet: it will open the cart screen (cart
  * service /api/v1/cart/items), still to be built. Favourites only toggle aria-pressed.
@@ -60,13 +60,12 @@
  *   rating, reviews, available, stock?, specs[{ label, value }] } }
  * Guide: blocks/product-detail/README.md
  */
-import { getMetadata, readBlockConfig } from '../../scripts/aem.js';
+import { getMetadata } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { post } from '../../scripts/api/http-client.js';
-import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES, { CURRENCY, LOCALE } from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, formatPrice,
+  readTableCell, readRowTextOrDefault, getSafeHref, formatPrice,
 } from '../../scripts/foundations/block-utils.js';
 import { setCurrentPageName } from '../../scripts/foundations/page-context.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
@@ -87,10 +86,8 @@ const DETAIL_REQUEST_SECURITY = {
 
 // URL parameter with the phone identifier (the sku in lower case)
 const SKU_PARAM = 'sku';
-// live hosts: only there a page without sku goes back to the catalogue; anywhere else (any
-// preview, the editing tool) it shows the Preview Sku phone so authors see the detail.
-// Add the production domain here when the site gets one (e.g. /\.aem\.live$|^www\.novamovil\.mx$/)
-const LIVE_HOSTS = /\.aem\.live$/;
+// valid sku: letters, numbers and hyphens (iph-15-128-blk); anything else is not looked up
+const SKU_PATTERN = /^[a-z0-9-]{1,60}$/;
 // quantity limit when the service does not send the stock
 const MAX_QUANTITY = 10;
 // icon of the "not available" message, unless the table has an Empty List Icon row
@@ -149,7 +146,7 @@ function readBenefitRows(block) {
 /**
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
- * @returns {Object} texts, endpoint, catalogLink, installmentsMonths, benefits, alert, messages
+ * @returns {Object} texts, endpoint, catalogLink, installmentsMonths, benefits, messages
  */
 function readDetailSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
@@ -173,13 +170,10 @@ function readDetailSettings(block) {
       specsTitle: readCellText('specs title'),
     },
     endpoint: endpointCell.href || endpointCell.text,
-    previewSku: readCellText('preview sku').toLowerCase(),
     catalogLink: getSafeHref(catalogCell.href || catalogCell.text) || pageFolder,
     installmentsMonths: Number.isFinite(months) && months > 0 ? months : null,
     benefits: readBenefitRows(block),
-    alert: getAlertOptions(readBlockConfig(block)),
     messages: {
-      errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
       emptyListTitle: readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle),
       emptyListDescription: readRowTextOrDefault(
         block,
@@ -622,8 +616,8 @@ function renderNotAvailable(block, settings) {
 }
 
 /**
- * Loads the phone from the service; on any error logs it, shows the alert and the
- * "not available" message.
+ * Loads the phone from the service; when it does not exist (404, no data) or on any error, only
+ * the empty list message (the error is logged, no alert).
  * @param {Element} block
  * @param {string} sku Phone identifier from the URL
  * @param {Object} settings readDetailSettings() result
@@ -641,7 +635,6 @@ async function loadProductFromService(block, sku, settings) {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[product-detail] Could not load product', sku, 'from', settings.endpoint, error);
-    showToast(settings.messages.errorResponseMessage, settings.alert);
     renderNotAvailable(block, settings);
   }
 }
@@ -654,15 +647,14 @@ async function loadProductFromService(block, sku, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readDetailSettings(block);
-  const isPreview = !LIVE_HOSTS.test(window.location.hostname);
-  const sku = readSkuFromUrl() || (isPreview ? settings.previewSku : '');
+  const sku = readSkuFromUrl();
   if (!sku) {
-    // no phone in the URL: back to the catalogue (replace: "back" does not return here)
+    // no phone in the URL: back to the list of phones (replace: "back" does not return here)
     block.replaceChildren();
     window.location.replace(settings.catalogLink);
     return;
   }
-  if (!settings.endpoint) {
+  if (!SKU_PATTERN.test(sku) || !settings.endpoint) {
     renderNotAvailable(block, settings);
     return;
   }

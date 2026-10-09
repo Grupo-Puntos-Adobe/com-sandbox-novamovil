@@ -42,7 +42,8 @@ va en una columna; desde tablet, la galería a la izquierda y la información a 
 - Caja de beneficios (envío, compra segura, devoluciones) desde las filas `Benefit N`
 - Tabla **Características principales** (`specs` del servicio)
 - El breadcrumb termina con el nombre del celular (`{product}`) y la pestaña del navegador también
-- Esqueleto de carga, alerta si el servicio falla y aviso "no disponible" con enlace al catálogo
+- Esqueleto de carga; sin sku regresa a la lista de celulares (`/celulares`); si el sku no existe, es
+  inválido o el servicio falla, solo el aviso de lista vacía ("Este celular no existe"), sin alerta
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: título con `role="heading"` y `aria-level="1"`, opciones con `aria-pressed`, miniatura
@@ -140,32 +141,26 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
    `documentation/01-styles-classname.md`)
 2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
    sale el aviso "no disponible" (no hay JSON interno)
-3. **`Preview Sku`** – Celular de ejemplo (ej. `iph-15-128-blk`) que se muestra en **cualquier vista
-   previa** (el panel de edición, localhost, `.aem.page`) cuando la URL no trae `?sku=`, para que el
-   autor vea el detalle. En el sitio publicado (`.aem.live`, `LIVE_HOSTS` en el JS) sin sku siempre
-   regresa al catálogo
-4. **`Catalog Link`** – A dónde regresa la página sin sku y el enlace del aviso. Por defecto, la
+
+3. **`Catalog Link`** – A dónde regresa la página sin sku y el enlace del aviso. Por defecto, la
    carpeta de la página (`/celulares`)
-5. **`Back Text`** – Texto del enlace al catálogo en el aviso ("Ver todos los celulares"). Sin fila no
+4. **`Back Text`** – Texto del enlace al catálogo en el aviso ("Ver todos los celulares"). Sin fila no
    se pinta el enlace
-6. **`Color Label`** / **`Storage Label`** / **`Quantity Label`** – Etiquetas de color, capacidad y
+5. **`Color Label`** / **`Storage Label`** / **`Quantity Label`** – Etiquetas de color, capacidad y
    cantidad. Sin fila no se pinta la etiqueta
-7. **`Reviews Text`** – Reseñas con `{count}` ("({count} reseñas)"). Sin fila solo salen las
+6. **`Reviews Text`** – Reseñas con `{count}` ("({count} reseñas)"). Sin fila solo salen las
    estrellas y la calificación
-8. **`Savings Text`** – Ahorro con `{amount}` ("Ahorras {amount}"). Sin fila no se pinta
-9. **`Installments Text`** + **`Installments Months`** – "O {months} MSI de {amount}/mes sin
+7. **`Savings Text`** – Ahorro con `{amount}` ("Ahorras {amount}"). Sin fila no se pinta
+8. **`Installments Text`** + **`Installments Months`** – "O {months} MSI de {amount}/mes sin
    intereses" y el número de meses (12). Sin alguna de las dos no se pinta
-10. **`In Stock Text`** / **`Sold Out Text`** – Disponibilidad. Sin fila no se pinta
-11. **`Button Text`** – Botón "Agregar al carrito". Sin fila no se pinta
-12. **`Benefit 1`, `Benefit 2`…** – Icono (emoji) en la 2.ª celda y texto en la 3.ª. Sin filas no hay
+9. **`In Stock Text`** / **`Sold Out Text`** – Disponibilidad. Sin fila no se pinta
+10. **`Button Text`** – Botón "Agregar al carrito". Sin fila no se pinta
+11. **`Benefit 1`, `Benefit 2`…** – Icono (emoji) en la 2.ª celda y texto en la 3.ª. Sin filas no hay
     caja de beneficios
-13. **`Specs Title`** – Título de la tabla ("Características principales")
-14. **`Alert Duration`** / **`Alert Color`** – Duración y color de la alerta de error (5 s, `error`)
-15. **`Error Response Message`** – Texto de la alerta. Por defecto, `errorResponseMessage` de
-    `scripts/foundations/messages.js`
-16. **`Empty List Title`** / **`Empty List Description`** / **`Empty List Icon`** – Aviso "no
+12. **`Specs Title`** – Título de la tabla ("Características principales")
+13. **`Empty List Title`** / **`Empty List Description`** / **`Empty List Icon`** – Aviso "no
     disponible". Por defecto, `messages.js` y `📱`; fila vacía → no se pinta
-17. **`Image Error Message`** – Texto en lugar de una foto que falla. Por defecto, `messages.js`
+14. **`Image Error Message`** – Texto en lugar de una foto que falla. Por defecto, `messages.js`
 
 Los textos que solo oyen los lectores de pantalla ("Imagen 2 de 3", "Aumentar cantidad", "Agregar a
 favoritos"…) están en `LABELS` de `product-detail.js`.
@@ -179,7 +174,7 @@ La tabla en Drive permite al autor configurar:
 - El **ahorro**, los **meses sin intereses** y la **disponibilidad**
 - El botón **Agregar al carrito** y los **beneficios**
 - El título de **Características principales**
-- La **alerta**, el aviso **no disponible** y el texto de **foto que falla**
+- El aviso **"Este celular no existe"** y el texto de **foto que falla**
 
 ![Vista Tabla en Drive](/documentation/readme/product-detail/drive-table.png)
 
@@ -235,12 +230,12 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
-| Vista previa (panel de edición, localhost, `.aem.page`) sin `?sku=` | Muestra el celular de `Preview Sku` |
 | Sitio publicado sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
-| El servicio falla | Alerta + aviso "no disponible" con enlace al catálogo |
-| El servicio responde sin celular | Aviso "no disponible", sin alerta |
+| `?sku=` con formato inválido (no solo letras, números y guiones) | Aviso "Este celular no existe", sin llamar al servicio |
+| El servicio responde que no existe (404 o sin celular) | Aviso "Este celular no existe", sin alerta |
+| El servicio falla | Aviso "Este celular no existe", sin alerta (el error queda en la consola) |
 | Sin fila `Endpoint` | Aviso "no disponible" (no hay datos de ejemplo) |
 | La foto falla | `Image Error Message` en lugar de la foto |
 | Sin stock | "Agotado"; cantidad y **Agregar al carrito** desactivados |
