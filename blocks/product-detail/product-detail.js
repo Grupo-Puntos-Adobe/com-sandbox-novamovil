@@ -23,9 +23,10 @@
  *
  * The block lives in the index document of the celulares folder (celulares/index, URL
  * /celulares/) and the phone comes from the URL parameter: /celulares/?sku=iph-15-128-blk (see
- * readSkuFromUrl). Without sku the page always goes back to Catalog Link (/celulares, with
- * location.replace so "back" does not return to the empty page). A sku that does not match
- * SKU_PATTERN is not sent to the service: the empty list message is shown.
+ * readSkuFromUrl). Without sku the page goes back to Catalog Link (/celulares, with
+ * location.replace so "back" does not return to the empty page); only in the editing tool's
+ * preview panel (EDITOR_PREVIEW_HOSTS) a valid sku is put in the URL instead. A sku that does
+ * not match SKU_PATTERN is not sent to the service: the empty list message is shown.
  * Detail request: only data.productId changes; meta and security are fixed
  * (DETAIL_REQUEST_META, DETAIL_REQUEST_SECURITY), as the service expects.
  *
@@ -88,6 +89,10 @@ const DETAIL_REQUEST_SECURITY = {
 const SKU_PARAM = 'sku';
 // valid sku: letters, numbers and hyphens (iph-15-128-blk); anything else is not looked up
 const SKU_PATTERN = /^[a-z0-9-]{1,60}$/;
+// only the editing tool's preview panel opens the page without ?sku=; there a valid sku is put
+// in the URL so the detail can be seen (everywhere else, no sku → back to the list)
+const EDITOR_PREVIEW_HOSTS = /^preview-aemcoder\.adobe\.io$/;
+const EDITOR_PREVIEW_SKU = 'iph-15-128-blk';
 // quantity limit when the service does not send the stock
 const MAX_QUANTITY = 10;
 // icon of the "not available" message, unless the table has an Empty List Icon row
@@ -647,7 +652,13 @@ async function loadProductFromService(block, sku, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readDetailSettings(block);
-  const sku = readSkuFromUrl();
+  let sku = readSkuFromUrl();
+  if (!sku && EDITOR_PREVIEW_HOSTS.test(window.location.hostname)) {
+    sku = EDITOR_PREVIEW_SKU;
+    const url = new URL(window.location.href);
+    url.searchParams.set(SKU_PARAM, sku);
+    window.history.replaceState(null, '', url);
+  }
   if (!sku) {
     // no phone in the URL: back to the list of phones (replace: "back" does not return here)
     block.replaceChildren();

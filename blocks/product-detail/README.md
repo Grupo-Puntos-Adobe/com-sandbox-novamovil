@@ -233,6 +233,7 @@ La tabla en Drive permite al autor configurar:
 | Sitio publicado sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
+| Panel de vista previa de la herramienta de edición (`preview-aemcoder.adobe.io`) sin `?sku=` | Pone `?sku=iph-15-128-blk` en la URL y muestra ese detalle (solo ahí; en el sitio sin sku regresa a la lista) |
 | `?sku=` con formato inválido (no solo letras, números y guiones) | Aviso "Este celular no existe", sin llamar al servicio |
 | El servicio responde que no existe (404 o sin celular) | Aviso "Este celular no existe", sin alerta |
 | El servicio falla | Aviso "Este celular no existe", sin alerta (el error queda en la consola) |
