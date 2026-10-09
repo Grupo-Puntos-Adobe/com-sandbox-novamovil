@@ -14,14 +14,7 @@
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta property="og:title" content="Page not found">
-  <script nonce="aem" type="module">
-    /* /celulares/{sku} has no document of its own: paint the template page first
-       (scripts/fallback-routes.js), then decorate as any page */
-    import renderFallbackRoute from '/scripts/fallback-routes.js';
-
-    await renderFallbackRoute();
-    await import('/scripts/scripts.js');
-  </script>
+  <script nonce="aem" src="/scripts/scripts.js" type="module"></script>
   <script nonce="aem" type="module">
     window.addEventListener('load', () => {
       if (document.referrer) {
@@ -33,8 +26,7 @@
           backBtn.textContent = 'Go back';
           backBtn.title = 'Go back';
           const btnContainer = document.querySelector('.button-container');
-          /* not there when a fallback route painted a real page */
-          btnContainer?.append(backBtn);
+          btnContainer.append(backBtn);
         }
       }
     });

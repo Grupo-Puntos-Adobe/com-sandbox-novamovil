@@ -5,7 +5,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | Archivo | Tipo | Qué se hizo |
 |---|---|---|
 | `.hlxignore` | Modificado | No publicar docs ni archivos internos |
-| `404.html` | Modificado | Carga breakpoints, grid y colores; muestra el detalle en /celulares/{sku} |
+| `404.html` | Modificado | Carga breakpoints, grid y colores |
 | `head.html` | Modificado | Carga breakpoints, grid y colores |
 | `AGENTS.md` | Modificado | Reglas del proyecto |
 | `package.json` | Modificado | Lint de CSS en subcarpetas |
@@ -19,7 +19,6 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `fonts/plus-jakarta-sans-*.woff2` | Nuevo | Archivos de la fuente |
 | `fonts/roboto-*.woff2` | Modificado | Se quitaron (ya no se usan) |
 | `icons/cart.svg`, `close.svg`, `logo.svg`, `user.svg` | Nuevo | Iconos del header |
-| `scripts/fallback-routes.js` | Nuevo | URLs sin documento que pinta otra página |
 | `scripts/api/http-client.js` | Nuevo | Llamadas a servicios |
 | `scripts/api/interceptors.js` | Nuevo | Encabezados y errores de servicios |
 | `scripts/foundations/block-options.js` | Nuevo | Filas Styles y Classname |
