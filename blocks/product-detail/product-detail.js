@@ -24,8 +24,8 @@
  * The block lives in the index document of the celulares folder (celulares/index, URL
  * /celulares/) and the phone comes from the URL parameter: /celulares/?sku=iph-15-128-blk (see
  * readSkuFromUrl). Without sku the page goes back to Catalog Link (/celulares, with
- * location.replace so "back" does not return to the empty page); only on preview hosts
- * (localhost, *.aem.page) it shows the Preview Sku phone instead, so authors see the detail.
+ * location.replace so "back" does not return to the empty page) on the live site (LIVE_HOSTS);
+ * on any preview it shows the Preview Sku phone instead, so authors see the detail.
  * Detail request: only data.productId changes; meta and security are fixed
  * (DETAIL_REQUEST_META, DETAIL_REQUEST_SECURITY), as the service expects.
  *
@@ -87,8 +87,10 @@ const DETAIL_REQUEST_SECURITY = {
 
 // URL parameter with the phone identifier (the sku in lower case)
 const SKU_PARAM = 'sku';
-// preview hosts: there, a page without sku shows the Preview Sku phone (authors see the detail)
-const PREVIEW_HOSTS = /^localhost$|\.aem\.page$|\.hlx\.page$/;
+// live hosts: only there a page without sku goes back to the catalogue; anywhere else (any
+// preview, the editing tool) it shows the Preview Sku phone so authors see the detail.
+// Add the production domain here when the site gets one (e.g. /\.aem\.live$|^www\.novamovil\.mx$/)
+const LIVE_HOSTS = /\.aem\.live$/;
 // quantity limit when the service does not send the stock
 const MAX_QUANTITY = 10;
 // icon of the "not available" message, unless the table has an Empty List Icon row
@@ -652,7 +654,7 @@ async function loadProductFromService(block, sku, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readDetailSettings(block);
-  const isPreview = PREVIEW_HOSTS.test(window.location.hostname);
+  const isPreview = !LIVE_HOSTS.test(window.location.hostname);
   const sku = readSkuFromUrl() || (isPreview ? settings.previewSku : '');
   if (!sku) {
     // no phone in the URL: back to the catalogue (replace: "back" does not return here)

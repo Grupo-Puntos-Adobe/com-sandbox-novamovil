@@ -140,9 +140,10 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
    `documentation/01-styles-classname.md`)
 2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
    sale el aviso "no disponible" (no hay JSON interno)
-3. **`Preview Sku`** – Celular de ejemplo (ej. `iph-15-128-blk`) que se muestra **solo en la vista
-   previa** (localhost y `.aem.page`) cuando la URL no trae `?sku=`, para que el autor vea el detalle.
-   En el sitio publicado (`.aem.live`) sin sku siempre regresa al catálogo
+3. **`Preview Sku`** – Celular de ejemplo (ej. `iph-15-128-blk`) que se muestra en **cualquier vista
+   previa** (el panel de edición, localhost, `.aem.page`) cuando la URL no trae `?sku=`, para que el
+   autor vea el detalle. En el sitio publicado (`.aem.live`, `LIVE_HOSTS` en el JS) sin sku siempre
+   regresa al catálogo
 4. **`Catalog Link`** – A dónde regresa la página sin sku y el enlace del aviso. Por defecto, la
    carpeta de la página (`/celulares`)
 5. **`Back Text`** – Texto del enlace al catálogo en el aviso ("Ver todos los celulares"). Sin fila no
@@ -234,7 +235,7 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
-| Vista previa (localhost, `.aem.page`) sin `?sku=` | Muestra el celular de `Preview Sku` |
+| Vista previa (panel de edición, localhost, `.aem.page`) sin `?sku=` | Muestra el celular de `Preview Sku` |
 | Sitio publicado sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
