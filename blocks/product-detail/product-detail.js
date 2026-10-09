@@ -6,7 +6,7 @@
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
  * "Product Detail" table.
  *
- * Authored rows (all optional): Styles, Classname, Endpoint, Catalog Link, Back Text,
+ * Authored rows (all optional): Styles, Classname, Endpoint, Preview Sku, Catalog Link, Back Text,
  * Color Label, Storage Label, Quantity Label, Reviews Text ("({count} reseñas)"),
  * Savings Text ("Ahorras {amount}"), Installments Text ("O {months} MSI de {amount}/mes sin
  * intereses"), Installments Months, In Stock Text, Sold Out Text, Button Text, Benefit N
@@ -24,7 +24,8 @@
  * The block lives in the index document of the celulares folder (celulares/index, URL
  * /celulares/) and the phone comes from the URL parameter: /celulares/?sku=iph-15-128-blk (see
  * readSkuFromUrl). Without sku the page goes back to Catalog Link (/celulares, with
- * location.replace so "back" does not return to the empty page).
+ * location.replace so "back" does not return to the empty page); only on preview hosts
+ * (localhost, *.aem.page) it shows the Preview Sku phone instead, so authors see the detail.
  * Detail request: only data.productId changes; meta and security are fixed
  * (DETAIL_REQUEST_META, DETAIL_REQUEST_SECURITY), as the service expects.
  *
@@ -86,6 +87,8 @@ const DETAIL_REQUEST_SECURITY = {
 
 // URL parameter with the phone identifier (the sku in lower case)
 const SKU_PARAM = 'sku';
+// preview hosts: there, a page without sku shows the Preview Sku phone (authors see the detail)
+const PREVIEW_HOSTS = /^localhost$|\.aem\.page$|\.hlx\.page$/;
 // quantity limit when the service does not send the stock
 const MAX_QUANTITY = 10;
 // icon of the "not available" message, unless the table has an Empty List Icon row
@@ -168,6 +171,7 @@ function readDetailSettings(block) {
       specsTitle: readCellText('specs title'),
     },
     endpoint: endpointCell.href || endpointCell.text,
+    previewSku: readCellText('preview sku').toLowerCase(),
     catalogLink: getSafeHref(catalogCell.href || catalogCell.text) || pageFolder,
     installmentsMonths: Number.isFinite(months) && months > 0 ? months : null,
     benefits: readBenefitRows(block),
@@ -648,7 +652,8 @@ async function loadProductFromService(block, sku, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readDetailSettings(block);
-  const sku = readSkuFromUrl();
+  const isPreview = PREVIEW_HOSTS.test(window.location.hostname);
+  const sku = readSkuFromUrl() || (isPreview ? settings.previewSku : '');
   if (!sku) {
     // no phone in the URL: back to the catalogue (replace: "back" does not return here)
     block.replaceChildren();

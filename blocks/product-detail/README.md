@@ -140,28 +140,31 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
    `documentation/01-styles-classname.md`)
 2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
    sale el aviso "no disponible" (no hay JSON interno)
-3. **`Catalog Link`** – A dónde regresa la página sin sku y el enlace del aviso. Por defecto, la
+3. **`Preview Sku`** – Celular de ejemplo (ej. `iph-15-128-blk`) que se muestra **solo en la vista
+   previa** (localhost y `.aem.page`) cuando la URL no trae `?sku=`, para que el autor vea el detalle.
+   En el sitio publicado (`.aem.live`) sin sku siempre regresa al catálogo
+4. **`Catalog Link`** – A dónde regresa la página sin sku y el enlace del aviso. Por defecto, la
    carpeta de la página (`/celulares`)
-4. **`Back Text`** – Texto del enlace al catálogo en el aviso ("Ver todos los celulares"). Sin fila no
+5. **`Back Text`** – Texto del enlace al catálogo en el aviso ("Ver todos los celulares"). Sin fila no
    se pinta el enlace
-5. **`Color Label`** / **`Storage Label`** / **`Quantity Label`** – Etiquetas de color, capacidad y
+6. **`Color Label`** / **`Storage Label`** / **`Quantity Label`** – Etiquetas de color, capacidad y
    cantidad. Sin fila no se pinta la etiqueta
-6. **`Reviews Text`** – Reseñas con `{count}` ("({count} reseñas)"). Sin fila solo salen las
+7. **`Reviews Text`** – Reseñas con `{count}` ("({count} reseñas)"). Sin fila solo salen las
    estrellas y la calificación
-7. **`Savings Text`** – Ahorro con `{amount}` ("Ahorras {amount}"). Sin fila no se pinta
-8. **`Installments Text`** + **`Installments Months`** – "O {months} MSI de {amount}/mes sin
+8. **`Savings Text`** – Ahorro con `{amount}` ("Ahorras {amount}"). Sin fila no se pinta
+9. **`Installments Text`** + **`Installments Months`** – "O {months} MSI de {amount}/mes sin
    intereses" y el número de meses (12). Sin alguna de las dos no se pinta
-9. **`In Stock Text`** / **`Sold Out Text`** – Disponibilidad. Sin fila no se pinta
-10. **`Button Text`** – Botón "Agregar al carrito". Sin fila no se pinta
-11. **`Benefit 1`, `Benefit 2`…** – Icono (emoji) en la 2.ª celda y texto en la 3.ª. Sin filas no hay
+10. **`In Stock Text`** / **`Sold Out Text`** – Disponibilidad. Sin fila no se pinta
+11. **`Button Text`** – Botón "Agregar al carrito". Sin fila no se pinta
+12. **`Benefit 1`, `Benefit 2`…** – Icono (emoji) en la 2.ª celda y texto en la 3.ª. Sin filas no hay
     caja de beneficios
-12. **`Specs Title`** – Título de la tabla ("Características principales")
-13. **`Alert Duration`** / **`Alert Color`** – Duración y color de la alerta de error (5 s, `error`)
-14. **`Error Response Message`** – Texto de la alerta. Por defecto, `errorResponseMessage` de
+13. **`Specs Title`** – Título de la tabla ("Características principales")
+14. **`Alert Duration`** / **`Alert Color`** – Duración y color de la alerta de error (5 s, `error`)
+15. **`Error Response Message`** – Texto de la alerta. Por defecto, `errorResponseMessage` de
     `scripts/foundations/messages.js`
-15. **`Empty List Title`** / **`Empty List Description`** / **`Empty List Icon`** – Aviso "no
+16. **`Empty List Title`** / **`Empty List Description`** / **`Empty List Icon`** – Aviso "no
     disponible". Por defecto, `messages.js` y `📱`; fila vacía → no se pinta
-16. **`Image Error Message`** – Texto en lugar de una foto que falla. Por defecto, `messages.js`
+17. **`Image Error Message`** – Texto en lugar de una foto que falla. Por defecto, `messages.js`
 
 Los textos que solo oyen los lectores de pantalla ("Imagen 2 de 3", "Aumentar cantidad", "Agregar a
 favoritos"…) están en `LABELS` de `product-detail.js`.
@@ -231,7 +234,8 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
-| URL sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
+| Vista previa (localhost, `.aem.page`) sin `?sku=` | Muestra el celular de `Preview Sku` |
+| Sitio publicado sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
 | El servicio falla | Alerta + aviso "no disponible" con enlace al catálogo |
