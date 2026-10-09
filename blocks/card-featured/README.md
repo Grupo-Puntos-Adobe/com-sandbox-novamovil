@@ -28,7 +28,7 @@ bloque. Se acomoda solo a cada resolución con el grid del proyecto: 1 tarjeta p
 
 - Productos desde un servicio (`Endpoint`) o desde el JSON interno del bloque
 - Título de la sección y botón "Ver todos" personalizables (sin fila no se pintan)
-- Enlace de cada producto armado con una plantilla (`/celulares/{sku}`) si el servicio no trae `path`
+- Enlace de cada producto armado con una plantilla (`/celulares/?sku={sku}`) si el servicio no trae `path`
 - Botón de la tarjeta personalizable; sin `Button Text` el nombre del producto es el enlace
 - Etiquetas sobre la foto (`badge` y `promo`), estrellas rellenas según la calificación y número de
   reseñas
@@ -164,7 +164,7 @@ y pueden ir en cualquier orden.
 6. **`Product Link`**
     - **Tipo:** Texto (plantilla con `{sku}`, `{productId}` o `{id}`)
     - **Descripción:** Enlace de cada tarjeta cuando el producto no trae `path`, por ejemplo
-      `/celulares/{sku}`
+      `/celulares/?sku={sku}`
     - **Por defecto:** ninguno. Sin él (y sin `path`), la tarjeta se muestra sin enlace
 
 7. **`Button Text`**

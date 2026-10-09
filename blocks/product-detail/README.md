@@ -20,16 +20,16 @@ limitations under the License.
 
 Este componente permite a los usuarios **ver el detalle de un celular: fotos, precio, colores,
 capacidad, disponibilidad, cantidad y características**.
-La URL de cada celular es `/celulares/{sku}` (por ejemplo `/celulares/iph-15-128-blk`), que es lo
-que arman las tarjetas del catálogo y de destacados. Es un solo documento para todos los celulares
-(`celulares/producto`); en la configuración del sitio, la carpeta `/celulares/` se mapea a ese
-documento (*folder mapping*). También acepta `?sku=iph-15-128-blk`. Todo viene del servicio de detalle (`Endpoint`, POST): **no tiene JSON interno**. En móvil
+La URL de cada celular es `/celulares/?sku={sku}` (por ejemplo `/celulares/?sku=iph-15-128-blk`),
+que es lo que arman las tarjetas del catálogo y de destacados. El bloque vive en el documento
+**index** de la carpeta **celulares** de Drive (`celulares/index`, URL `/celulares/`): un solo documento
+para todos los celulares. Todo viene del servicio de detalle (`Endpoint`, POST): **no tiene JSON interno**. En móvil
 va en una columna; desde tablet, la galería a la izquierda y la información a la derecha.
 
 ### Características
 
-- El sku sale del último tramo de la URL (`/celulares/iph-15-128-blk`) o de `?sku=`; sin sku (la
-  carpeta o el propio documento `producto`) la página regresa al catálogo (`Catalog Link`)
+- El sku sale del parámetro de la URL (`/celulares/?sku=iph-15-128-blk`); sin él la página regresa
+  al catálogo (`Catalog Link`, `/celulares`)
 - Galería: foto grande y miniaturas cuando el servicio trae varias fotos (`images`)
 - Etiqueta y descuento, marca, nombre (título principal de la página), estrellas, calificación y
   reseñas
@@ -133,7 +133,7 @@ div.product-detail
 
 ### Estructura de la tabla en Drive
 
-El autor escribe una tabla **Product Detail** en el documento `celulares/producto` de Drive (debajo
+El autor escribe una tabla **Product Detail** en el documento `index` de la carpeta `celulares` de Drive (debajo
 del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 
 1. **`Styles`** / **`Classname`** – Estilos en línea y clases extra del bloque (ver
@@ -220,9 +220,8 @@ La tabla en Drive permite al autor configurar:
 }
 ```
 
-> **Folder mapping:** para que `/celulares/{sku}` abra este documento en el sitio publicado hay
-> que mapear `/celulares/` → `/celulares/producto` en la configuración del sitio. La documentación de
-> aem.live indica que está detrás de un feature flag que activa Adobe.
+> **Carpeta en Drive:** el documento `celulares` (catálogo, `/celulares`) y la carpeta `celulares` con
+> el documento `index` adentro (detalle, `/celulares/`) van uno al lado del otro.
 
 > **Mock de Postman:** hoy devuelve siempre el iPhone 15 Pro, con una sola foto, una capacidad y
 > colores sin nombre. El bloque ya acepta `images[]`, `storages[]`, colores con nombre y `stock` para
@@ -232,7 +231,7 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
-| URL sin sku (`/celulares/` o `/celulares/producto`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
+| URL sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
 | El servicio falla | Alerta + aviso "no disponible" con enlace al catálogo |
@@ -273,6 +272,6 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-detail-*`)
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
-  `/celulares/{sku}`)
+  `/celulares/?sku={sku}`)
 
 Integración de servicios: `documentation/02-integracion-endpoints.md`.

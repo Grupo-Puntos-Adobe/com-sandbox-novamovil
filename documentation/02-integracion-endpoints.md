@@ -54,7 +54,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
 | `blocks/card-*/card-*.css` | 🆕 | Esqueleto de carga y mensaje de "no hay elementos" | mismos commits |
 | `blocks/product-catalog/product-catalog.js` | 🆕 | Pide los filtros con `get` (`data.brands`, `operatingSystems`, `storages`, `priceRange`) y busca con `post` (`data` con los filtros elegidos; `pagination` + lista en `data`), cancelando la búsqueda anterior. Guía: `blocks/product-catalog/README.md` | — |
-| `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = sku de la URL `/celulares/{sku}`, o `?sku=`); sin JSON interno: si falla, alerta + aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
+| `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = sku de la URL `/celulares/?sku={sku}`); sin JSON interno: si falla, alerta + aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
 | `content-drive/index.docx` | 🆕 | Filas `Endpoint`, `Alert Duration`, `Alert Color` en cada tabla | mismos commits |
 | `styles/styles.css` | 📦 ✏️ | Agrega `--z-index-toast: 900` (la alerta queda bajo el header, `1000`) | `db5a73d` |
 | `head.html` | 📦 ✏️ | Ya cargaba `styles/colors.css` desde el header; **no se cambió para esto** | `5fa25e7` (header) |
@@ -344,7 +344,7 @@ Detalles importantes:
 | Bloque | Campo que lee de la respuesta | Enlace de cada tarjeta |
 |---|---|---|
 | `card-categories` | `data.categories` | `path` de cada categoría |
-| `card-featured` | `data.products` | `path` del producto o fila `Product Link` (`/celulares/{sku}`); sin ninguno, sin enlace |
+| `card-featured` | `data.products` | `path` del producto o fila `Product Link` (`/celulares/?sku={sku}`); sin ninguno, sin enlace |
 | `card-promotions` | `data.promotions` | `path` de la promoción o fila `Promo Link` (`/promociones/{id}`); sin ninguno, sin enlace |
 
 ### Paso 8 · Configurarlo en el documento (`content-drive/index.docx`)

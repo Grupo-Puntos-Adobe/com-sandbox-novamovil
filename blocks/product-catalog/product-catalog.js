@@ -9,7 +9,7 @@
  * Authored rows (all optional): Styles, Classname, Title, Results Text ("{count} productos
  * encontrados"), Results Text One ("{count} producto encontrado"), Sort Label, Filters Title,
  * Brand Label, OS Label, Storage Label, Price Label, Apply Text, Filters Endpoint,
- * Search Endpoint, Category, Page Size, Product Link ("/celulares/{sku}"),
+ * Search Endpoint, Category, Page Size, Product Link ("/celulares/?sku={sku}"),
  * Button Text, Available Text, Sold Out Text, Alert Duration, Alert Color, Error Response Message,
  * Empty List Title, Empty List Description, Empty List Icon, Image Error Message.
  * Defaults only for messages and configuration:
@@ -228,7 +228,7 @@ function normalizeFilters(rawFilters) {
 
 /**
  * Builds the phone link from its own path/url or the authored template,
- * e.g. "/celulares/{sku}" (placeholders: {sku}, {productId}, {id}).
+ * e.g. "/celulares/?sku={sku}" (placeholders: {sku}, {productId}, {id}).
  * @param {Object} item Raw phone
  * @param {string} linkTemplate Product Link row ('' when the table has none)
  * @returns {string|null}
