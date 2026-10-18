@@ -1,7 +1,7 @@
 /*
- * Product Detail block: the page of one phone (/celulares/?sku=iph-15-128-blk), fed
+ * Product Detail block: the page of one phone (/celulares/?id=prod-001), fed
  * only by a POST service (Endpoint row). There is no internal JSON: without Endpoint, with an
- * invalid sku, or when the service fails or has no product, the block shows only the empty list
+ * invalid id, or when the service fails or has no product, the block shows only the empty list
  * message (no alert).
  *
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
@@ -22,11 +22,11 @@
  *   - Catalog Link: missing → the folder of the page (/celulares for /celulares/).
  *
  * The block lives in the index document of the celulares folder (celulares/index, URL
- * /celulares/) and the phone comes from the URL parameter: /celulares/?sku=iph-15-128-blk (see
- * readSkuFromUrl). Without sku the page goes back to Catalog Link (/celulares, with
+ * /celulares/) and the phone comes from the URL parameter: /celulares/?id=prod-001 (see
+ * readIdFromUrl). Without id the page goes back to Catalog Link (/celulares, with
  * location.replace so "back" does not return to the empty page); only in the editing tool's
- * preview panel (EDITOR_PREVIEW_HOSTS) a valid sku is put in the URL instead. A sku that does
- * not match SKU_PATTERN is not sent to the service: the empty list message is shown.
+ * preview panel (EDITOR_PREVIEW_HOSTS) a valid id is put in the URL instead. An id that does
+ * not match ID_PATTERN is not sent to the service: the empty list message is shown.
  * Detail request: only data.productId changes; meta and security are fixed
  * (DETAIL_REQUEST_META, DETAIL_REQUEST_SECURITY), as the service expects.
  *
@@ -34,7 +34,7 @@
  *   decorate(block)
  *     ├─ applyBlockOptions(block)          Styles / Classname rows
  *     ├─ readDetailSettings(block)         texts, endpoint, messages, benefits
- *     ├─ readSkuFromUrl()                  none → location.replace(catalogLink)
+ *     ├─ readIdFromUrl()                   none → location.replace(catalogLink)
  *     ├─ buildDetailSkeleton()
  *     └─ loadProductFromService()          post(Endpoint, { meta, security, data: { productId } })
  *          ├─ ok    → normalizeProduct() → renderProductDetail()
@@ -85,14 +85,14 @@ const DETAIL_REQUEST_SECURITY = {
   signature: '{{hmac_signature}}',
 };
 
-// URL parameter with the phone identifier (the sku in lower case)
-const SKU_PARAM = 'sku';
-// valid sku: letters, numbers and hyphens (iph-15-128-blk); anything else is not looked up
-const SKU_PATTERN = /^[a-z0-9-]{1,60}$/;
-// only the editing tool's preview panel opens the page without ?sku=; there a valid sku is put
-// in the URL so the detail can be seen (everywhere else, no sku → back to the list)
+// URL parameter with the phone identifier (its id in lower case)
+const ID_PARAM = 'id';
+// valid id: letters, numbers and hyphens (prod-001); anything else is not looked up
+const ID_PATTERN = /^[a-z0-9-]{1,60}$/;
+// only the editing tool's preview panel opens the page without ?id=; there a valid id is put
+// in the URL so the detail can be seen (everywhere else, no id → back to the list)
 const EDITOR_PREVIEW_HOSTS = /^preview-aemcoder\.adobe\.io$/;
-const EDITOR_PREVIEW_SKU = 'iph-15-128-blk';
+const EDITOR_PREVIEW_ID = 'prod-001';
 // quantity limit when the service does not send the stock
 const MAX_QUANTITY = 10;
 // icon of the "not available" message, unless the table has an Empty List Icon row
@@ -192,11 +192,11 @@ function readDetailSettings(block) {
 }
 
 /**
- * The phone identifier of the page: /celulares/?sku=iph-15-128-blk.
+ * The phone identifier of the page: /celulares/?id=prod-001.
  * @returns {string} '' when the URL has none
  */
-function readSkuFromUrl() {
-  return (new URLSearchParams(window.location.search).get(SKU_PARAM) || '').trim().toLowerCase();
+function readIdFromUrl() {
+  return (new URLSearchParams(window.location.search).get(ID_PARAM) || '').trim().toLowerCase();
 }
 
 /**
@@ -624,22 +624,22 @@ function renderNotAvailable(block, settings) {
  * Loads the phone from the service; when it does not exist (404, no data) or on any error, only
  * the empty list message (the error is logged, no alert).
  * @param {Element} block
- * @param {string} sku Phone identifier from the URL
+ * @param {string} id Phone identifier from the URL
  * @param {Object} settings readDetailSettings() result
  */
-async function loadProductFromService(block, sku, settings) {
+async function loadProductFromService(block, id, settings) {
   try {
     const response = await post(settings.endpoint, {
       meta: DETAIL_REQUEST_META,
       security: DETAIL_REQUEST_SECURITY,
-      data: { productId: sku },
+      data: { productId: id },
     });
     const product = normalizeProduct(response?.data);
     if (product) renderProductDetail(block, product, settings);
     else renderNotAvailable(block, settings);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[product-detail] Could not load product', sku, 'from', settings.endpoint, error);
+    console.error('[product-detail] Could not load product', id, 'from', settings.endpoint, error);
     renderNotAvailable(block, settings);
   }
 }
@@ -652,24 +652,24 @@ async function loadProductFromService(block, sku, settings) {
 export default function decorate(block) {
   applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
   const settings = readDetailSettings(block);
-  let sku = readSkuFromUrl();
-  if (!sku && EDITOR_PREVIEW_HOSTS.test(window.location.hostname)) {
-    sku = EDITOR_PREVIEW_SKU;
+  let id = readIdFromUrl();
+  if (!id && EDITOR_PREVIEW_HOSTS.test(window.location.hostname)) {
+    id = EDITOR_PREVIEW_ID;
     const url = new URL(window.location.href);
-    url.searchParams.set(SKU_PARAM, sku);
+    url.searchParams.set(ID_PARAM, id);
     window.history.replaceState(null, '', url);
   }
-  if (!sku) {
+  if (!id) {
     // no phone in the URL: back to the list of phones (replace: "back" does not return here)
     block.replaceChildren();
     window.location.replace(settings.catalogLink);
     return;
   }
-  if (!SKU_PATTERN.test(sku) || !settings.endpoint) {
+  if (!ID_PATTERN.test(id) || !settings.endpoint) {
     renderNotAvailable(block, settings);
     return;
   }
   block.setAttribute('aria-busy', 'true');
   block.replaceChildren(buildDetailSkeleton());
-  loadProductFromService(block, sku, settings);
+  loadProductFromService(block, id, settings);
 }

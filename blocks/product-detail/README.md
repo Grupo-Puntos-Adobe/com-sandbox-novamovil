@@ -20,7 +20,7 @@ limitations under the License.
 
 Este componente permite a los usuarios **ver el detalle de un celular: fotos, precio, colores,
 capacidad, disponibilidad, cantidad y características**.
-La URL de cada celular es `/celulares/?sku={sku}` (por ejemplo `/celulares/?sku=iph-15-128-blk`),
+La URL de cada celular es `/celulares/?id={id}` (por ejemplo `/celulares/?id=prod-001`),
 que es lo que arman las tarjetas del catálogo y de destacados. El bloque vive en el documento
 **index** de la carpeta **celulares** de Drive (`celulares/index`, URL `/celulares/`): un solo documento
 para todos los celulares. Todo viene del servicio de detalle (`Endpoint`, POST): **no tiene JSON interno**. En móvil
@@ -28,7 +28,7 @@ va en una columna; desde tablet, la galería a la izquierda y la información a 
 
 ### Características
 
-- El sku sale del parámetro de la URL (`/celulares/?sku=iph-15-128-blk`); sin él la página regresa
+- El id sale del parámetro de la URL (`/celulares/?id=prod-001`); sin él la página regresa
   al catálogo (`Catalog Link`, `/celulares`)
 - Galería: foto grande y miniaturas cuando el servicio trae varias fotos (`images`)
 - Etiqueta y descuento, marca, nombre (título principal de la página), estrellas, calificación y
@@ -230,11 +230,11 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
-| Sitio publicado sin `?sku=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
+| Sitio publicado sin `?id=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
-| Panel de vista previa de la herramienta de edición (`preview-aemcoder.adobe.io`) sin `?sku=` | Pone `?sku=iph-15-128-blk` en la URL y muestra ese detalle (solo ahí; en el sitio sin sku regresa a la lista) |
-| `?sku=` con formato inválido (no solo letras, números y guiones) | Aviso "Este celular no existe", sin llamar al servicio |
+| Panel de vista previa de la herramienta de edición (`preview-aemcoder.adobe.io`) sin `?id=` | Pone `?id=prod-001` en la URL y muestra ese detalle (solo ahí; en el sitio sin sku regresa a la lista) |
+| `?id=` con formato inválido (no solo letras, números y guiones) | Aviso "Este celular no existe", sin llamar al servicio |
 | El servicio responde que no existe (404 o sin celular) | Aviso "Este celular no existe", sin alerta |
 | El servicio falla | Aviso "Este celular no existe", sin alerta (el error queda en la consola) |
 | Sin fila `Endpoint` | Aviso "no disponible" (no hay datos de ejemplo) |
@@ -273,6 +273,6 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-detail-*`)
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
-  `/celulares/?sku={sku}`)
+  `/celulares/?id={id}`)
 
 Integración de servicios: `documentation/02-integracion-endpoints.md`.
