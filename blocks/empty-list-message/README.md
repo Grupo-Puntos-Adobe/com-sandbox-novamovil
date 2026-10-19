@@ -26,11 +26,13 @@ lista.
 ### Características
 
 - Un solo aviso con el mismo diseño para todos los bloques que lo usan
-- Solo pinta lo que le mandan: icono, título y descripción
-- Cada parte es opcional: si llega vacía, no se pinta
+- Pinta lo que le mandan: icono, título y descripción
+- Si no le mandan título o descripción, usa los mensajes genéricos de
+  `scripts/foundations/messages.js` (`emptyListTitle` y `emptyListDescription`)
+- Si no le mandan icono, usa su icono genérico (`📭`, `EMPTY_LIST_ICON` dentro del bloque)
+- Si una parte llega vacía (`''`, fila vacía en Drive), no se pinta
 - Trae su propio CSS (`empty-list-message.css`), que se pide en cuanto un bloque lo importa, así ya
   está listo cuando se pinta el aviso
-- No tiene textos por defecto: los pone el bloque que lo llama
 - Adaptación a móvil, tablet y desktop (`styles/foundations/breakpoints.css`)
 - Accesible: `role="status"` para que los lectores de pantalla lo anuncien y el icono decorativo
   oculto (`aria-hidden="true"`)
@@ -63,11 +65,12 @@ div.empty-list-message[role=status]
 
 ### Parámetros de la función
 
-El bloque que lo usa lo importa y llama a `buildEmptyListMessage` con un objeto:
+El bloque que lo usa lo importa y llama a `buildEmptyListMessage` con un objeto (todo es
+opcional):
 
-1. `icon` – Emoji o texto corto
-2. `title` – Título
-3. `description` – Descripción
+1. `icon` – Emoji o texto corto. Si no llega: `📭`
+2. `title` – Título. Si no llega: `Por ahora no hay elementos disponibles`
+3. `description` – Descripción. Si no llega: `Vuelve pronto para descubrir nuestras novedades.`
 
 Devuelve el `div.empty-list-message` listo para ponerlo en el bloque.
 
@@ -79,6 +82,9 @@ block.replaceChildren(header, buildEmptyListMessage({
   title: 'Por ahora no hay categorías disponibles',
   description: 'Vuelve pronto para descubrir nuestras novedades.',
 }));
+
+// sin nada: icono genérico y mensajes genéricos
+block.replaceChildren(buildEmptyListMessage());
 ```
 
 ### Comportamiento
@@ -86,7 +92,10 @@ block.replaceChildren(header, buildEmptyListMessage({
 | Caso | Qué se ve |
 |---|---|
 | Llegan icono, título y descripción | El aviso completo |
-| Una parte llega vacía | Esa parte no se pinta |
+| No llega nada (`buildEmptyListMessage()`) | Icono `📭` y los mensajes genéricos |
+| No llega el icono | El icono genérico `📭` |
+| No llega el título o la descripción | El mensaje genérico de `scripts/foundations/messages.js` |
+| Una parte llega vacía (`''`) | Esa parte no se pinta |
 
 ### Vista previa
 
@@ -105,7 +114,8 @@ Móvil:
 ### Archivos y dependencias
 
 - `empty-list-message.js` – `buildEmptyListMessage({ icon, title, description })`; pide su CSS al
-  importarse
+  importarse y tiene el icono genérico (`EMPTY_LIST_ICON`)
+- `scripts/foundations/messages.js` – Mensajes genéricos (`emptyListTitle`, `emptyListDescription`)
 - `empty-list-message.css` – Estilos del aviso (tamaños, colores y resoluciones)
 - `scripts/aem.js` – `loadCSS` para pedir el CSS
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
