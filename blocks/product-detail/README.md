@@ -159,7 +159,8 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
     caja de beneficios
 12. **`Specs Title`** – Título de la tabla ("Características principales")
 13. **`Empty List Title`** / **`Empty List Description`** / **`Empty List Icon`** – Aviso "no
-    disponible". Por defecto, `messages.js` y `📱`; fila vacía → no se pinta
+    disponible". Por defecto, `messages.js` y `📱`; fila vacía → genérico del aviso (`messages.js` /
+    `📭`)
 14. **`Image Error Message`** – Texto en lugar de una foto que falla. Por defecto, `messages.js`
 
 Los textos que solo oyen los lectores de pantalla ("Imagen 2 de 3", "Aumentar cantidad", "Agregar a

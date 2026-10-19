@@ -147,19 +147,19 @@ opcionales y pueden ir en cualquier orden.
     - **Tipo:** Texto
     - **Descripción:** Título del aviso cuando no hay promociones que mostrar
     - **Por defecto:** `emptyListTitle` de `scripts/foundations/messages.js`. Si la fila existe pero
-      está vacía, no se pinta
+      está vacía, el aviso usa ese mismo mensaje genérico
 
 10. **`Empty List Description`**
     - **Tipo:** Texto
     - **Descripción:** Descripción de ese aviso
-    - **Por defecto:** `emptyListDescription` de `scripts/foundations/messages.js`. Si la fila existe
-      pero está vacía, no se pinta
+    - **Por defecto:** `emptyListDescription` de `scripts/foundations/messages.js`. Si la fila
+      existe pero está vacía, el aviso usa ese mismo mensaje genérico
 
 11. **`Empty List Icon`**
     - **Tipo:** Texto (emoji o texto corto)
     - **Descripción:** Icono de ese aviso
     - **Por defecto:** `🏷️` (`EMPTY_LIST_ICON` en `card-promotions.js`). Si la fila existe pero está
-      vacía, no se pinta
+      vacía, el aviso usa su icono genérico `📭`
 
 Este bloque no tiene fila `Link` (solo Card Featured lleva el botón "Ver todos").
 

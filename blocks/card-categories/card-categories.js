@@ -10,8 +10,8 @@
  * Defaults only for messages and the alert:
  *   - Title has no default: without text in the table the section has no title.
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
- *     (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present but empty →
- *     not painted.
+ *     (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present but empty → generic
+ *     of blocks/empty-list-message (messages.js text, 📭).
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * The list is named by the Title (aria-label with the title text).
  * The loading skeleton always paints SKELETON_ELEMENTS placeholder cards (below).

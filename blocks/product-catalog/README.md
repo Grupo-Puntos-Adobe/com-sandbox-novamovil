@@ -288,8 +288,9 @@ opcionales y pueden ir en cualquier orden.
 17. **`Empty List Title`** / **`Empty List Description`** / **`Empty List Icon`**
     - **Tipo:** Texto (el icono, emoji o texto corto)
     - **Descripción:** Aviso cuando no hay celulares que mostrar
-    - **Por defecto:** `emptyListTitle` / `emptyListDescription` de `scripts/foundations/messages.js`
-      y `📱` (`EMPTY_LIST_ICON`). Si la fila existe pero está vacía, no se pinta
+    - **Por defecto:** `emptyListTitle` / `emptyListDescription` de
+      `scripts/foundations/messages.js` y `📱` (`EMPTY_LIST_ICON`). Si la fila existe pero está
+      vacía, el aviso usa su genérico (`messages.js` / `📭`)
 
 18. **`Image Error Message`**
     - **Tipo:** Texto

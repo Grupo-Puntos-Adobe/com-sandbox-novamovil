@@ -16,9 +16,10 @@
  * Defaults only for messages and configuration:
  *   - Content (labels, texts, button, benefits, Specs Title) has no default: without text in
  *     the table that part is not painted.
- *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault):
- *     row missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below);
- *     row present but empty → not painted.
+ *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault): row
+ *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present
+ *     but empty → Empty List parts use the generic of blocks/empty-list-message (messages.js
+ *     text, 📭) and Image Error Message is not painted.
  *   - Catalog Link: missing → the folder of the page (/celulares for /celulares/).
  *
  * The block lives in the index document of the celulares folder (celulares/index, URL

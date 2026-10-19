@@ -15,9 +15,10 @@
  * Defaults only for messages and configuration:
  *   - Content (Title, the texts and labels, Button Text, Product Link) has no default:
  *     without text in the table that part is not painted.
- *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault):
- *     row missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below);
- *     row present but empty → not painted.
+ *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault): row
+ *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present
+ *     but empty → Empty List parts use the generic of blocks/empty-list-message (messages.js
+ *     text, 📭) and Image Error Message is not painted.
  *   - Error Response Message, Alert Duration, Alert Color, Page Size: missing or empty → default.
  *
  * Search request: only `data` changes (selected filters, price, sort and page); `meta` and

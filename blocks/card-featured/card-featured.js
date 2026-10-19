@@ -13,8 +13,9 @@
  *     table that part is not painted. Without Button Text the product name is the link;
  *     without Product Link (and no path from the service) the card has no link.
  *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault): row
- *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present but
- *     empty → not painted.
+ *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present
+ *     but empty → Empty List parts use the generic of blocks/empty-list-message (messages.js
+ *     text, 📭) and Image Error Message is not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * Prices use formatPrice (scripts/foundations/block-utils.js) with LOCALE and CURRENCY from
  * scripts/foundations/messages.js.

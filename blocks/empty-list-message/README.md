@@ -27,10 +27,11 @@ lista.
 
 - Un solo aviso con el mismo diseño para todos los bloques que lo usan
 - Pinta lo que le mandan: icono, título y descripción
-- Si no le mandan título o descripción, usa los mensajes genéricos de
-  `scripts/foundations/messages.js` (`emptyListTitle` y `emptyListDescription`)
-- Si no le mandan icono, usa su icono genérico (`📭`, `EMPTY_LIST_ICON` dentro del bloque)
-- Si una parte llega vacía (`''`, fila vacía en Drive), no se pinta
+- Solo si una parte llega vacía (no viene, `''` o solo espacios) usa su valor genérico:
+  - Título y descripción: mensajes genéricos de `scripts/foundations/messages.js`
+    (`emptyListTitle` y `emptyListDescription`)
+  - Icono: `📭` (`EMPTY_LIST_ICON`, dentro del bloque)
+- Siempre pinta las 3 partes (lo que le mandan o el genérico)
 - Trae su propio CSS (`empty-list-message.css`), que se pide en cuanto un bloque lo importa, así ya
   está listo cuando se pinta el aviso
 - Adaptación a móvil, tablet y desktop (`styles/foundations/breakpoints.css`)
@@ -65,12 +66,11 @@ div.empty-list-message[role=status]
 
 ### Parámetros de la función
 
-El bloque que lo usa lo importa y llama a `buildEmptyListMessage` con un objeto (todo es
-opcional):
+El bloque que lo usa lo importa y llama a `buildEmptyListMessage` con un objeto:
 
-1. `icon` – Emoji o texto corto. Si no llega: `📭`
-2. `title` – Título. Si no llega: `Por ahora no hay elementos disponibles`
-3. `description` – Descripción. Si no llega: `Vuelve pronto para descubrir nuestras novedades.`
+1. `icon` – Emoji o texto corto. Si llega vacío: `📭`
+2. `title` – Título. Si llega vacío: `Por ahora no hay elementos disponibles`
+3. `description` – Descripción. Si llega vacía: `Vuelve pronto para descubrir nuestras novedades.`
 
 Devuelve el `div.empty-list-message` listo para ponerlo en el bloque.
 
@@ -82,20 +82,17 @@ block.replaceChildren(header, buildEmptyListMessage({
   title: 'Por ahora no hay categorías disponibles',
   description: 'Vuelve pronto para descubrir nuestras novedades.',
 }));
-
-// sin nada: icono genérico y mensajes genéricos
-block.replaceChildren(buildEmptyListMessage());
 ```
 
 ### Comportamiento
 
 | Caso | Qué se ve |
 |---|---|
-| Llegan icono, título y descripción | El aviso completo |
-| No llega nada (`buildEmptyListMessage()`) | Icono `📭` y los mensajes genéricos |
-| No llega el icono | El icono genérico `📭` |
-| No llega el título o la descripción | El mensaje genérico de `scripts/foundations/messages.js` |
-| Una parte llega vacía (`''`) | Esa parte no se pinta |
+| Llegan icono, título y descripción | El aviso con lo que llegó |
+| Llega vacío el icono | El icono genérico `📭` |
+| Llega vacío el título | `Por ahora no hay elementos disponibles` (`messages.js`) |
+| Llega vacía la descripción | `Vuelve pronto para descubrir nuestras novedades.` (`messages.js`) |
+| Llegan vacíos los 3 | `📭` y los dos mensajes genéricos |
 
 ### Vista previa
 
@@ -120,4 +117,5 @@ Móvil:
 - `scripts/aem.js` – `loadCSS` para pedir el CSS
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--empty-list-message-*`)
-- Lo usan: `blocks/card-categories/`, `blocks/card-featured/` y `blocks/card-promotions/`
+- Lo usan: `blocks/card-categories/`, `blocks/card-featured/`, `blocks/card-promotions/`,
+  `blocks/product-catalog/` y `blocks/product-detail/`
