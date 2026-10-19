@@ -31,7 +31,7 @@
  *     └─ "Classname" row → applyAuthorClasses(block, text)
  *     (both rows are then removed)
  *
- * Guide: documentation/01-styles-classname.md
+ * Guide: documentation/06-styles-classname.md
  */
 
 const STYLE_KEYS = ['styles', 'style'];

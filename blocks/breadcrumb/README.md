@@ -73,7 +73,7 @@ las filas son opcionales y pueden ir en cualquier orden.
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
     - **Descripción:** Estilos en línea sobre el bloque
-    - **Por defecto:** ninguno (ver `documentation/01-styles-classname.md`)
+    - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
 
 2. **`Classname`**
     - **Tipo:** Texto (nombres separados por espacio o coma)

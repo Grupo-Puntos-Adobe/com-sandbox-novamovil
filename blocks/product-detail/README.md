@@ -138,7 +138,7 @@ El autor escribe una tabla **Product Detail** en el documento `index` de la carp
 del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 
 1. **`Styles`** / **`Classname`** – Estilos en línea y clases extra del bloque (ver
-   `documentation/01-styles-classname.md`)
+   `documentation/06-styles-classname.md`)
 2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
    sale el aviso "no disponible" (no hay JSON interno)
 
@@ -275,4 +275,4 @@ Móvil:
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
   `/celulares/?id={id}`)
 
-Integración de servicios: `documentation/02-integracion-endpoints.md`.
+Integración de servicios: `documentation/07-integracion-endpoints.md`.

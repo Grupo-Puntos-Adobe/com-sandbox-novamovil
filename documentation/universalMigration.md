@@ -38,7 +38,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `blocks/breadcrumb/` | Nuevo | Ruta de navegación |
 | `blocks/product-catalog/` | Nuevo | Catálogo con filtros |
 | `blocks/product-detail/` | Nuevo | Detalle de un celular |
-| `documentation/01-styles-classname.md` | Nuevo | Guía de Styles y Classname |
-| `documentation/02-integracion-endpoints.md` | Nuevo | Guía de servicios |
+| `documentation/06-styles-classname.md` | Nuevo | Guía de Styles y Classname |
+| `documentation/07-integracion-endpoints.md` | Nuevo | Guía de servicios |
 | `documentation/readme/` | Nuevo | Imágenes de los README |
 | `content-drive/*.docx` | Nuevo | Documentos para Drive |

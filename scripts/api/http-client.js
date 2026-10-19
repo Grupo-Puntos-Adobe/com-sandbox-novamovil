@@ -17,7 +17,7 @@
  *     ├─ interceptor.response(response)     'public' → checks status, returns JSON
  *     └─ on any error: interceptor.error(e) may recover; otherwise the ApiError is thrown
  *
- * Guide: documentation/02-integracion-endpoints.md
+ * Guide: documentation/07-integracion-endpoints.md
  */
 import { ApiError, resolveInterceptors } from './interceptors.js';
 

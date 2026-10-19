@@ -201,7 +201,7 @@ opcionales y pueden ir en cualquier orden.
 1. **`Styles`** / **`Classname`**
     - **Tipo:** Texto
     - **Descripción:** Estilos en línea y clases extra del bloque
-    - **Por defecto:** ninguno (ver `documentation/01-styles-classname.md`)
+    - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
 
 2. **`Title`**
     - **Tipo:** Texto
@@ -456,4 +456,4 @@ Móvil con el panel de filtros abierto:
   `styles/styles.css` para el panel móvil
 - Se usa en: la página Celulares, después de `blocks/breadcrumb/`
 
-Integración de servicios: `documentation/02-integracion-endpoints.md`.
+Integración de servicios: `documentation/07-integracion-endpoints.md`.

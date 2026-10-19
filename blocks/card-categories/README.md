@@ -89,7 +89,7 @@ opcionales y pueden ir en cualquier orden.
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
     - **Descripción:** Estilos en línea sobre el bloque, por ejemplo `margin-top: 20px; padding-left: 16px`
-    - **Por defecto:** ninguno (ver `documentation/01-styles-classname.md`)
+    - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
 
 2. **`Classname`**
     - **Tipo:** Texto (nombres separados por espacio o coma)
@@ -216,4 +216,4 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-categories-*`)
 
-Integración del servicio: `documentation/02-integracion-endpoints.md`.
+Integración del servicio: `documentation/07-integracion-endpoints.md`.
