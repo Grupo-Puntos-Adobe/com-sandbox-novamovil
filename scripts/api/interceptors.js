@@ -10,7 +10,7 @@
  * Registry: 'public' → [publicInterceptor]. Blocks pick a chain with
  * get(url, { interceptor: 'name' }); unknown names fall back to 'public'.
  *
- * Guide: documentation/02-integracion-endpoints.md
+ * Guide: documentation/07-integracion-endpoints.md
  */
 
 /**

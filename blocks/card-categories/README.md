@@ -89,7 +89,7 @@ opcionales y pueden ir en cualquier orden.
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
     - **Descripción:** Estilos en línea sobre el bloque, por ejemplo `margin-top: 20px; padding-left: 16px`
-    - **Por defecto:** ninguno (ver `documentation/01-styles-classname.md`)
+    - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
 
 2. **`Classname`**
     - **Tipo:** Texto (nombres separados por espacio o coma)
@@ -133,19 +133,19 @@ opcionales y pueden ir en cualquier orden.
     - **Tipo:** Texto
     - **Descripción:** Título del aviso cuando no hay categorías que mostrar
     - **Por defecto:** `emptyListTitle` de `scripts/foundations/messages.js`. Si la fila existe pero
-      está vacía, no se pinta
+      está vacía, el aviso usa ese mismo mensaje genérico
 
 9. **`Empty List Description`**
     - **Tipo:** Texto
     - **Descripción:** Descripción de ese aviso
-    - **Por defecto:** `emptyListDescription` de `scripts/foundations/messages.js`. Si la fila existe
-      pero está vacía, no se pinta
+    - **Por defecto:** `emptyListDescription` de `scripts/foundations/messages.js`. Si la fila
+      existe pero está vacía, el aviso usa ese mismo mensaje genérico
 
 10. **`Empty List Icon`**
     - **Tipo:** Texto (emoji o texto corto)
     - **Descripción:** Icono de ese aviso
     - **Por defecto:** `🗂️` (`EMPTY_LIST_ICON` en `card-categories.js`). Si la fila existe pero está
-      vacía, no se pinta
+      vacía, el aviso usa su icono genérico `📭`
 
 ### Vista previa de la tabla en Drive
 
@@ -216,4 +216,4 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-categories-*`)
 
-Integración del servicio: `documentation/02-integracion-endpoints.md`.
+Integración del servicio: `documentation/07-integracion-endpoints.md`.

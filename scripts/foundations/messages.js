@@ -11,8 +11,9 @@
  *   | Image Error Message    | …  → imageErrorMessage
  * Texts that are content (Title, Link, Button Text…) have no default: they come from the
  * table or are not painted. Block-specific texts ("No pudimos cargar las categorías…") go
- * in the table, not here. The icon of the empty list is not here: each block has its own
- * default (Empty List Icon).
+ * in the table, not here. blocks/empty-list-message also uses emptyListTitle and
+ * emptyListDescription when the title or description it receives is empty. The icon of the
+ * empty list is not here: the generic one lives in blocks/empty-list-message.
  */
 const MESSAGES = {
   // floating alert when a service fails or does not answer

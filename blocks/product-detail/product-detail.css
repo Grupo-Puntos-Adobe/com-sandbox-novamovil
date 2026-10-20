@@ -1,0 +1,610 @@
+/*
+ * NovaMóvil product detail (block "Product Detail"): gallery, summary, purchase options,
+ * benefits and specs of one phone.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. product-detail.js builds the block with divs, links,
+ *     images and buttons, and adds the classes.
+ *   - Every rule lives inside .product-detail, at most 2 levels deep:
+ *       .product-detail > & .part > its state (&:hover, &[aria-pressed]) or its resolution.
+ *   - Sizes are written directly in px where they apply; each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css): one column on mobile, gallery + information
+ *     side by side from tablet.
+ *   - Columns and the space between them are NOT here: they come from the grid
+ *     (styles/foundations/grid.css) through the classes product-detail.js puts on the layout,
+ *     the thumbnails, the actions and the specs rows.
+ *   - The only variables are colours (styles/colors.css, --product-detail-*), plus
+ *     --product-detail-rating (the rating 0-5 of the service, the stars fill is worked out
+ *     here) and --product-detail-swatch-color (each colour of the service).
+ *     Fonts come from styles.css (body, and [role='heading'] for the titles).
+ *
+ * The "not available" message is the shared block blocks/empty-list-message (its own CSS).
+ *
+ * Sections: 1 layout · 2 gallery · 3 summary · 4 purchase options · 5 benefits · 6 specs ·
+ *           7 not available · 8 loading skeleton
+ */
+
+.product-detail {
+  /* ========================================================================
+     1. Layout: gallery + information (two grid columns from tablet)
+     ======================================================================== */
+
+  padding-block: 16px 8px;
+
+  @container style(--tablet-desktop: on) {
+    padding-block: 20px 16px;
+  }
+
+  & .product-detail-col-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* ========================================================================
+     2. Gallery: big photo on a light box + thumbnails
+     ======================================================================== */
+
+  & .product-detail-media {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    aspect-ratio: 1;
+    overflow: hidden;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--product-detail-media-background);
+
+    @container style(--desktop: on) {
+      aspect-ratio: auto;
+      block-size: 376px;
+    }
+  }
+
+  & .product-detail-image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: 344px;
+    max-block-size: 344px;
+    object-fit: cover;
+  }
+
+  & .product-detail-media-fallback {
+    color: var(--product-detail-muted);
+    font-size: 14px;
+  }
+
+  & .product-detail-thumbnails {
+    margin-block-start: 12px;
+  }
+
+  & .product-detail-thumbnail {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 64px;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--product-detail-media-background);
+    cursor: pointer;
+
+    &[aria-current='true'] {
+      border-color: var(--product-detail-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: 2px;
+    }
+
+    @container style(--tablet-desktop: on) {
+      block-size: 72px;
+    }
+  }
+
+  & .product-detail-thumbnail-image {
+    display: block;
+    inline-size: 70px;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* ========================================================================
+     3. Summary: tags, brand, name, rating, prices
+     ======================================================================== */
+
+  & .product-detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  & .product-detail-badge,
+  & .product-detail-promo {
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  & .product-detail-badge {
+    background: var(--product-detail-badge-background);
+    color: var(--product-detail-badge-text);
+  }
+
+  & .product-detail-promo {
+    background: var(--product-detail-promo-background);
+    color: var(--product-detail-promo-text);
+  }
+
+  & .product-detail-brand {
+    margin-block-start: 10px;
+    color: var(--product-detail-muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  & .product-detail-title {
+    margin: 4px 0 0;
+    color: var(--product-detail-title);
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+
+    @container style(--tablet: on) {
+      font-size: 26px;
+    }
+
+    @container style(--desktop: on) {
+      font-size: 32px;
+    }
+  }
+
+  & .product-detail-rating {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-block-start: 10px;
+    font-size: 13px;
+  }
+
+  /* five stars filled up to the rating: 4.8 of 5 → 96% gold */
+  & .product-detail-stars {
+    background: linear-gradient(
+      90deg,
+      var(--product-detail-star) calc(var(--product-detail-rating, 0) / 5 * 100%),
+      var(--product-detail-star-empty) calc(var(--product-detail-rating, 0) / 5 * 100%)
+    );
+    background-clip: text;
+    color: transparent;
+    font-size: 15px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  & .product-detail-rating-value {
+    color: var(--product-detail-title);
+    font-weight: 700;
+  }
+
+  & .product-detail-reviews {
+    color: var(--product-detail-muted);
+  }
+
+  & .product-detail-prices {
+    margin-block-start: 20px;
+  }
+
+  & .product-detail-price {
+    color: var(--product-detail-price);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+
+    @container style(--desktop: on) {
+      font-size: 34px;
+    }
+  }
+
+  & .product-detail-price-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-block-start: 6px;
+    font-size: 14px;
+  }
+
+  & .product-detail-old-price {
+    color: var(--product-detail-muted);
+    text-decoration: line-through;
+  }
+
+  & .product-detail-savings {
+    color: var(--product-detail-positive);
+    font-weight: 700;
+  }
+
+  & .product-detail-installments {
+    margin-block-start: 6px;
+    color: var(--product-detail-muted);
+    font-size: 12px;
+  }
+
+  & .product-detail-installments-highlight {
+    color: var(--product-detail-title);
+    font-weight: 700;
+  }
+
+  & .product-detail-sr-only {
+    position: absolute;
+    overflow: hidden;
+    inline-size: 1px;
+    block-size: 1px;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ========================================================================
+     4. Purchase options: colour, storage, stock, quantity, cart + favourite
+     ======================================================================== */
+
+  & .product-detail-field {
+    margin-block-start: 20px;
+  }
+
+  & .product-detail-field-label {
+    margin-block-end: 10px;
+    color: var(--product-detail-title);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  & .product-detail-field-value {
+    color: var(--product-detail-muted);
+    font-weight: 400;
+  }
+
+  & .product-detail-colors,
+  & .product-detail-storages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* each colour of the service in --product-detail-swatch-color */
+  & .product-detail-swatch {
+    inline-size: 30px;
+    block-size: 30px;
+    padding: 0;
+    border: 1px solid var(--product-detail-border);
+    border-radius: 50%;
+    background: var(--product-detail-swatch-color);
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: 2px;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  & .product-detail-storage {
+    box-sizing: border-box;
+    min-inline-size: 70px;
+    block-size: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--product-detail-border);
+    border-radius: 8px;
+    background: var(--product-detail-surface);
+    color: var(--product-detail-title);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--product-detail-accent);
+      background: var(--product-detail-option-selected-background);
+      color: var(--product-detail-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* "● En stock — Entrega en 1-3 días hábiles" / "Agotado" */
+  & .product-detail-stock {
+    margin-block-start: 20px;
+    font-size: 13px;
+    font-weight: 700;
+
+    &.is-available {
+      color: var(--product-detail-positive);
+    }
+
+    &.is-sold-out {
+      color: var(--product-detail-muted);
+    }
+
+    &.is-available::before {
+      content: '● ';
+    }
+  }
+
+  & .product-detail-quantity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-block-start: 16px;
+
+    & .product-detail-field-label {
+      margin: 0;
+    }
+  }
+
+  & .product-detail-stepper {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--product-detail-border);
+    border-radius: 8px;
+    background: var(--product-detail-surface);
+  }
+
+  & .product-detail-step {
+    inline-size: 34px;
+    block-size: 32px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--product-detail-title);
+    font-size: 16px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: -2px;
+    }
+  }
+
+  & .product-detail-quantity-value {
+    min-inline-size: 28px;
+    color: var(--product-detail-title);
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  & .product-detail-actions {
+    inline-size: 100%;
+    margin-block-start: 22px;
+  }
+
+  & .product-detail-cart {
+    inline-size: 100%;
+    block-size: 48px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--product-detail-button-background);
+    box-shadow: 0 8px 20px var(--product-detail-button-glow);
+    color: var(--product-detail-button-text);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.45;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: 3px;
+    }
+  }
+
+  /* outline heart; filled when it is a favourite */
+  & .product-detail-favorite {
+    display: grid;
+    place-items: center;
+    inline-size: 48px;
+    block-size: 48px;
+    padding: 0;
+    border: 1px solid var(--product-detail-border);
+    border-radius: 10px;
+    background: var(--product-detail-surface);
+    color: var(--product-detail-favorite);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+
+    &::before {
+      content: '♡';
+    }
+
+    &[aria-pressed='true']::before {
+      content: '♥';
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--product-detail-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     5. Benefits: soft box under the actions
+     ======================================================================== */
+
+  & .product-detail-benefits {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    inline-size: 100%;
+    margin-block-start: 22px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: var(--product-detail-benefits-background);
+  }
+
+  & .product-detail-benefit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--product-detail-text);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  & .product-detail-benefit-icon {
+    flex: 0 0 auto;
+    font-size: 14px;
+  }
+
+  /* ========================================================================
+     6. Specs: "Características principales", label | value rows
+     ======================================================================== */
+
+  & .product-detail-specs {
+    margin-block-start: 40px;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-start: 56px;
+    }
+  }
+
+  & .product-detail-specs-title {
+    margin: 0 0 16px;
+    color: var(--product-detail-title);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.3;
+
+    @container style(--tablet-desktop: on) {
+      margin-block-end: 20px;
+      font-size: 22px;
+    }
+  }
+
+  & .product-detail-specs-table {
+    overflow: hidden;
+    border: 1px solid var(--product-detail-border);
+    border-radius: 14px;
+    background: var(--product-detail-surface);
+  }
+
+  & .product-detail-spec {
+    align-items: center;
+    min-block-size: 48px;
+
+    &:nth-child(even) {
+      background: var(--product-detail-spec-stripe);
+    }
+
+    &:not(:last-child) {
+      border-block-end: 1px solid var(--product-detail-border);
+    }
+  }
+
+  & .product-detail-spec-label {
+    padding-block: 8px;
+    padding-inline-start: 20px;
+    color: var(--product-detail-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  & .product-detail-spec-value {
+    padding-block: 8px;
+    padding-inline-end: 20px;
+    color: var(--product-detail-title);
+    font-size: 13px;
+  }
+
+  /* ========================================================================
+     7. Not available: shared message + link back to the catalogue
+     ======================================================================== */
+
+  & .product-detail-back {
+    display: inline-flex;
+    margin-block-start: 16px;
+    color: var(--product-detail-accent);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  /* ========================================================================
+     8. Loading skeleton: photo box and information lines
+     ======================================================================== */
+
+  & .product-detail-skeleton {
+    border-radius: 12px;
+    background: linear-gradient(
+      90deg,
+      var(--product-detail-skeleton) 25%,
+      var(--product-detail-skeleton-shine) 50%,
+      var(--product-detail-skeleton) 75%
+    );
+    background-size: 200% 100%;
+    animation: product-detail-shine 1.4s ease-in-out infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  & .product-detail-skeleton-media {
+    aspect-ratio: 1;
+
+    @container style(--desktop: on) {
+      aspect-ratio: auto;
+      block-size: 376px;
+    }
+  }
+
+  & .product-detail-skeleton-line {
+    inline-size: 100%;
+    block-size: 18px;
+    margin-block-end: 14px;
+
+    &.is-short { inline-size: 30%; }
+    &.is-medium { inline-size: 50%; }
+    &.is-block { block-size: 180px; }
+
+    &.is-title {
+      inline-size: 70%;
+      block-size: 36px;
+    }
+
+    &.is-price {
+      inline-size: 40%;
+      block-size: 40px;
+    }
+  }
+}
+
+@keyframes product-detail-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}

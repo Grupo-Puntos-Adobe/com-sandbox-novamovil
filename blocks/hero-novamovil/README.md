@@ -104,7 +104,7 @@ por las estadísticas; en las demás filas el valor ocupa las 2 últimas columna
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
     - **Descripción:** Estilos en línea sobre el bloque, por ejemplo `margin-top: 20px; padding-left: 16px`
-    - **Por defecto:** ninguno (ver `documentation/01-styles-classname.md`)
+    - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
 
 2. **`Classname`**
     - **Tipo:** Texto (nombres separados por espacio o coma)

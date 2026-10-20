@@ -34,6 +34,7 @@
   --nav-height: 64px;
 
   /* stacking order (z-index scale): the header stays above everything */
+  --z-index-panel: 800; /* full-screen panels below the header (filters on mobile) */
   --z-index-toast: 900;
   --z-index-header: 1000;
 }

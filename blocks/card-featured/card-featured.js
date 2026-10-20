@@ -5,7 +5,7 @@
  * "Card Featured" table.
  *
  * Authored rows (all optional): Styles, Classname, Title, Link ("Ver todos"), Endpoint,
- * Product Link ("/productos/{sku}"), Button Text, Alert Duration, Alert Color,
+ * Product Link ("/celulares/?id={id}"), Button Text, Alert Duration, Alert Color,
  * Error Response Message, Empty List Title, Empty List Description, Empty List Icon,
  * Image Error Message.
  * Defaults only for messages and the alert:
@@ -13,8 +13,9 @@
  *     table that part is not painted. Without Button Text the product name is the link;
  *     without Product Link (and no path from the service) the card has no link.
  *   - Empty List Title / Description / Icon and Image Error Message (readRowTextOrDefault): row
- *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present but
- *     empty → not painted.
+ *     missing → default (scripts/foundations/messages.js, EMPTY_LIST_ICON below); row present
+ *     but empty → Empty List parts use the generic of blocks/empty-list-message (messages.js
+ *     text, 📭) and Image Error Message is not painted.
  *   - Error Response Message, Alert Duration, Alert Color: missing or empty → default.
  * Prices use formatPrice (scripts/foundations/block-utils.js) with LOCALE and CURRENCY from
  * scripts/foundations/messages.js.
@@ -62,7 +63,7 @@
  *
  * Expected response: { data: { products: [{ id, sku, brand, name, description, image, price,
  *   oldPrice, promo, currency, rating, reviews, badge, active, path? }] } }
- * Guides: blocks/card-featured/README.md, documentation/02-integracion-endpoints.md
+ * Guides: blocks/card-featured/README.md, documentation/07-integracion-endpoints.md
  */
 import { readBlockConfig } from '../../scripts/aem.js';
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
@@ -199,7 +200,7 @@ function readFeaturedSettings(block) {
 
 /**
  * Builds the product link from the item's own path/url or the authored template,
- * e.g. "/productos/{sku}" (placeholders: {sku}, {productId}, {id}).
+ * e.g. "/celulares/?id={id}" (placeholders: {sku}, {productId}, {id}).
  * @param {Object} item Raw product
  * @param {string} linkTemplate Product Link row ('' when the table has none)
  * @returns {string|null} null without template or when a placeholder could not be filled

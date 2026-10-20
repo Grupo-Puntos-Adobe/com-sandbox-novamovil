@@ -3,8 +3,10 @@
  * Components call get()/post()/request(); interceptors (scripts/api/interceptors.js)
  * decide headers, auth and how responses and errors are handled.
  *
- * Called by: loadFromService() of card-categories, card-featured and card-promotions
- * (get(endpoint)). No library: native fetch + AbortSignal.
+ * Called by: loadCategoriesFromService(), loadProductsFromService() and
+ * loadPromotionsFromService() of the card-* blocks (get(endpoint)), and product-catalog
+ * (get(Filters Endpoint) + post(Search Endpoint, body, { signal })) and product-detail
+ * (post(Endpoint, body)). No library: native fetch + AbortSignal.
  *
  * Flow:
  *   get(url) / post(url, body) → request(url, options)
@@ -15,7 +17,7 @@
  *     ├─ interceptor.response(response)     'public' → checks status, returns JSON
  *     └─ on any error: interceptor.error(e) may recover; otherwise the ApiError is thrown
  *
- * Guide: documentation/02-integracion-endpoints.md
+ * Guide: documentation/07-integracion-endpoints.md
  */
 import { ApiError, resolveInterceptors } from './interceptors.js';
 
