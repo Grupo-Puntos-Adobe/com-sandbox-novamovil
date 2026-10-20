@@ -180,6 +180,29 @@
   --product-detail-skeleton: var(--color-gray-200);
   --product-detail-skeleton-shine: var(--color-gray-100);
 
+  /* login (tabs, form card, buttons, legal text) */
+  --login-title: var(--heading-color);
+  --login-label: var(--color-gray-900);
+  --login-muted: var(--color-gray-500);
+  --login-surface: var(--color-white);
+  --login-border: var(--border-color);
+  --login-accent: var(--color-primary);
+  --login-link-hover: var(--color-accent);
+  --login-tabs-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-gray-100));
+  --login-tab-selected-background: var(--color-white);
+  --login-tab-selected-shadow: color-mix(in srgb, var(--color-navy-950) 10%, transparent);
+  --login-input-text: var(--color-gray-900);
+  --login-input-placeholder: var(--color-gray-400);
+  --login-input-focus-ring: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  --login-button-background: var(--gradient-brand);
+  --login-button-text: var(--color-white);
+  --login-button-glow: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --login-guest-background: color-mix(in srgb, var(--color-primary) 3%, var(--color-gray-100));
+  --login-guest-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-gray-100));
+  --login-guest-text: var(--color-gray-900);
+  --login-divider: var(--color-gray-200);
+  --login-divider-text: var(--color-gray-400);
+
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);
   --empty-list-message-background: var(--color-white);
