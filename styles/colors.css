@@ -202,6 +202,12 @@
   --login-guest-text: var(--color-gray-900);
   --login-divider: var(--color-gray-200);
   --login-divider-text: var(--color-gray-400);
+  --login-error: color-mix(in srgb, var(--color-error) 80%, var(--color-gray-900)); /* 4.5:1 on white */
+  --login-error-background: color-mix(in srgb, var(--color-error) 8%, var(--color-white));
+  --login-error-border: color-mix(in srgb, var(--color-error) 30%, var(--color-white));
+  --login-success: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --login-success-background: color-mix(in srgb, var(--color-success) 10%, var(--color-white));
+  --login-success-border: color-mix(in srgb, var(--color-success) 35%, var(--color-white));
 
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);

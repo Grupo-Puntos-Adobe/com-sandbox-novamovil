@@ -7,8 +7,9 @@
  * All three hooks are optional. Add new interceptors here and register them by name.
  *
  * Used by: scripts/api/http-client.js (resolveInterceptors, ApiError).
- * Registry: 'public' → [publicInterceptor]. Blocks pick a chain with
- * get(url, { interceptor: 'name' }); unknown names fall back to 'public'.
+ * Registry: 'public' → [publicInterceptor]; 'public-error-body' → [errorBodyInterceptor,
+ * publicInterceptor] (error answers keep their JSON body in ApiError.cause). Blocks pick a
+ * chain with get(url, { interceptor: 'name' }); unknown names fall back to 'public'.
  *
  * Guide: documentation/07-integracion-endpoints.md
  */
@@ -60,20 +61,45 @@ export const publicInterceptor = {
   },
 };
 
+/**
+ * Keeps the JSON body of an error answer (400, 401, 500…): services send there what went
+ * wrong ({ status: { code, message }, errors: [{ field, message }] }). Goes before
+ * publicInterceptor: an ok answer passes through untouched; an error one is thrown as an
+ * ApiError whose `cause` is the parsed body (null when it is not JSON).
+ */
+export const errorBodyInterceptor = {
+  name: 'error-body',
+  async response(response, config) {
+    if (response.ok) return response;
+    let body = null;
+    try {
+      body = await response.json();
+    } catch {
+      // no JSON body: the status is enough
+    }
+    throw new ApiError(`HTTP ${response.status} ${response.statusText}`.trim(), {
+      status: response.status,
+      url: config.url,
+      cause: body,
+    });
+  },
+};
+
 /*
  * Template for a protected interceptor (not registered). Copy, adapt and register it:
  *
+ * import { getAccessToken, signOut } from '../foundations/session.js';
  * export const authInterceptor = {
  *   name: 'auth',
  *   request(config) {
- *     const token = sessionStorage.getItem('novamovil-token');
  *     return {
  *       ...config,
- *       headers: { ...config.headers, Authorization: `Bearer ${token}` },
+ *       headers: { ...config.headers, Authorization: getAccessToken() },
  *     };
  *   },
  *   error(error) {
- *     if (error.status === 401) { // e.g. redirect to login or refresh the token
+ *     if (error.status === 401) { // token expired or invalid: sign out and go to /login
+ *       signOut();
  *     }
  *     throw error;
  *   },
@@ -81,7 +107,11 @@ export const publicInterceptor = {
  * registerInterceptor('auth', [publicInterceptor, authInterceptor]);
  */
 
-const registry = new Map([['public', [publicInterceptor]]]);
+const registry = new Map([
+  ['public', [publicInterceptor]],
+  // public request whose error answers keep their body (login: field and credential errors)
+  ['public-error-body', [errorBodyInterceptor, publicInterceptor]],
+]);
 
 /**
  * Registers (or replaces) a named interceptor chain.

@@ -172,6 +172,11 @@ export function resolveInterceptors(interceptor = 'public') { … } // nombre, o
 En el mismo archivo hay una **plantilla comentada** de `authInterceptor` (con
 `Authorization: Bearer …`) para cuando algún servicio requiera token (ver sección 7).
 
+También está registrado `'public-error-body'` = `[errorBodyInterceptor, publicInterceptor]`: igual
+que `'public'`, pero cuando el servicio responde con error (400, 401, 500…) guarda su JSON en
+`error.cause`, para mostrar sus mensajes (`status.message`, `errors[].field / message`). Lo usa el
+bloque `login`.
+
 ### Paso 4 · Crear el cliente HTTP (`scripts/api/http-client.js`)
 
 Es el **único archivo que llama a `fetch`**. Expone `request`, `get` y `post`:
@@ -406,9 +411,13 @@ import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-
 
 ### Servicio que requiere token
 
-1. En `scripts/api/interceptors.js`, descomentar y adaptar `authInterceptor`.
+1. En `scripts/api/interceptors.js`, descomentar y adaptar `authInterceptor`: toma el token de
+   `getAccessToken()` y con un 401 llama `signOut()` (`scripts/foundations/session.js`).
 2. Registrarlo: `registerInterceptor('auth', [publicInterceptor, authInterceptor]);`
 3. En el bloque: `get(endpoint, { interceptor: 'auth' })`.
+
+El token lo guarda el bloque `login` con `signIn(data)` cuando el servicio de inicio de sesión
+responde 200 (ver `blocks/login/README.md`).
 
 > ⚠️ En AEM Edge Delivery todo el JavaScript es público. **Nunca** se debe escribir un token o API key
 > en el código ni en el documento; el token debe obtenerlo el usuario al iniciar sesión.
@@ -431,6 +440,18 @@ const response = await post(settings.searchEndpoint, buildSearchRequest(state, s
   signal: controller.signal,
 });
 if (controller.signal.aborted) return;          // llegó tarde: ya hay otra búsqueda
+```
+
+Para un formulario cuyos errores trae el servicio (por ejemplo el inicio de sesión), se usa
+`'public-error-body'` y se leen los mensajes de `error.cause`:
+
+```js
+try {
+  const response = await post(settings.endpoint, body, { interceptor: 'public-error-body' });
+  signIn(response.data);
+} catch (error) {
+  const serviceBody = error.cause;   // { status: { message }, errors: [{ field, message }] } o null
+}
 ```
 
 > Un `POST` con JSON hace que el navegador mande antes una consulta `OPTIONS` (CORS). El mock de

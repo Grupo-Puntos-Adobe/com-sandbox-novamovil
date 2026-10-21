@@ -23,9 +23,11 @@ sesión con su correo o teléfono y contraseña, o continuar como invitado.
 Vive en la página **login** (`/login`) y tiene dos tabs, **Iniciar sesión** y **Crear cuenta**; se
 muestra uno u otro.
 
-> **Estado actual:** solo maquetación. El servicio de inicio de sesión aún no existe: la fila
-> `Endpoint` ya se lee, pero va vacía, y al dar clic en **Iniciar sesión** no pasa nada (la página
-> no se recarga y no se envía nada). El tab **Crear cuenta** está vacío: su bloque se hace después.
+> **Estado actual:** conectado al servicio de inicio de sesión (mock de Postman). Por ahora
+> **siempre se envían los mismos datos** (`cliente@ejemplo.com` / `Password123`), escriba lo que
+> escriba el usuario; ya está preparado para enviar lo del formulario (ver
+> [Datos que se envían](#datos-que-se-envían)). El tab **Crear cuenta** está vacío: su bloque se
+> hace después.
 
 ### Características
 
@@ -37,7 +39,10 @@ muestra uno u otro.
   **Continuar como invitado**
 - Texto legal con enlaces a **Términos y Condiciones** y **Aviso de Privacidad**
 - Todo se configura desde la tabla en Drive; si una fila no tiene texto, esa parte no se pinta
-- Fila `Endpoint` lista para el servicio de inicio de sesión (por ahora vacía)
+- Inicio de sesión con el servicio de la fila `Endpoint` (POST): al responder 200 guarda la sesión
+  (`scripts/foundations/session.js`) y lleva a la siguiente página
+- Mensajes del servicio: arriba del formulario (error o éxito) y debajo de cada campo (400)
+- Mientras espera la respuesta, el botón se desactiva para no enviar dos veces
 - Columna centrada con el grid (`container-fluid > row row-center > col-24`): todo el ancho en
   móvil y 420 px desde tablet
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
@@ -61,13 +66,17 @@ formulario para funcionar (`form`, `label`, `input`, `button`) y los enlaces (`a
 - `login-tab` – Cada tab (`button`, `role="tab"`, `aria-selected`)
 - `login-panel` – Panel de cada tab (`role="tabpanel"`); `login-panel-login` y
   `login-panel-register` (vacío por ahora)
-- `login-form` – Tarjeta blanca con el formulario (`form`)
+- `login-form` – Tarjeta blanca con el formulario (`form`, `aria-busy` mientras espera)
+- `login-alert` – Mensaje del servicio arriba del formulario (`role="alert"`); `login-alert-error`
+  o `login-alert-success`
 - `login-field` – Etiqueta y campo
 - `login-label` – Etiqueta del campo (`label`)
-- `login-input` – Campo (`input`): usuario (`autocomplete="username"`) y contraseña
-  (`autocomplete="current-password"`)
+- `login-input` – Campo (`input`): usuario (`name="emailOrPhone"`, `autocomplete="username"`) y
+  contraseña (`name="password"`, `autocomplete="current-password"`); con error lleva
+  `aria-invalid="true"` y `aria-describedby` hacia su mensaje
+- `login-field-error` – Mensaje de error debajo del campo (solo cuando el servicio lo manda)
 - `login-forgot` / `login-forgot-link` – Enlace "¿Olvidaste tu contraseña?"
-- `login-submit` – Botón "Iniciar sesión" (`button type="submit"`)
+- `login-submit` – Botón "Iniciar sesión" (`button type="submit"`, `disabled` mientras espera)
 - `login-divider` / `login-divider-text` – Separador con la "o" (`role="separator"`)
 - `login-guest` – Botón "Continuar como invitado" (`a`)
 - `login-legal` / `login-legal-link` – Texto legal y sus enlaces
@@ -84,8 +93,12 @@ div.login
          │  ├─ button.login-tab[role=tab][aria-selected=true]    Iniciar sesión
          │  └─ button.login-tab[role=tab][aria-selected=false]   Crear cuenta
          ├─ div.login-panel.login-panel-login[role=tabpanel]
-         │  └─ form.login-form
-         │     ├─ div.login-field > label.login-label + input.login-input   × 2
+         │  └─ form.login-form[aria-busy]
+         │     ├─ div.login-alert[role=alert][hidden]                      (mensaje del servicio)
+         │     ├─ div.login-field × 2
+         │     │  ├─ label.login-label
+         │     │  ├─ input.login-input[aria-invalid][aria-describedby]
+         │     │  └─ div.login-field-error                                 (solo con error)
          │     ├─ div.login-forgot > a.login-forgot-link
          │     ├─ button.login-submit[type=submit]
          │     ├─ div.login-divider[role=separator] > div.login-divider-text
@@ -108,8 +121,9 @@ en todas las resoluciones.
 ### Estructura de la tabla en Drive
 
 El autor escribe una tabla **Login** en el documento `login` de Drive. Todas las filas son
-opcionales y pueden ir en cualquier orden. Son contenido, así que no tienen texto por defecto: si
-la fila no existe o está vacía, esa parte no se pinta.
+opcionales y pueden ir en cualquier orden. Solo `Success Link` y `Error Response Message` tienen
+valor por defecto (configuración y mensaje); las demás son contenido: si la fila no existe o está
+vacía, esa parte no se pinta.
 
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
@@ -139,48 +153,61 @@ la fila no existe o está vacía, esa parte no se pinta.
 
 6. **`Endpoint`**
     - **Tipo:** URL
-    - **Descripción:** Servicio de inicio de sesión
-    - **Por defecto:** ninguno. **Por ahora va vacío**: el servicio aún no existe y el botón no hace
-      nada
+    - **Descripción:** Servicio de inicio de sesión (POST),
+      `https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io/api/v1/auth/login`
+    - **Por defecto:** ninguno. Sin `Endpoint`, el botón no envía nada
 
-7. **`User Label`** / **`User Placeholder`**
+7. **`Success Link`**
+    - **Tipo:** Ruta del sitio (`/`)
+    - **Descripción:** A dónde ir después de iniciar sesión cuando el servicio no manda
+      `nextStep.route`
+    - **Por defecto:** `/`. Solo acepta rutas del sitio
+
+8. **`User Label`** / **`User Placeholder`**
     - **Tipo:** Texto
     - **Descripción:** Etiqueta y texto de ejemplo del campo de usuario ("Correo electrónico o
       teléfono" / "correo@ejemplo.com")
     - **Por defecto:** ninguno. Sin etiqueta, el campo conserva su nombre para lectores de pantalla
       (`LABELS` en `login.js`)
 
-8. **`Password Label`** / **`Password Placeholder`**
+9. **`Password Label`** / **`Password Placeholder`**
     - **Tipo:** Texto
     - **Descripción:** Etiqueta y texto de ejemplo del campo de contraseña
     - **Por defecto:** ninguno (igual que el usuario)
 
-9. **`Forgot Password`**
+10. **`Forgot Password`**
     - **Tipo:** Enlace (texto y link en la celda)
     - **Descripción:** "¿Olvidaste tu contraseña?"
     - **Por defecto:** ninguno. Sin texto o sin enlace válido, no se pinta
 
-10. **`Button Text`**
+11. **`Button Text`**
     - **Tipo:** Texto
     - **Descripción:** Botón "Iniciar sesión"
     - **Por defecto:** ninguno
 
-11. **`Divider Text`**
+12. **`Divider Text`**
     - **Tipo:** Texto
     - **Descripción:** Texto del separador ("o")
     - **Por defecto:** ninguno. El separador solo sale entre el botón y **Guest Button**; sin texto
       queda solo la línea
 
-12. **`Guest Button`**
+13. **`Guest Button`**
     - **Tipo:** Enlace
     - **Descripción:** "Continuar como invitado"
     - **Por defecto:** ninguno. Sin texto o sin enlace válido, no se pinta
 
-13. **`Legal Text`**
+14. **`Legal Text`**
     - **Tipo:** Texto con enlaces
     - **Descripción:** "Al continuar aceptas nuestros Términos y Condiciones y Aviso de Privacidad."
       Los enlaces se respetan; las negritas las pone el CSS
     - **Por defecto:** ninguno
+
+15. **`Error Response Message`**
+    - **Tipo:** Texto
+    - **Descripción:** Mensaje cuando el servicio falla sin mandar un mensaje propio (sin red, sin
+      respuesta, respuesta que no es JSON)
+    - **Por defecto:** `errorResponseMessage` de `scripts/foundations/messages.js` (también si la fila
+      está vacía)
 
 ### Vista previa de la tabla en Drive
 
@@ -189,10 +216,52 @@ La tabla en Drive permite al autor configurar:
 - El **título**, la **descripción** y los **tabs**
 - Las **etiquetas** y **textos de ejemplo** de los campos
 - Los **enlaces** de contraseña olvidada, invitado y textos legales
-- El **Endpoint** del servicio (por ahora vacío)
+- El **Endpoint** del servicio, el **Success Link** y el **mensaje de error** genérico
 - **Estilos** y **clases** extra del bloque
 
 ![Vista Tabla en Drive](/documentation/readme/login/drive-table.png)
+
+### Servicio de inicio de sesión
+
+`POST` a la fila `Endpoint`. `meta` y `security` van fijos (`LOGIN_REQUEST_META` y
+`LOGIN_REQUEST_SECURITY` en `login.js`), como los pide el servicio:
+
+```json
+{
+  "meta": { "requestId": "REQ-AUTH-LOGIN-001", "correlationId": "CORR-AUTH-001",
+            "timestamp": "2026-10-20T18:00:00Z", "channel": "WEB", "platform": "DESKTOP" },
+  "security": { "auth": { "type": "Bearer", "value": "Bearer {{bearer_token}}" },
+                "nonce": "NONCE-REQ-AUTH-LOGIN-001", "signature": "{{hmac_signature}}" },
+  "data": { "emailOrPhone": "cliente@ejemplo.com", "password": "Password123" }
+}
+```
+
+#### Datos que se envían
+
+Por ahora `data` es **siempre** `FIXED_CREDENTIALS` (el usuario del mock). Para enviar lo que
+escribe el usuario, en `login.js` se cambia una sola línea:
+
+```js
+const SEND_FORM_CREDENTIALS = true; // false = siempre FIXED_CREDENTIALS
+```
+
+Con `true`, `readLoginCredentials` toma `emailOrPhone` (sin espacios al inicio y al final) y
+`password` de los campos del formulario. Los campos ya se llaman como los pide el servicio.
+
+#### Respuestas
+
+| Respuesta | Qué hace el bloque |
+|---|---|
+| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`), muestra `status.message` en verde y va a `?redirect=` → `nextStep.route` → `Success Link` → `/` (la primera que sea ruta del sitio) |
+| **400** `{ status, errors: [{ field, message }] }` | `status.message` arriba y cada `errors[].message` debajo de su campo (`emailOrPhone`, `password`); al escribir en el campo se quita su mensaje |
+| **401** `{ status, errors: [{ field: "credentials", message }] }` | `status.message` + los mensajes sin campo, arriba ("El correo/teléfono o la contraseña son incorrectos. Verifica tus datos e inténtalo nuevamente.") |
+| **500** `{ status }` | `status.message` arriba ("Ocurrió un error al iniciar sesión.") |
+| Sin red, sin respuesta o 200 sin `accessToken` | `Error Response Message` arriba |
+
+Las respuestas de error conservan su JSON gracias al interceptor `public-error-body`
+(`scripts/api/interceptors.js`). La sesión dura `expiresIn` segundos y vive en `sessionStorage`
+(se borra al cerrar la pestaña); el `refreshToken` no se guarda porque aún no hay servicio para
+renovar el token.
 
 ### Comportamiento
 
@@ -200,7 +269,10 @@ La tabla en Drive permite al autor configurar:
 |---|---|
 | Al entrar | Tab **Iniciar sesión** activo y su formulario |
 | Clic en **Crear cuenta** (o flechas / Inicio / Fin en los tabs) | Se oculta el formulario y se muestra el panel de crear cuenta (vacío por ahora) |
-| Clic en **Iniciar sesión** (botón) | Nada: no se recarga la página ni se envía nada (el servicio aún no existe) |
+| Clic en **Iniciar sesión** (botón) | Se envía el inicio de sesión; el botón se desactiva hasta la respuesta (ver [Respuestas](#respuestas)) |
+| Error del servicio | El mensaje sale arriba y el cursor va al primer campo con error |
+| Sin `Endpoint` | El botón no envía nada |
+| `?redirect=/carrito` en la URL | Después de iniciar sesión, va a `/carrito` (solo rutas del sitio) |
 | Falta `Login Tab` o `Register Tab` | Sin tabs, solo el formulario |
 | Falta `Guest Button` | Sin separador ni botón de invitado |
 | Un enlace no es del sitio ni `http(s)` (p. ej. `javascript:`) | Se muestra solo el texto, sin enlace |
@@ -225,9 +297,13 @@ Móvil:
 - `login.css` – Estilos del bloque, todos dentro de `.login` (tamaños, colores y resoluciones)
 - `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
+- `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
+- `scripts/foundations/session.js` – `signIn` guarda la sesión
+- `scripts/api/http-client.js` – `post` con el interceptor `public-error-body`
+  (`scripts/api/interceptors.js`)
 - `styles/foundations/grid.css` – Columna centrada (`container-fluid > row row-center > col-24`)
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--login-*`)
 - Documento de Drive: `content-drive/login.docx` (página `/login`)
-- Pendiente: el servicio de inicio de sesión (`Endpoint`) y el bloque de crear cuenta (tab
-  **Crear cuenta**)
+- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), la página `/datos` a la
+  que manda el servicio y el bloque de crear cuenta (tab **Crear cuenta**)

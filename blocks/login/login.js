@@ -6,17 +6,30 @@
  * table (page /login).
  *
  * Authored rows (all optional): Styles, Classname, Title, Description, Login Tab,
- * Register Tab, Endpoint, User Label, User Placeholder, Password Label, Password Placeholder,
- * Forgot Password (link), Button Text, Divider Text, Guest Button (link), Legal Text (text with
- * links).
- * Defaults only for messages and configuration: every row is content, so without text in the
+ * Register Tab, Endpoint, Success Link, User Label, User Placeholder, Password Label,
+ * Password Placeholder, Forgot Password (link), Button Text, Divider Text, Guest Button (link),
+ * Legal Text (text with links), Error Response Message.
+ * Defaults only for messages and configuration; the rest is content, so without text in the
  * table that part is not painted. Special cases:
  *   - Tabs: only when Login Tab and Register Tab both have text; otherwise only the login
  *     panel is shown.
  *   - User / Password Label missing: the field keeps an accessible name (LABELS below).
  *   - Divider: only between Button Text and Guest Button (both painted).
- *   - Endpoint: read now, empty for the moment. The login service does not exist yet, so the
- *     submit only stops the page reload (handleLoginSubmit); the request goes there.
+ *   - Endpoint: login service (POST). Without it the submit only stops the page reload.
+ *   - Success Link: where to go after a login when the service sends no nextStep.route
+ *     (default DEFAULT_SUCCESS_LINK).
+ *   - Error Response Message: shown when the service fails without a message of its own
+ *     (default errorResponseMessage of scripts/foundations/messages.js, also when empty).
+ *
+ * Login request: post(Endpoint, { meta, security, data: { emailOrPhone, password } }); meta and
+ * security are fixed (LOGIN_REQUEST_META, LOGIN_REQUEST_SECURITY), as the service expects.
+ * For now data is always FIXED_CREDENTIALS (the mock user); set SEND_FORM_CREDENTIALS to true
+ * to send what the user types (readLoginCredentials). Answers:
+ *   200 → signIn(data) (scripts/foundations/session.js) → success message → go to
+ *         ?redirect= | data.nextStep.route | Success Link (only paths of this site)
+ *   400 → each errors[].field message under its field + status.message on top
+ *   401 / 500 / no answer → status.message (+ errors without field) on top, or
+ *         Error Response Message
  *
  * Flow:
  *   decorate(block)
@@ -25,8 +38,8 @@
  *     └─ renderLogin()
  *          ├─ buildLoginHeader()       title + description
  *          ├─ buildLoginTabs()         tablist (arrows / Home / End move between tabs)
- *          ├─ buildLoginForm()         fields, forgot link, submit, divider, guest link
- *          │    └─ submit → handleLoginSubmit() (no service yet: no reload, nothing sent)
+ *          ├─ buildLoginForm()         alert, fields, forgot link, submit, divider, guest link
+ *          │    └─ submit → submitLogin()   post → signIn + redirect, or showLoginErrors()
  *          ├─ register panel           empty (register block, later)
  *          └─ buildLegalText()         authored text, links rebuilt with getSafeHref
  *
@@ -39,6 +52,33 @@
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, getSafeHref } from '../../scripts/foundations/block-utils.js';
+import MESSAGES from '../../scripts/foundations/messages.js';
+import { signIn } from '../../scripts/foundations/session.js';
+import { post } from '../../scripts/api/http-client.js';
+
+// fixed parts of the login request (only data changes)
+const LOGIN_REQUEST_META = {
+  requestId: 'REQ-AUTH-LOGIN-001',
+  correlationId: 'CORR-AUTH-001',
+  timestamp: '2026-10-20T18:00:00Z',
+  channel: 'WEB',
+  platform: 'DESKTOP',
+};
+const LOGIN_REQUEST_SECURITY = {
+  auth: { type: 'Bearer', value: 'Bearer {{bearer_token}}' },
+  nonce: 'NONCE-REQ-AUTH-LOGIN-001',
+  signature: '{{hmac_signature}}',
+};
+// false while the service is a mock: every login sends FIXED_CREDENTIALS (the mock user).
+// true → sends what the user types in the form (readLoginCredentials).
+const SEND_FORM_CREDENTIALS = false;
+const FIXED_CREDENTIALS = { emailOrPhone: 'cliente@ejemplo.com', password: 'Password123' };
+// form fields, named as the service names them (errors[].field)
+const FORM_FIELDS = ['emailOrPhone', 'password'];
+// URL parameter with the page to return to after the login (/login?redirect=/carrito)
+const REDIRECT_PARAM = 'redirect';
+// after a login, when neither the URL, the service nor the table say where to go
+const DEFAULT_SUCCESS_LINK = '/';
 
 // accessible names when the table has no label (only read by screen readers)
 const LABELS = {
@@ -88,6 +128,7 @@ function readLoginSettings(block) {
     return { text: cell.text, href: getSafeHref(cell.href) };
   };
   const endpointCell = readTableCell(block, 'endpoint');
+  const successCell = readTableCell(block, 'success link');
   return {
     texts: {
       title: readCellText('title'),
@@ -104,6 +145,8 @@ function readLoginSettings(block) {
     forgotPassword: readLink('forgot password'),
     guest: readLink('guest button'),
     endpoint: endpointCell.href || endpointCell.text,
+    successLink: successCell.href || successCell.text,
+    errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
     legalCell: findValueCell(block, 'legal text'),
   };
 }
@@ -216,12 +259,154 @@ function buildLoginField({
 }
 
 /**
- * Submit of the login form. The login service does not exist yet: the page must not reload
- * and nothing is sent. When it exists, the POST to settings.endpoint (Endpoint row) goes here.
- * @param {SubmitEvent} event
+ * Credentials of the request: FIXED_CREDENTIALS for now, or what the user typed when
+ * SEND_FORM_CREDENTIALS is true.
+ * @param {HTMLFormElement} form
+ * @returns {{emailOrPhone: string, password: string}}
  */
-function handleLoginSubmit(event) {
-  event.preventDefault();
+function readLoginCredentials(form) {
+  if (!SEND_FORM_CREDENTIALS) return { ...FIXED_CREDENTIALS };
+  return {
+    emailOrPhone: form.elements.emailOrPhone.value.trim(),
+    password: form.elements.password.value,
+  };
+}
+
+/**
+ * Message on top of the form (error or success); '' hides it.
+ * @param {HTMLFormElement} form
+ * @param {string} message
+ * @param {'error'|'success'} [variant='error']
+ */
+function showLoginAlert(form, message, variant = 'error') {
+  const alert = form.querySelector('.login-alert');
+  alert.className = `login-alert login-alert-${variant}`;
+  alert.textContent = message;
+  alert.hidden = !message;
+}
+
+/**
+ * Message under one field; the field is marked invalid and points to it.
+ * @param {HTMLFormElement} form
+ * @param {string} fieldName emailOrPhone | password
+ * @param {string} message
+ */
+function showFieldError(form, fieldName, message) {
+  const input = form.elements[fieldName];
+  const field = input.closest('.login-field');
+  let error = field.querySelector('.login-field-error');
+  if (!error) {
+    error = createElementWithClass('div', 'login-field-error');
+    error.id = `${input.id}-error`;
+    field.append(error);
+  }
+  error.textContent = message;
+  input.setAttribute('aria-invalid', 'true');
+  input.setAttribute('aria-describedby', error.id);
+}
+
+/**
+ * Removes the message of one field.
+ * @param {HTMLInputElement} input
+ */
+function clearFieldError(input) {
+  input.closest('.login-field')?.querySelector('.login-field-error')?.remove();
+  input.removeAttribute('aria-invalid');
+  input.removeAttribute('aria-describedby');
+}
+
+/**
+ * Removes every message of the form.
+ * @param {HTMLFormElement} form
+ */
+function clearLoginErrors(form) {
+  showLoginAlert(form, '');
+  form.querySelectorAll('.login-input').forEach(clearFieldError);
+}
+
+/**
+ * While the request runs: the form is busy and the button cannot be pressed again.
+ * @param {HTMLFormElement} form
+ * @param {boolean} busy
+ */
+function setLoginBusy(form, busy) {
+  form.setAttribute('aria-busy', String(busy));
+  const submit = form.querySelector('.login-submit');
+  if (submit) submit.disabled = busy;
+}
+
+/**
+ * What to show for a failed login, from the error body of the service
+ * ({ status: { message }, errors: [{ field, message }] }).
+ * @param {Error} error ApiError (its cause is the body, see errorBodyInterceptor) or any error
+ * @param {string} fallbackMessage Error Response Message
+ * @returns {{message: string, fields: {field: string, message: string}[]}}
+ */
+function readLoginErrors(error, fallbackMessage) {
+  const body = error?.cause && typeof error.cause === 'object' && !(error.cause instanceof Error)
+    ? error.cause : null;
+  const errors = (Array.isArray(body?.errors) ? body.errors : [])
+    .filter((item) => typeof item?.message === 'string' && item.message.trim());
+  const fields = errors.filter((item) => FORM_FIELDS.includes(item.field));
+  const message = [body?.status?.message, ...errors
+    .filter((item) => !FORM_FIELDS.includes(item.field))
+    .map((item) => item.message)]
+    .filter((text) => typeof text === 'string' && text.trim())
+    .join(' ');
+  return { message: message || (fields.length ? '' : fallbackMessage), fields };
+}
+
+/**
+ * A path of this site (/carrito), or null for anything else (other sites, //host…).
+ * @param {string} path
+ * @returns {string|null}
+ */
+function toSitePath(path) {
+  const href = getSafeHref(path);
+  return href && href.startsWith('/') && !href.startsWith('//') ? href : null;
+}
+
+/**
+ * Where to go after a login: ?redirect=, then the service nextStep.route, then Success Link.
+ * @param {string} serviceRoute data.nextStep.route
+ * @param {string} successLink Success Link row
+ * @returns {string}
+ */
+function getLoginRedirect(serviceRoute, successLink) {
+  const fromUrl = new URLSearchParams(window.location.search).get(REDIRECT_PARAM);
+  return [fromUrl, serviceRoute, successLink].map(toSitePath).find(Boolean)
+    || DEFAULT_SUCCESS_LINK;
+}
+
+/**
+ * Sends the login. 200 → session saved and redirect; any error → messages on the form.
+ * Without Endpoint nothing is sent.
+ * @param {HTMLFormElement} form
+ * @param {Object} settings readLoginSettings() result
+ */
+async function submitLogin(form, settings) {
+  if (form.getAttribute('aria-busy') === 'true') return;
+  clearLoginErrors(form);
+  if (!settings.endpoint) return;
+
+  setLoginBusy(form, true);
+  try {
+    const response = await post(settings.endpoint, {
+      meta: LOGIN_REQUEST_META,
+      security: LOGIN_REQUEST_SECURITY,
+      data: readLoginCredentials(form),
+    }, { interceptor: 'public-error-body' });
+    if (!signIn(response?.data)) throw new Error('Login answer without accessToken');
+    showLoginAlert(form, response.status?.message || '', 'success');
+    window.location.assign(getLoginRedirect(response.data.nextStep?.route, settings.successLink));
+  } catch (error) {
+    const { message, fields } = readLoginErrors(error, settings.errorResponseMessage);
+    fields.forEach(({ field, message: fieldMessage }) => showFieldError(form, field, fieldMessage));
+    showLoginAlert(form, message);
+    setLoginBusy(form, false);
+    // the disabled button lost the focus: go to the first field to fix
+    form.querySelector('.login-input[aria-invalid="true"]')?.focus();
+  }
 }
 
 /**
@@ -234,10 +419,15 @@ function buildLoginForm(idPrefix, settings) {
   const { texts, forgotPassword, guest } = settings;
   const form = createElementWithClass('form', 'login-form');
   form.noValidate = true;
+  // messages of the service (role=alert: read as soon as they appear)
+  const alert = createElementWithClass('div', 'login-alert');
+  alert.setAttribute('role', 'alert');
+  alert.hidden = true;
   form.append(
+    alert,
     buildLoginField({
       id: `${idPrefix}-user`,
-      name: 'user',
+      name: 'emailOrPhone',
       type: 'text',
       autocomplete: 'username',
       label: texts.userLabel,
@@ -282,7 +472,14 @@ function buildLoginForm(idPrefix, settings) {
     form.append(guestLink);
   }
 
-  form.addEventListener('submit', handleLoginSubmit);
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitLogin(form, settings);
+  });
+  // a field that changes loses its error message
+  form.addEventListener('input', (event) => {
+    if (event.target.classList.contains('login-input')) clearFieldError(event.target);
+  });
   return form;
 }
 

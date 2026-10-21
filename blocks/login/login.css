@@ -15,7 +15,7 @@
  *     styles.css (body, and [role='heading'] for the title).
  *
  * Sections: 1 layout · 2 header · 3 tabs · 4 card and fields · 5 buttons and divider ·
- *           6 legal text
+ *           6 legal text · 7 service messages (alert on top, error under each field)
  */
 
 .login {
@@ -151,6 +151,10 @@
       outline: 0;
       box-shadow: 0 0 0 3px var(--login-input-focus-ring);
     }
+
+    &[aria-invalid='true'] {
+      border-color: var(--login-error);
+    }
   }
 
   & .login-forgot {
@@ -193,6 +197,14 @@
     &:focus-visible {
       outline: 2px solid var(--login-accent);
       outline-offset: 2px;
+    }
+
+    /* while the request runs */
+    &:disabled {
+      box-shadow: none;
+      cursor: progress;
+      opacity: 0.7;
+      transform: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -268,5 +280,38 @@
     &:hover {
       color: var(--login-link-hover);
     }
+  }
+
+  /* ========================================================================
+     7. Service messages: alert on top of the form, error under each field
+     ======================================================================== */
+
+  & .login-alert {
+    margin-block-end: 18px;
+    padding: 10px 12px;
+    border: 1px solid var(--login-error-border);
+    border-radius: 10px;
+    background: var(--login-error-background);
+    color: var(--login-error);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  & .login-alert-success {
+    border-color: var(--login-success-border);
+    background: var(--login-success-background);
+    color: var(--login-success);
+  }
+
+  & .login-field-error {
+    color: var(--login-error);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
   }
 }

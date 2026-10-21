@@ -10,6 +10,7 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
 | `messages.js` | Mensajes genéricos con valor por defecto (alerta, lista vacía, foto que falla) y el formato de números / precios | `MESSAGES` (default), `LOCALE`, `CURRENCY` |
 | `toast.js` | Alerta flotante arriba a la derecha, apilable, que se cierra sola | `showToast(message, { duration, variant })`, `TOAST_VARIANTS` |
 | `page-context.js` | Datos que un bloque obtiene al cargar y otro bloque de la misma página necesita, sin importarse entre ellos (hoy: el nombre de la página actual) | `setCurrentPageName(name)`, `getCurrentPageName()`, `CURRENT_PAGE_NAME_EVENT` |
+| `session.js` | Sesión del usuario: la guarda el bloque `login` al iniciar sesión y la lee cualquier bloque (usuario y token). Vive en `sessionStorage` y vence con `expiresIn` | `signIn(data)`, `getSession()`, `isSignedIn()`, `getAccessToken()`, `signOut()`, `SESSION_CHANGE_EVENT`, `SESSION_STORAGE_KEY` |
 
 ## Qué necesita cada uno
 
@@ -19,6 +20,7 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
 | `block-utils.js` | `messages.js` (para `formatPrice`) |
 | `messages.js` | nada |
 | `page-context.js` | nada |
+| `session.js` | nada |
 | `toast.js` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` y sus colores `--toast-*` en `styles/colors.css`, más `--z-index-toast` en `styles/styles.css` |
 
 ## Llevarlos a otro proyecto
@@ -31,6 +33,7 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
    import { readTableCell, formatPrice } from '../../scripts/foundations/block-utils.js';
    import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
    import { showToast } from '../../scripts/foundations/toast.js';
+   import { signIn, getSession, signOut } from '../../scripts/foundations/session.js';
    ```
 
 3. Ajusta lo propio del sitio:

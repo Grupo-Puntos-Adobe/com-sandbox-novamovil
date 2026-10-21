@@ -5,8 +5,9 @@
  *
  * Called by: loadCategoriesFromService(), loadProductsFromService() and
  * loadPromotionsFromService() of the card-* blocks (get(endpoint)), and product-catalog
- * (get(Filters Endpoint) + post(Search Endpoint, body, { signal })) and product-detail
- * (post(Endpoint, body)). No library: native fetch + AbortSignal.
+ * (get(Filters Endpoint) + post(Search Endpoint, body, { signal })), product-detail
+ * (post(Endpoint, body)) and login (post(Endpoint, body, { interceptor: 'public-error-body' })).
+ * No library: native fetch + AbortSignal.
  *
  * Flow:
  *   get(url) / post(url, body) → request(url, options)
