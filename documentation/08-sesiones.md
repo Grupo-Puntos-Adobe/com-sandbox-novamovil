@@ -62,7 +62,7 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 
 | `Session` | `Redirect With Session` | Sin sesión | Con sesión |
 |---|---|---|---|
-| `true` | `/login` | Va a `/login?redirect=%2Fperfil` (el login regresa aquí) | Se ve |
+| `true` | `/login` | Va a `/login`, tal cual (nada se agrega a la URL) | Se ve |
 | `true` | sin la fila o vacía | Va al home `/` | Se ve |
 | `false`, vacía o sin la fila | — | Se ve (página pública) | Se ve |
 
@@ -143,7 +143,6 @@ O sin JS, directo con clases:
 |---|---|---|
 | `Redirect With Session` | `/perfil` | Con sesión, siempre va ahí (sin mostrar el formulario) |
 | | vacía o sin la fila | **Modo paso**: no redirige; el login solo se ve sin sesión y se oculta al iniciar sesión o entrar como invitado |
-| `Return To Previous Page` | `yes` | Un `?redirect=` válido gana a `Redirect With Session` |
 
 Cada página tiene su propia tabla Login: en `/login` va `Redirect With Session` = `/perfil`; en el
 paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
@@ -157,7 +156,7 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 | 1 | `getSession()` / `isSignedIn()` / `getAccessToken()` | Usuario, ¿hay sesión?, `'Bearer …'` |
 | 2 | `guardPage()` | Regla de la página (la llama `scripts.js`) |
 | 2 | `requireSession({ allowGuest, redirectTo })` | Un bloque que debe redirigir por sí mismo |
-| 2 | `getSessionRedirectUrl()` / `getReturnPath()` / `toSitePath()` | URLs de redirección validadas (solo rutas del sitio) |
+| 2 | `getSessionRedirectUrl()` / `toSitePath()` | Ruta de `Redirect With Session` (o `/`) y rutas validadas (solo del sitio) |
 | 2 | `navigateTo(path, { replace })` | Ir a otra página sin que la recarga de las filas la cancele |
 | 3 | `applySessionRows(block)` | Filas con el estado en la última celda (la llama `applyBlockOptions`) |
 | 3 | `setSessionVisibility(el, states)` / `parseSessionStates(text)` | Mostrar u ocultar |
@@ -168,7 +167,7 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 | # | Caso | Resultado |
 |---|---|---|
 | 1 | Página pública sin reglas | Igual que antes |
-| 2 | `/perfil` (`Session: true`, `Redirect With Session: /login`) sin sesión | Va a `/login?redirect=%2Fperfil` |
+| 2 | `/perfil` (`Session: true`, `Redirect With Session: /login`) sin sesión | Va a `/login` (sin `?redirect=`) |
 | 2b | `Session: true` sin `Redirect With Session` | Va al home `/` |
 | 2c | `Session: false`, vacía o sin la fila | La página se ve |
 | 3 | Login correcto desde ahí | Regresa a `/perfil` |
@@ -179,7 +178,7 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 | 7 | Cerrar sesión en una página `Session: true` | Redirige |
 | 8 | `/login` ya con sesión | Va a `Redirect With Session` sin mostrar el formulario |
 | 9 | Login en modo paso | Al iniciar sesión o como invitado se oculta y aparece lo `signed-in, guest`, sin recargar |
-| 10 | `?redirect=//otro.com` | Se ignora |
+| 10 | `Redirect With Session` = `//otro.com` o `javascript:` | Se ignora: va al home |
 | 11 | Sesión vencida | Cuenta como `signed-out` |
 | 12 | Llamada privada sin sesión | No llama al servicio y redirige al login |
 | 13 | Llamada privada con sesión | Header `Authorization: Bearer …` y `security.auth.value` iguales |
@@ -190,8 +189,8 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 - **Ocultar no es proteger.** El HTML y el JavaScript son públicos: lo oculto sigue en la página.
   Los datos privados solo deben llegar del servicio con `REQUEST_TYPE.PRIVATE`.
 - El token **nunca** va en el código ni en Drive: sale de `getAccessToken()` después del login.
-- `?redirect=` y las rutas de la tabla solo aceptan **rutas del sitio** (nada de `//otro.com` ni
-  `javascript:`).
+- Nada viaja por la URL. Las rutas de las tablas solo aceptan **rutas del sitio** (nada de
+  `//otro.com` ni `javascript:`).
 - La sesión vive en `sessionStorage` (se borra al cerrar la pestaña) y vence con `expiresIn`.
 - Nunca se escribe la sesión en `console`.
 

@@ -6,7 +6,7 @@
  * table (page /login).
  *
  * Authored rows (all optional): Styles, Classname, Session, Title, Description, Login Tab,
- * Register Tab, Endpoint, Redirect With Session, Return To Previous Page, User Label,
+ * Register Tab, Endpoint, Redirect With Session, User Label,
  * User Placeholder, Password Label, Password Placeholder, Forgot Password (link), Button Text,
  * Divider Text, Guest Button (text, optional link), Legal Text (text with links),
  * Error Response Message.
@@ -23,10 +23,9 @@
  *     only to signed-out visitors (Session signed-out, unless the table has its own Session
  *     row) and hides itself after a login or "Continuar como invitado": the step is done
  *     (SESSION_CHANGE_EVENT, for the checkout steps).
- *   - Return To Previous Page: yes → a valid ?redirect= of the URL wins over Redirect With
- *     Session (pages that sent the visitor here come back). Without it ?redirect= is ignored.
- *   - Guest Button: continueAsGuest(), then ?redirect= (with Return To Previous Page), then its
- *     link; without any of them it stays (step mode). Without link it is a button.
+ *   - Guest Button: continueAsGuest(), then its link; without link it stays (step mode: the
+ *     step is done) and is painted as a button.
+ *   Nothing is read from or added to the URL.
  *   - Error Response Message: shown when the service fails without a message of its own
  *     (default errorResponseMessage of scripts/foundations/messages.js, also when empty).
  *
@@ -67,7 +66,7 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, getSafeHref } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  SESSION_STATES, continueAsGuest, getAccessState, getReturnPath, isEditorPreview, navigateTo,
+  SESSION_STATES, continueAsGuest, getAccessState, isEditorPreview, navigateTo,
   setSessionVisibility, signIn, toSitePath,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -91,8 +90,6 @@ const SEND_FORM_CREDENTIALS = false;
 const FIXED_CREDENTIALS = { emailOrPhone: 'cliente@ejemplo.com', password: 'Password123' };
 // form fields, named as the service names them (errors[].field)
 const FORM_FIELDS = ['emailOrPhone', 'password'];
-// values of Return To Previous Page that mean "yes"
-const YES_VALUE = /^(yes|si|sí|true)$/i;
 
 // accessible names when the table has no label (only read by screen readers)
 const LABELS = {
@@ -161,7 +158,6 @@ function readLoginSettings(block) {
     endpoint: endpointCell.href || endpointCell.text,
     // '' = step mode (no redirect)
     redirectWithSession: toSitePath(redirectCell.href || redirectCell.text),
-    returnToPreviousPage: YES_VALUE.test(readCellText('return to previous page')),
     errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
     legalCell: findValueCell(block, 'legal text'),
   };
@@ -373,24 +369,23 @@ function readLoginErrors(error, fallbackMessage) {
 }
 
 /**
- * Where a signed-in visitor goes: the valid ?redirect= (only with Return To Previous Page),
- * else Redirect With Session; '' = step mode (stay, the block hides itself).
+ * Where a signed-in visitor goes: Redirect With Session; '' = step mode (stay, the block hides
+ * itself).
  * @param {Object} settings readLoginSettings() result
  * @returns {string}
  */
 function getLoginDestination(settings) {
-  return (settings.returnToPreviousPage && getReturnPath()) || settings.redirectWithSession;
+  return settings.redirectWithSession;
 }
 
 /**
- * Where a guest goes: the valid ?redirect= (only with Return To Previous Page), else the link
- * of Guest Button; '' = stay (step mode). Redirect With Session is not used: it is for
- * visitors with a session.
+ * Where a guest goes: the link of Guest Button; '' = stay (step mode). Redirect With Session is
+ * not used: it is for visitors with a session.
  * @param {Object} settings readLoginSettings() result
  * @returns {string}
  */
 function getGuestDestination(settings) {
-  return (settings.returnToPreviousPage && getReturnPath()) || toSitePath(settings.guest.href);
+  return toSitePath(settings.guest.href);
 }
 
 /**

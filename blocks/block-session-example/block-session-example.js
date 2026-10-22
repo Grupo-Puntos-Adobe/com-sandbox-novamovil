@@ -13,7 +13,7 @@
  *   3. Items by session, the generic way of ANY block: "Item | text | signed-in" (the state in
  *      the LAST cell). applySessionRows() (block-options.js) removes the rows of other states
  *      before this block reads its table, and the page reloads when the session changes.
- *   4. Actions: Iniciar sesión (link to the login with ?redirect= back here), Continuar como
+ *   4. Actions: Iniciar sesión (link to the login, as authored), Continuar como
  *      invitado (continueAsGuest) and Cerrar sesión (signOut), each one only for its state.
  *   5. Private call: with Private Endpoint and a session, post(…, REQUEST_TYPE.PRIVATE) sends
  *      the Bearer token and shows the answer of the service.
@@ -44,7 +44,7 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  REDIRECT_PARAM, SESSION_STATES, continueAsGuest, parseSessionStates, renderForSession,
+  SESSION_STATES, continueAsGuest, parseSessionStates, renderForSession,
   setSessionVisibility, signOut, toSitePath,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -124,17 +124,6 @@ function readExampleSettings(block) {
 }
 
 /**
- * Link to the login that comes back to this page after signing in (?redirect=).
- * @param {string} loginPath e.g. /login
- * @returns {string}
- */
-function buildLoginHref(loginPath) {
-  const url = new URL(loginPath, window.location.origin);
-  url.searchParams.set(REDIRECT_PARAM, `${window.location.pathname}${window.location.search}`);
-  return `${url.pathname}${url.search}`;
-}
-
-/**
  * Badge with the name of a state (its colour comes from the CSS modifier).
  * @param {string} state One of SESSION_STATES
  * @returns {Element}
@@ -170,7 +159,7 @@ function buildExampleActions(settings) {
 
   if (login.text && login.href) {
     const link = createElementWithClass('a', 'block-session-example-button block-session-example-button-primary', login.text);
-    link.href = buildLoginHref(login.href);
+    link.href = login.href;
     actions.append(setSessionVisibility(link, [SESSION_STATES.SIGNED_OUT]));
   }
   if (texts.guestButton) {

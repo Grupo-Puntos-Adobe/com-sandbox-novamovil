@@ -130,8 +130,8 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
 
 6. **`Login Link`**
     - **Tipo:** Enlace (texto y link)
-    - **Descripción:** Botón "Iniciar sesión" (solo sin sesión); agrega `?redirect=` para volver a
-      esta página después del login
+    - **Descripción:** Botón "Iniciar sesión" (solo sin sesión); va a su enlace tal cual, sin nada en
+      la URL
 
 7. **`Guest Button Text`** / **`Sign Out Text`**
     - **Tipo:** Texto

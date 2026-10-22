@@ -25,8 +25,8 @@
  *   | Redirect With Session | /login |   where a visitor without session goes (default: home /)
  *   guardPage()               reads both rows; called by scripts.js before painting
  *   requireSession(options)   the same rule for a block that must redirect by itself
- *   getSessionRedirectUrl()   /login?redirect=%2Fcurrent-page
- *   getReturnPath()           the ?redirect= of the URL, only if it is a path of this site
+ *   getSessionRedirectUrl()   the Redirect With Session path as authored, or / (nothing is
+ *                             added to the URL)
  *   navigateTo(path)          goes to a page (use it after signIn/continueAsGuest: the page
  *                             does not reload over the navigation)
  *
@@ -68,8 +68,6 @@ export const PAGE_SESSION_REQUIRED = 'true';
 // where a protected page sends a visitor without session, when its Metadata has no
 // "Redirect With Session" row: the home page
 export const DEFAULT_SESSION_REDIRECT = '/';
-// URL parameter with the page to come back to (/login?redirect=/perfil)
-export const REDIRECT_PARAM = 'redirect';
 // editing tool preview: no redirects, everything visible
 const EDITOR_PREVIEW_HOSTS = /^preview-aemcoder\.adobe\.io$/;
 // class on <html> for each state (sessions.css); editor = show everything
@@ -272,30 +270,16 @@ export function toSitePath(path) {
 }
 
 /**
- * The page to come back to (?redirect= of the URL), only when it is a path of this site.
- * @returns {string} '' when there is none or it is not valid
- */
-export function getReturnPath() {
-  return toSitePath(new URLSearchParams(window.location.search).get(REDIRECT_PARAM));
-}
-
-/**
  * Where to send who cannot open the current page: redirectTo, else the "Redirect With Session"
- * Metadata row, with ?redirect= set to the page to come back to (the login uses it). Without
- * any of them: DEFAULT_SESSION_REDIRECT, the home page, as is.
+ * Metadata row (a path of this site, as authored: nothing is added to the URL). Missing or
+ * empty: DEFAULT_SESSION_REDIRECT, the home page.
  * @param {Object} [options]
  * @param {string} [options.redirectTo] Page to go to (a block that redirects by itself)
- * @param {string} [options.returnTo] Page to come back to (default: the current one)
- * @returns {string} e.g. /login?redirect=%2Fperfil, or /
+ * @returns {string} e.g. /login, or /
  */
-export function getSessionRedirectUrl({ redirectTo, returnTo } = {}) {
-  const configured = toSitePath(redirectTo) || toSitePath(readPageMetadata('redirect-with-session'));
-  if (!configured) return DEFAULT_SESSION_REDIRECT;
-  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const target = new URL(configured, window.location.origin);
-  const back = toSitePath(returnTo ?? current);
-  if (back) target.searchParams.set(REDIRECT_PARAM, back);
-  return `${target.pathname}${target.search}`;
+export function getSessionRedirectUrl({ redirectTo } = {}) {
+  return toSitePath(redirectTo) || toSitePath(readPageMetadata('redirect-with-session'))
+    || DEFAULT_SESSION_REDIRECT;
 }
 
 /**

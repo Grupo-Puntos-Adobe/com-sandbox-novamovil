@@ -160,15 +160,14 @@ se pinta (en `Redirect With Session`, vacía = modo paso).
       `https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io/api/v1/auth/login`
     - **Por defecto:** ninguno. Sin `Endpoint`, el botón no envía nada
 
-7. **`Redirect With Session`** / **`Return To Previous Page`**
-    - **Tipo:** Ruta del sitio (`/perfil`) / `yes`
+7. **`Redirect With Session`**
+    - **Tipo:** Ruta del sitio (`/perfil`)
     - **Descripción:** **Con ruta:** siempre que haya sesión va ahí, sin mostrar el formulario (al
       abrir la página ya con sesión o justo después de iniciar sesión). **Vacía o sin la fila: modo
       paso**: no redirige; el login solo se ve sin sesión y, al iniciar sesión o entrar como
-      invitado, se oculta solo y el paso queda cumplido (para los pasos de compra).
-      `Return To Previous Page` = `yes`: si la URL trae `?redirect=` de una página del sitio, regresa
-      ahí antes que a `Redirect With Session`
-    - **Por defecto:** ninguno (modo paso) / sin la fila se ignora `?redirect=`
+      invitado, se oculta solo y el paso queda cumplido (para los pasos de compra). No se lee ni se
+      agrega nada en la URL
+    - **Por defecto:** ninguno (modo paso)
     - El `nextStep.route` del servicio ya no decide a dónde ir: lo decide la tabla
 
 8. **`User Label`** / **`User Placeholder`**
@@ -202,8 +201,8 @@ se pinta (en `Redirect With Session`, vacía = modo paso).
 13. **`Guest Button`**
     - **Tipo:** Texto, con enlace opcional
     - **Descripción:** "Continuar como invitado": activa el modo invitado (`continueAsGuest()`) y
-      luego va al `?redirect=` (con `Return To Previous Page`) o a su enlace. Sin ninguno de los dos
-      se queda (modo paso: el paso queda cumplido). Sin enlace se pinta como botón
+      luego va a su enlace. Sin enlace se queda (modo paso: el paso queda cumplido) y se pinta como
+      botón
     - **Por defecto:** ninguno. Sin texto, no se pinta
 
 14. **`Legal Text`**
@@ -226,8 +225,8 @@ La tabla en Drive permite al autor configurar:
 - El **título**, la **descripción** y los **tabs**
 - Las **etiquetas** y **textos de ejemplo** de los campos
 - Los **enlaces** de contraseña olvidada, invitado y textos legales
-- El **Endpoint** del servicio, a dónde ir con sesión (**Redirect With Session**,
-  **Return To Previous Page**) y el **mensaje de error** genérico
+- El **Endpoint** del servicio, a dónde ir con sesión (**Redirect With Session**) y el **mensaje
+  de error** genérico
 - **Estilos** y **clases** extra del bloque
 
 ![Vista Tabla en Drive](/documentation/readme/login/drive-table.png)
@@ -263,7 +262,7 @@ Con `true`, `readLoginCredentials` toma `emailOrPhone` (sin espacios al inicio y
 
 | Respuesta | Qué hace el bloque |
 |---|---|
-| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`); con `Redirect With Session` muestra `status.message` en verde y va al `?redirect=` (si `Return To Previous Page`) o a esa ruta. En modo paso no navega: el login se oculta |
+| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`); con `Redirect With Session` muestra `status.message` en verde y va a esa ruta. En modo paso no navega: el login se oculta |
 | **400** `{ status, errors: [{ field, message }] }` | `status.message` arriba y cada `errors[].message` debajo de su campo (`emailOrPhone`, `password`); al escribir en el campo se quita su mensaje |
 | **401** `{ status, errors: [{ field: "credentials", message }] }` | `status.message` + los mensajes sin campo, arriba ("El correo/teléfono o la contraseña son incorrectos. Verifica tus datos e inténtalo nuevamente.") |
 | **500** `{ status }` | `status.message` arriba ("Ocurrió un error al iniciar sesión.") |
@@ -285,7 +284,6 @@ renovar el token.
 | Error del servicio | El mensaje sale arriba y el cursor va al primer campo con error |
 | Sin `Endpoint` | El botón no envía nada |
 | Abre la página ya con sesión (con `Redirect With Session`) | Va directo a esa ruta, sin ver el formulario |
-| `?redirect=/perfil` en la URL y `Return To Previous Page: yes` | Después de iniciar sesión regresa a `/perfil` (solo rutas del sitio; `//otro.com` se ignora) |
 | Modo paso (sin `Redirect With Session`) | Sin sesión se ve el login; con sesión o como invitado se oculta y el paso queda cumplido, sin recargar |
 | Panel de edición | Se ve el formulario y no redirige, para poder editarlo |
 | Falta `Login Tab` o `Register Tab` | Sin tabs, solo el formulario |
@@ -313,7 +311,7 @@ Móvil:
 - `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
-- `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `getReturnPath`, `toSitePath` y
+- `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `navigateTo`, `toSitePath` y
   `setSessionVisibility` (modo paso)
 - `styles/foundations/sessions.css` – Oculta el login en modo paso cuando ya hay sesión
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`
