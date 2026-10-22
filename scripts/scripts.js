@@ -11,7 +11,7 @@ import {
   loadCSS,
   buildBlock,
 } from './aem.js';
-import { guardPage } from './foundations/session.js';
+import { applySessionRows, guardPage } from './foundations/session.js';
 
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
   const innerTT = window.trustedTypes.createPolicy('tt-inner', {
@@ -153,6 +153,8 @@ export function decorateMain(main) {
   buildAutoBlocks(main);
   decorateSections(main);
   decorateBlocks(main);
+  // rows whose last cell is a session state (signed-in / signed-out / guest), in every block
+  main.querySelectorAll('div.block').forEach(applySessionRows);
   decorateButtons(main);
 }
 

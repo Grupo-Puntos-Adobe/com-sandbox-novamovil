@@ -35,13 +35,17 @@
  *                             does not reload over the navigation)
  *
  * Part 3 · Showing things by session (blocks)
- *   applySessionRows(block)    rows of any table whose LAST cell is a state:
- *                                | Title     | Hola, cliente   | signed-in |
- *                                | Benefit 1 | 🚚 | Envío gratis | guest     |
+ *   applySessionRows(block)    rows of ANY block whose LAST cell is a state (signed-in,
+ *                              signed-out, guest, combined with commas), with 2 or more cells:
+ *                                | Promociones | signed-out |
+ *                                | Title       | Hola, cliente   | signed-in |
+ *                                | Benefit 1   | 🚚 | Envío gratis | guest, signed-in |
  *                              the rows of other states are removed (and the state cell of the
  *                              others) before the block reads its table; empty last cell or no
- *                              state word → the row is always shown. Called by block-options.js;
- *                              when the session changes, a page with such rows reloads.
+ *                              state word → the row is always shown. scripts.js runs it on every
+ *                              block of the page (template blocks and fragments too) and
+ *                              block-options.js again (no effect the 2nd time); when the session
+ *                              changes, a page with such rows reloads.
  *   setSessionVisibility(element, 'signed-in, guest')   classes of sessions.css
  *   parseSessionStates(text)                            'signed-in, guest' → ['signed-in', 'guest']
  *   renderForSession(target, views)                     paints the view of the current state
@@ -414,11 +418,12 @@ function reloadOnSessionChange() {
 }
 
 /**
- * Session rows of a block table: a row with a value and a LAST cell made only of states
- * (| key | value… | signed-in |) stays only for those states. The state cell is removed from
- * the rows that stay (row.dataset.session keeps it, e.g. "signed-in guest"), so the block
- * reads its table as always. Rows with an empty last cell, with only key | value, or whose last
- * cell is not a state are not touched (always shown).
+ * Session rows of a block table: a row of 2 or more cells whose LAST cell is made only of states
+ * (| … | signed-in |, | … | signed-out, guest |) stays only for those states, whatever the block
+ * and its number of columns. The state cell is removed from the rows that stay
+ * (row.dataset.session keeps it, e.g. "signed-in guest"), so the block reads its table as
+ * always. Rows with an empty last cell, a single cell, or a last cell that is not only states
+ * are not touched (always shown). Running it twice changes nothing.
  * @param {Element} block
  * @returns {boolean} true when the block had session rows
  */
@@ -428,7 +433,7 @@ export function applySessionRows(block) {
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const cells = [...row.children];
     const lastCell = cells[cells.length - 1];
-    if (cells.length < 3 || !isSessionStateText(lastCell.textContent)) return;
+    if (cells.length < 2 || !isSessionStateText(lastCell.textContent)) return;
     hasSessionRows = true;
     const states = parseSessionStates(lastCell.textContent);
     lastCell.remove();

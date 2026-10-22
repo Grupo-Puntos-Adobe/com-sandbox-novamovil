@@ -16,9 +16,10 @@
  * (scripts/foundations/session.js, styles/foundations/sessions.css).
  *
  * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
- * state (applySessionRows of session.js); it works with any number of values:
- *   | Title     | Tus promociones, cliente | signed-in |
- *   | Benefit 1 | 🚚 | Envío gratis          | guest     |
+ * state (applySessionRows of session.js; scripts.js already runs it on every block, this call
+ * only covers a block used without scripts.js); it works with any number of columns:
+ *   | Title     | Tus promociones, cliente | signed-in        |
+ *   | Benefit 1 | 🚚 | Envío gratis          | guest, signed-in |
  *
  * The rows are optional and can be anywhere in the table (usually right after the
  * block name). They are removed from the block, so the rest of its code never sees them.

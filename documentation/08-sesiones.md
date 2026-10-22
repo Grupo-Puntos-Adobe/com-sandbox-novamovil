@@ -82,7 +82,9 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 
 ### 5.1 Una fila de la tabla (Drive) — funciona en cualquier bloque
 
-El estado va en la **última celda** de la fila, tenga uno o varios valores:
+El estado va en la **última celda** de la fila, tenga 2 o más columnas. Funciona en **todos** los
+bloques de la página (los del proyecto, los del template como `columns` o `cards`, y los de los
+fragmentos), porque `scripts.js` lo aplica a cada bloque antes de que se decore:
 
 ```
 ┌──────────────┬──────────────────────────┬──────────────┐
@@ -95,13 +97,16 @@ El estado va en la **última celda** de la fila, tenga uno o varios valores:
 └──────────────┴──────────────────────────┴──────────────┘
 ```
 
-- Si la última celda dice `signed-in`, `signed-out` o `guest` (o varios con coma), la fila solo queda
+- Si la última celda dice **solo** `signed-in`, `signed-out` o `guest` (o varios con coma, p. ej.
+  `guest, signed-out`), la fila solo queda
   para ese estado; las de otros estados se quitan **antes** de que el bloque lea su tabla, y a la
   que queda se le quita la celda del estado. El bloque lee `Title` como siempre: **no hay que
   cambiar su código**.
 - Si la última celda está vacía o no es un estado, la fila **siempre se muestra**.
-- Una fila de solo `llave | valor` nunca se toca (el valor no se confunde con un estado).
-- Lo hace `applySessionRows(block)`, que llama `applyBlockOptions` al inicio de cada bloque.
+- Si la última celda trae otra cosa además del estado ("guest y otra palabra"), no cuenta: la fila
+  se ve siempre.
+- Lo hace `applySessionRows(block)`: lo corre `scripts.js` (`decorateMain`) en cada bloque y
+  `applyBlockOptions` otra vez (no cambia nada la segunda vez).
 - Cuando la sesión cambia en la misma página (iniciar sesión, invitado, cerrar sesión), la página se
   **recarga** para mostrar las filas del nuevo estado. Si en ese momento se navega a otra página con
   `navigateTo()` (por ejemplo el login), no se recarga.
