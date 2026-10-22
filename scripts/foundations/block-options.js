@@ -11,6 +11,11 @@
  * is only hidden or shown (it never redirects); it changes as soon as the session changes
  * (scripts/foundations/session.js, styles/foundations/sessions.css).
  *
+ * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
+ * state (applySessionRows of session.js); it works with any number of values:
+ *   | Title     | Tus promociones, cliente | signed-in |
+ *   | Benefit 1 | 🚚 | Envío gratis          | guest     |
+ *
  * The rows are optional and can be anywhere in the table (usually right after the
  * block name). They are removed from the block, so the rest of its code never sees them.
  * Styles: declarations separated by ";" (a comma can be part of a CSS value, e.g.
@@ -32,6 +37,7 @@
  *
  * Flow:
  *   applyBlockOptions(block)            default export, one call per block
+ *     ├─ session rows    → applySessionRows(block) (rows of other states are removed)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
  *     ├─ "Classname" row → applyAuthorClasses(block, text)
  *     └─ "Session" row   → setSessionVisibility(block, text)
@@ -39,7 +45,7 @@
  *
  * Guide: documentation/06-styles-classname.md
  */
-import { setSessionVisibility } from './session.js';
+import { applySessionRows, setSessionVisibility } from './session.js';
 
 const STYLE_KEYS = ['styles', 'style'];
 const SESSION_KEYS = ['session'];
@@ -113,10 +119,13 @@ export function applyAuthorClasses(block, names) {
 }
 
 /**
- * Reads, applies and removes the optional Styles / Classname / Session rows of a block.
+ * Applies the session rows, then reads, applies and removes the optional Styles / Classname /
+ * Session rows of a block.
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
+  // first: rows that depend on the session (| key | value… | signed-in |)
+  applySessionRows(block);
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     // name | value; extra cells are allowed only if empty (tables with 3+ columns)

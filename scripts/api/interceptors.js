@@ -21,7 +21,7 @@
  */
 
 import {
-  getAccessToken, getSessionRedirectUrl, isEditorPreview, signOut,
+  getAccessToken, getSessionRedirectUrl, isEditorPreview, navigateTo, signOut,
 } from '../foundations/session.js';
 
 /**
@@ -112,7 +112,7 @@ export const privateRequestInterceptor = {
   error(error) {
     if (error.status === 401) {
       signOut();
-      if (!isEditorPreview()) window.location.replace(getSessionRedirectUrl());
+      if (!isEditorPreview()) navigateTo(getSessionRedirectUrl(), { replace: true });
     }
     throw error;
   },

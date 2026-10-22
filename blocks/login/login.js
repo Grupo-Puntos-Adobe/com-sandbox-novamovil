@@ -67,7 +67,7 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, getSafeHref } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  SESSION_STATES, continueAsGuest, getAccessState, getReturnPath, isEditorPreview,
+  SESSION_STATES, continueAsGuest, getAccessState, getReturnPath, isEditorPreview, navigateTo,
   setSessionVisibility, signIn, toSitePath,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -415,7 +415,7 @@ async function submitLogin(form, settings) {
     const destination = getLoginDestination(settings);
     if (destination) {
       showLoginAlert(form, response.status?.message || '', 'success');
-      window.location.assign(destination);
+      navigateTo(destination);
       return;
     }
     // step mode: the block is hidden now (signed-out only); leave it clean for a sign out
@@ -497,7 +497,7 @@ function buildLoginForm(idPrefix, settings) {
       event.preventDefault();
       continueAsGuest();
       const destination = getGuestDestination(settings);
-      if (destination) window.location.assign(destination);
+      if (destination) navigateTo(destination);
     });
     form.append(guestAction);
   }
@@ -599,7 +599,7 @@ export default function decorate(block) {
   // already signed in: go to the destination without painting the form
   if (destination && getAccessState() === SESSION_STATES.SIGNED_IN && !isEditorPreview()) {
     block.replaceChildren();
-    window.location.replace(destination);
+    navigateTo(destination, { replace: true });
     return;
   }
 

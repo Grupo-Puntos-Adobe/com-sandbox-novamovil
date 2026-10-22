@@ -30,12 +30,14 @@ Sirve para copiar la forma de hacerlo en un bloque nuevo.
   sesión, solo como invitado o solo sin sesión. Nunca redirige
 - **Panel de estado:** etiqueta del estado (verde con sesión, azul invitado, gris sin sesión) y un
   texto por estado; con sesión saluda con el nombre (`{name}`)
-- **Filas por sesión:** cada `Item` dice quién lo ve; las que no tocan se ocultan
+- **Filas por sesión, igual que en cualquier bloque:** el estado va en la **última celda**
+  (`Item | texto | signed-in`); las filas de otros estados se quitan antes de pintar y la página se
+  recarga al cambiar la sesión
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
 - **Llamada privada:** con `Private Endpoint` y sesión, llama con el token (Bearer) y muestra la
   respuesta
-- Todo cambia **al instante, sin recargar**, al iniciar sesión, entrar como invitado o cerrar sesión
+- El estado, la etiqueta y los botones cambian al instante; las filas por sesión, al recargar (sola)
 - Grid de 24 columnas: 1 tarjeta por fila en móvil, 2 en tablet y 3 en desktop
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - Accesible: el estado se anuncia al cambiar (`aria-live="polite"`) y el título es un encabezado de
@@ -63,8 +65,8 @@ sesión **no** está en su CSS: lo hacen las clases `session-only-*` de
 - `block-session-example-item-tag` – Quién la ve ("Lo ve: Con sesión")
 - `block-session-example-item-text` – Texto de la tarjeta
 - `block-session-example-private` – Llamada privada (`-private-title`, `-private-text`)
-- `session-only session-only-*` – Clases de `sessions.css` que pone el JS en lo que depende de la
-  sesión
+- `session-only session-only-*` – Clases de `sessions.css` que pone el JS en los botones y la
+  llamada privada
 
 ```text
 div.block-session-example-wrapper[.session-only …]      (fila Session: el bloque entero)
@@ -80,7 +82,7 @@ div.block-session-example-wrapper[.session-only …]      (fila Session: el bloq
          │     ├─ a.-button.-button-primary.session-only.session-only-signed-out
          │     ├─ button.-button.session-only.session-only-signed-out
          │     └─ button.-button.session-only.session-only-signed-in.session-only-guest
-         ├─ div.col-24.col-md-12.col-lg-8[.session-only …] > div.block-session-example-item × N
+         ├─ div.col-24.col-md-12.col-lg-8 > div.block-session-example-item × N   (filas que quedan)
          │  ├─ div.block-session-example-item-tag
          │  └─ div.block-session-example-item-text
          └─ div.col-24.session-only.session-only-signed-in > div.block-session-example-private
@@ -120,9 +122,10 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
     - **Por defecto:** ninguno. Sin `Guest Text`, el invitado ve solo su etiqueta
 
 5. **`Item`** (las que quieras)
-    - **Tipo:** 3 celdas: `Item` | quién lo ve | texto
-    - **Descripción:** Una tarjeta. Quién lo ve: `signed-in`, `guest`, `signed-out` o combinados
-      (`signed-in, guest`); vacío = todos
+    - **Tipo:** `Item` | texto | estado (opcional, en la **última celda**)
+    - **Descripción:** Una tarjeta. Estado: `signed-in`, `guest`, `signed-out` o combinados
+      (`signed-in, guest`); sin estado la ven todos. Es la regla general: **cualquier fila de
+      cualquier bloque** puede terminar con un estado
     - **Por defecto:** ninguna
 
 6. **`Login Link`**
@@ -156,9 +159,9 @@ La tabla en Drive permite al autor configurar:
 | Caso | Qué se ve |
 |---|---|
 | Sin sesión | Etiqueta "Sin sesión", tarjetas `signed-out` y para todos, botones "Iniciar sesión" y "Continuar como invitado" |
-| Clic en "Continuar como invitado" | Sin recargar: etiqueta "Invitado", tarjetas `guest` y `signed-in, guest`, botón "Cerrar sesión" |
+| Clic en "Continuar como invitado" | La página se recarga: etiqueta "Invitado", tarjetas `guest` y `signed-in, guest`, botón "Cerrar sesión" |
 | Con sesión | "Hola, Cliente…", tarjetas `signed-in` y `signed-in, guest`, botón "Cerrar sesión" y llamada privada |
-| Clic en "Cerrar sesión" | Sin recargar: vuelve a "Sin sesión" |
+| Clic en "Cerrar sesión" | La página se recarga y vuelve a "Sin sesión" |
 | Fila `Session` = `signed-in` | El bloque entero solo se ve con sesión (la página no redirige) |
 | Fila `Session` = `signed-out` | El bloque entero se oculta al iniciar sesión o entrar como invitado |
 | Panel de edición | Se ve todo, para poder editarlo |
@@ -188,6 +191,9 @@ import {
   SESSION_STATES, renderForSession, setSessionVisibility, signOut,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
+
+// 0) en Drive, sin código: cualquier fila con el estado en la última celda
+//    | Title | Tus promociones | signed-in |
 
 // 1) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
 setSessionVisibility(couponCard, 'signed-in');

@@ -27,8 +27,17 @@
  *   requireSession(options)   the same rule for a block that must redirect by itself
  *   getSessionRedirectUrl()   /login?redirect=%2Fcurrent-page
  *   getReturnPath()           the ?redirect= of the URL, only if it is a path of this site
+ *   navigateTo(path)          goes to a page (use it after signIn/continueAsGuest: the page
+ *                             does not reload over the navigation)
  *
  * Part 3 · Showing things by session (blocks)
+ *   applySessionRows(block)    rows of any table whose LAST cell is a state:
+ *                                | Title     | Hola, cliente   | signed-in |
+ *                                | Benefit 1 | 🚚 | Envío gratis | guest     |
+ *                              the rows of other states are removed (and the state cell of the
+ *                              others) before the block reads its table; empty last cell or no
+ *                              state word → the row is always shown. Called by block-options.js;
+ *                              when the session changes, a page with such rows reloads.
  *   setSessionVisibility(element, 'signed-in, guest')   classes of sessions.css
  *   parseSessionStates(text)                            'signed-in, guest' → ['signed-in', 'guest']
  *   renderForSession(target, views)                     paints the view of the current state
@@ -69,6 +78,9 @@ const EDITOR_STATE_CLASS = `${STATE_CLASS_PREFIX}editor`;
 const MAX_TIMER_DELAY = 2147483647;
 
 let expiryTimer;
+// a navigation started by navigateTo(): the session rows reload must not cancel it
+let navigationPending = false;
+let reloadOnChangeRegistered = false;
 
 /**
  * True inside the editing tool preview.
@@ -287,6 +299,18 @@ export function getSessionRedirectUrl({ redirectTo, returnTo } = {}) {
 }
 
 /**
+ * Goes to a page of the site; a page reload asked by session rows does not cancel it.
+ * @param {string} path
+ * @param {Object} [options]
+ * @param {boolean} [options.replace=false] location.replace ("back" does not return here)
+ */
+export function navigateTo(path, { replace = false } = {}) {
+  navigationPending = true;
+  if (replace) window.location.replace(path);
+  else window.location.assign(path);
+}
+
+/**
  * True when the visitor can open something that needs a session (or a guest, if allowed).
  * @param {boolean} allowGuest
  * @returns {boolean}
@@ -307,7 +331,7 @@ function hasSessionAccess(allowGuest) {
  */
 export function requireSession({ allowGuest = false, redirectTo } = {}) {
   if (isEditorPreview() || hasSessionAccess(allowGuest)) return true;
-  window.location.replace(getSessionRedirectUrl({ redirectTo }));
+  navigateTo(getSessionRedirectUrl({ redirectTo }), { replace: true });
   return false;
 }
 
@@ -343,6 +367,57 @@ export function parseSessionStates(text) {
     .toLowerCase()
     .split(/[\s,;]+/)
     .filter((word) => valid.includes(word)))];
+}
+
+/**
+ * True when every word of the text is a state ('signed-in, guest'); false for anything else.
+ * @param {string} text
+ * @returns {boolean}
+ */
+function isSessionStateText(text) {
+  const words = String(text || '').toLowerCase().split(/[\s,;]+/).filter(Boolean);
+  const valid = Object.values(SESSION_STATES);
+  return words.length > 0 && words.every((word) => valid.includes(word));
+}
+
+/**
+ * Reloads the page once when the session changes (pages whose tables have session rows),
+ * unless a navigation already started (navigateTo).
+ */
+function reloadOnSessionChange() {
+  if (reloadOnChangeRegistered) return;
+  reloadOnChangeRegistered = true;
+  document.addEventListener(SESSION_CHANGE_EVENT, () => {
+    setTimeout(() => {
+      if (!navigationPending) window.location.reload();
+    }, 0);
+  });
+}
+
+/**
+ * Session rows of a block table: a row with a value and a LAST cell made only of states
+ * (| key | value… | signed-in |) stays only for those states. The state cell is removed from
+ * the rows that stay (row.dataset.session keeps it, e.g. "signed-in guest"), so the block
+ * reads its table as always. Rows with an empty last cell, with only key | value, or whose last
+ * cell is not a state are not touched (always shown).
+ * @param {Element} block
+ * @returns {boolean} true when the block had session rows
+ */
+export function applySessionRows(block) {
+  const state = getAccessState();
+  let hasSessionRows = false;
+  [...block.querySelectorAll(':scope > div')].forEach((row) => {
+    const cells = [...row.children];
+    const lastCell = cells[cells.length - 1];
+    if (cells.length < 3 || !isSessionStateText(lastCell.textContent)) return;
+    hasSessionRows = true;
+    const states = parseSessionStates(lastCell.textContent);
+    lastCell.remove();
+    row.dataset.session = states.join(' ');
+    if (!states.includes(state)) row.remove();
+  });
+  if (hasSessionRows) reloadOnSessionChange();
+  return hasSessionRows;
 }
 
 /**

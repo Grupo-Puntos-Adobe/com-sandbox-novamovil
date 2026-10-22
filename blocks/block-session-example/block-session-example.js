@@ -10,18 +10,19 @@
  *      shown to signed-in / guest / signed-out visitors. It never redirects.
  *   2. Status panel: renderForSession() paints the badge and the text of the current state
  *      ("Hola, {name}…" with the user of the session) and repaints them when it changes.
- *   3. Items by session: "Item | who sees it | text" → setSessionVisibility() on each card;
- *      sessions.css hides the ones that do not match, at once, without repainting.
+ *   3. Items by session, the generic way of ANY block: "Item | text | signed-in" (the state in
+ *      the LAST cell). applySessionRows() (block-options.js) removes the rows of other states
+ *      before this block reads its table, and the page reloads when the session changes.
  *   4. Actions: Iniciar sesión (link to the login with ?redirect= back here), Continuar como
  *      invitado (continueAsGuest) and Cerrar sesión (signOut), each one only for its state.
  *   5. Private call: with Private Endpoint and a session, post(…, REQUEST_TYPE.PRIVATE) sends
  *      the Bearer token and shows the answer of the service.
  *
  * Authored rows (all optional): Styles, Classname, Session, Title, Status Title,
- * Signed In Text ({name} = first name), Guest Text, Signed Out Text, Item (who | text, any
- * number), Login Link (link), Guest Button Text, Sign Out Text, Private Title, Private Endpoint.
- * Content rows have no default: without text that part is not painted. Who sees an Item:
- * signed-in | guest | signed-out, combined with commas; empty → everybody.
+ * Signed In Text ({name} = first name), Guest Text, Signed Out Text, Item (text, any number),
+ * Login Link (link), Guest Button Text, Sign Out Text, Private Title, Private Endpoint.
+ * Content rows have no default: without text that part is not painted. Any row can end with a
+ * state cell (signed-in | guest | signed-out, combined with commas); without it, everybody.
  *
  * Flow:
  *   decorate(block)
@@ -29,7 +30,7 @@
  *     ├─ readExampleSettings(block)        texts, items, links, endpoint
  *     └─ renderSessionExample()
  *          ├─ buildExampleStatus()         renderForSession: badge + text, actions by session
- *          ├─ buildExampleItem() × N       setSessionVisibility per card
+ *          ├─ buildExampleItem() × N       the Item rows left for the current state
  *          └─ buildExamplePrivate()        renderForSession: private call when signed in
  *
  * No resolution logic here: block-session-example.css decides each resolution. Columns come
@@ -81,7 +82,8 @@ function createElementWithClass(tag, className, content) {
 }
 
 /**
- * "Item" rows: who sees it (2nd cell) and its text (3rd cell), in authored order.
+ * "Item" rows left for the current state (applySessionRows already removed the others), in
+ * authored order; states = who sees it (row.dataset.session, empty = everybody).
  * @param {Element} block
  * @returns {{states: string[], text: string}[]}
  */
@@ -89,8 +91,8 @@ function readItemRows(block) {
   return [...block.querySelectorAll(':scope > div')]
     .filter((row) => row.children[0]?.textContent.trim().toLowerCase() === ITEM_ROW)
     .map((row) => ({
-      states: parseSessionStates(row.children[1]?.textContent),
-      text: (row.children[2]?.textContent || '').trim(),
+      states: parseSessionStates(row.dataset.session),
+      text: (row.children[1]?.textContent || '').trim(),
     }))
     .filter((item) => item.text);
 }
@@ -221,7 +223,7 @@ function buildExampleStatus(settings) {
 }
 
 /**
- * One Item card inside its grid column; the column is only visible for its states.
+ * One Item card inside its grid column, with a tag that says who sees it.
  * @param {{states: string[], text: string}} item
  * @returns {Element} div.col-24.col-md-12.col-lg-8
  */
@@ -236,7 +238,7 @@ function buildExampleItem(item) {
   );
   const col = createElementWithClass('div', 'col-24 col-md-12 col-lg-8');
   col.append(card);
-  return setSessionVisibility(col, item.states);
+  return col;
 }
 
 /**

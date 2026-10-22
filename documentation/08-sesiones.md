@@ -14,6 +14,7 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 | Elegir **a dónde** mandar a quien no tiene acceso | Metadata | `Session Redirect` \| `/login` (sin la fila: `/login`) |
 | Que un **bloque** solo se vea con sesión (sin redirigir) | Tabla del bloque | `Session` \| `signed-in` |
 | Que un bloque solo se vea **sin** sesión | Tabla del bloque | `Session` \| `signed-out` |
+| Que una **fila** de la tabla (un valor) solo se vea con sesión | Tabla del bloque | El estado en la **última celda**: `Title` \| `Hola, cliente` \| `signed-in` |
 | Mostrar u ocultar **una parte** de un bloque | Código del bloque | `setSessionVisibility(elemento, 'signed-in')` |
 | Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque | `renderForSession(elemento, { 'signed-in': … })` |
 | Llamar un **servicio privado** con el token | Código del bloque | `post(url, body, { interceptor: REQUEST_TYPE.PRIVATE })` |
@@ -66,9 +67,37 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 - Entra directo a un paso de compra sin sesión: con `Session Redirect` = `/datos`, regresa al paso de
   identificarse en lugar del login suelto.
 
-## 5. Bloques y partes según la sesión
+## 5. Bloques, filas y partes según la sesión
 
-### 5.1 Un bloque completo (Drive)
+### 5.1 Una fila de la tabla (Drive) — funciona en cualquier bloque
+
+El estado va en la **última celda** de la fila, tenga uno o varios valores:
+
+```
+┌──────────────┬──────────────────────────┬──────────────┐
+│ Card Promotions                                          │
+├──────────────┼──────────────────────────┼──────────────┤
+│ Title        │ Promociones              │ signed-out   │  ← solo sin sesión
+│ Title        │ Tus promociones, cliente │ signed-in    │  ← solo con sesión
+│ Benefit 1    │ 🚚 │ Envío gratis         │ guest        │  ← 2 valores: el estado sigue al final
+│ Endpoint     │ https://…                │              │  ← vacía: siempre se ve
+└──────────────┴──────────────────────────┴──────────────┘
+```
+
+- Si la última celda dice `signed-in`, `signed-out` o `guest` (o varios con coma), la fila solo queda
+  para ese estado; las de otros estados se quitan **antes** de que el bloque lea su tabla, y a la
+  que queda se le quita la celda del estado. El bloque lee `Title` como siempre: **no hay que
+  cambiar su código**.
+- Si la última celda está vacía o no es un estado, la fila **siempre se muestra**.
+- Una fila de solo `llave | valor` nunca se toca (el valor no se confunde con un estado).
+- Lo hace `applySessionRows(block)`, que llama `applyBlockOptions` al inicio de cada bloque.
+- Cuando la sesión cambia en la misma página (iniciar sesión, invitado, cerrar sesión), la página se
+  **recarga** para mostrar las filas del nuevo estado. Si en ese momento se navega a otra página con
+  `navigateTo()` (por ejemplo el login), no se recarga.
+- Ejemplo real: el breadcrumb con `Level 2 | Visitante | signed-out` y `Level 2 | Mi cuenta |
+  signed-in` muestra uno u otro sin tocar `breadcrumb.js`.
+
+### 5.2 Un bloque completo (Drive)
 
 Cualquier bloque que use `applyBlockOptions` acepta la fila **`Session`**:
 
@@ -79,7 +108,7 @@ Cualquier bloque que use `applyBlockOptions` acepta la fila **`Session`**:
 
 El bloque **y su wrapper** se ocultan, para no dejar espacio vacío.
 
-### 5.2 Una parte de un bloque (código)
+### 5.3 Una parte de un bloque (código)
 
 ```js
 import {
@@ -124,6 +153,8 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 | 2 | `guardPage()` | Regla de la página (la llama `scripts.js`) |
 | 2 | `requireSession({ allowGuest, redirectTo })` | Un bloque que debe redirigir por sí mismo |
 | 2 | `getSessionRedirectUrl()` / `getReturnPath()` / `toSitePath()` | URLs de redirección validadas (solo rutas del sitio) |
+| 2 | `navigateTo(path, { replace })` | Ir a otra página sin que la recarga de las filas la cancele |
+| 3 | `applySessionRows(block)` | Filas con el estado en la última celda (la llama `applyBlockOptions`) |
 | 3 | `setSessionVisibility(el, states)` / `parseSessionStates(text)` | Mostrar u ocultar |
 | 3 | `renderForSession(target, views)` | Pintar según el estado |
 
@@ -136,7 +167,8 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 | 3 | Login correcto desde ahí | Regresa a `/perfil` |
 | 4 | `/perfil` como invitado | Va al login (el invitado no alcanza) |
 | 5 | Ejemplo sin sesión | Se ven las filas `signed-out` y "para todos"; el bloque `signed-in` oculto |
-| 6 | Invitado / cerrar sesión en el ejemplo | Cambia al instante, sin recargar |
+| 6 | Invitado / cerrar sesión en el ejemplo | La página se recarga y muestra las filas del nuevo estado |
+| 6b | Breadcrumb con `Level 2` por estado (última celda) | Muestra "Visitante", "Invitado" o "Mi cuenta" sin cambiar su código |
 | 7 | Cerrar sesión en una página `required` | Redirige al login |
 | 8 | `/login` ya con sesión | Va a `Redirect With Session` sin mostrar el formulario |
 | 9 | Login en modo paso | Al iniciar sesión o como invitado se oculta y aparece lo `signed-in, guest`, sin recargar |
