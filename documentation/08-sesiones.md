@@ -9,9 +9,8 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 
 | Quiero… | Dónde | Qué escribo |
 |---|---|---|
-| Que una **página** solo se vea con sesión | Metadata de la página | `Session` \| `required` |
-| Que una página deje pasar también al **invitado** | Metadata | `Session` \| `guest` |
-| Elegir **a dónde** mandar a quien no tiene acceso | Metadata | `Session Redirect` \| `/login` (sin la fila: `/login`) |
+| Que una **página** solo se vea con sesión | Metadata de la página | `Session` \| `true` (`false`, vacía o sin la fila = pública) |
+| Elegir **a dónde** mandar a quien no tiene sesión | Metadata | `Redirect With Session` \| `/login` (sin la fila: al home `/`) |
 | Que un **bloque** solo se vea con sesión (sin redirigir) | Tabla del bloque | `Session` \| `signed-in` |
 | Que un bloque solo se vea **sin** sesión | Tabla del bloque | `Session` \| `signed-out` |
 | Que una **fila** de la tabla (un valor) solo se vea con sesión | Tabla del bloque | El estado en la **última celda**: `Title` \| `Hola, cliente` \| `signed-in` |
@@ -52,20 +51,26 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 ## 4. Páginas que piden sesión (Metadata)
 
 ```
-┌──────────────────┬───────────────────────┐
-│ Metadata         │                       │
-├──────────────────┼───────────────────────┤
-│ Title            │ Mi perfil | NovaMóvil │
-│ Session          │ required              │  ← required | guest
-│ Session Redirect │ /login                │  ← opcional (por defecto /login)
-└──────────────────┴───────────────────────┘
+┌───────────────────────┬───────────────────────┐
+│ Metadata              │                       │
+├───────────────────────┼───────────────────────┤
+│ Title                 │ Mi perfil | NovaMóvil │
+│ Session               │ true                  │  ← true | false (vacía o sin la fila = false)
+│ Redirect With Session │ /login                │  ← opcional; sin la fila: al home /
+└───────────────────────┴───────────────────────┘
 ```
 
-- Sin acceso, la página **no se pinta**: `scripts.js` llama `guardPage()` antes de decorar y hace
-  `location.replace('/login?redirect=%2Fperfil')`. Así "atrás" no regresa a la página privada.
+| `Session` | `Redirect With Session` | Sin sesión | Con sesión |
+|---|---|---|---|
+| `true` | `/login` | Va a `/login?redirect=%2Fperfil` (el login regresa aquí) | Se ve |
+| `true` | sin la fila o vacía | Va al home `/` | Se ve |
+| `false`, vacía o sin la fila | — | Se ve (página pública) | Se ve |
+
+- Solo `true` protege la página (no importan mayúsculas). El invitado **no** cuenta como sesión.
+- Sin sesión, la página **no se pinta**: `scripts.js` llama `guardPage()` antes de decorar y hace
+  `location.replace(…)`. Así "atrás" no regresa a la página privada.
 - Si el visitante cierra sesión estando en la página, se redirige al momento.
-- Entra directo a un paso de compra sin sesión: con `Session Redirect` = `/datos`, regresa al paso de
-  identificarse en lugar del login suelto.
+- Es **global**: los bloques no tienen que hacer nada para proteger la página.
 
 ## 5. Bloques, filas y partes según la sesión
 
@@ -163,13 +168,15 @@ paso **Datos** de la compra va sin esa fila, y el login solo se oculta.
 | # | Caso | Resultado |
 |---|---|---|
 | 1 | Página pública sin reglas | Igual que antes |
-| 2 | `/perfil` (`required`) sin sesión | Va a `/login?redirect=%2Fperfil` |
+| 2 | `/perfil` (`Session: true`, `Redirect With Session: /login`) sin sesión | Va a `/login?redirect=%2Fperfil` |
+| 2b | `Session: true` sin `Redirect With Session` | Va al home `/` |
+| 2c | `Session: false`, vacía o sin la fila | La página se ve |
 | 3 | Login correcto desde ahí | Regresa a `/perfil` |
 | 4 | `/perfil` como invitado | Va al login (el invitado no alcanza) |
 | 5 | Ejemplo sin sesión | Se ven las filas `signed-out` y "para todos"; el bloque `signed-in` oculto |
 | 6 | Invitado / cerrar sesión en el ejemplo | La página se recarga y muestra las filas del nuevo estado |
 | 6b | Breadcrumb con `Level 2` por estado (última celda) | Muestra "Visitante", "Invitado" o "Mi cuenta" sin cambiar su código |
-| 7 | Cerrar sesión en una página `required` | Redirige al login |
+| 7 | Cerrar sesión en una página `Session: true` | Redirige |
 | 8 | `/login` ya con sesión | Va a `Redirect With Session` sin mostrar el formulario |
 | 9 | Login en modo paso | Al iniciar sesión o como invitado se oculta y aparece lo `signed-in, guest`, sin recargar |
 | 10 | `?redirect=//otro.com` | Se ignora |

@@ -21,8 +21,8 @@
  *   The state is also a class on <html> (session-state-*), used by sessions.css.
  *
  * Part 2 · Pages and redirects (page Metadata in Drive)
- *   | Session          | required | guest |   who can open the page (no row: everybody)
- *   | Session Redirect | /login           |   where the others go (default /login)
+ *   | Session               | true   |   only with a session (false, empty or no row: public)
+ *   | Redirect With Session | /login |   where a visitor without session goes (default: home /)
  *   guardPage()               reads both rows; called by scripts.js before painting
  *   requireSession(options)   the same rule for a block that must redirect by itself
  *   getSessionRedirectUrl()   /login?redirect=%2Fcurrent-page
@@ -63,10 +63,11 @@ export const SESSION_STATES = {
   GUEST: 'guest',
   SIGNED_OUT: 'signed-out',
 };
-// values of the page Metadata "Session" row
-export const PAGE_ACCESS = { REQUIRED: 'required', GUEST: 'guest' };
-// where a page sends who cannot open it, when its Metadata has no "Session Redirect" row
-export const DEFAULT_SESSION_REDIRECT = '/login';
+// page Metadata "Session" row: only this value protects the page (false / empty = public)
+export const PAGE_SESSION_REQUIRED = 'true';
+// where a protected page sends a visitor without session, when its Metadata has no
+// "Redirect With Session" row: the home page
+export const DEFAULT_SESSION_REDIRECT = '/';
 // URL parameter with the page to come back to (/login?redirect=/perfil)
 export const REDIRECT_PARAM = 'redirect';
 // editing tool preview: no redirects, everything visible
@@ -247,9 +248,9 @@ updateSessionState();
 // ---------------------------------------------------------------------------------------------
 
 /**
- * A row of the page Metadata. aem.page writes <meta name="session-redirect">; some previews
- * keep the authored name (<meta name="Session Redirect">): both are accepted.
- * @param {string} name Lower case with hyphens, e.g. 'session-redirect'
+ * A row of the page Metadata. aem.page writes <meta name="redirect-with-session">; some
+ * previews keep the authored name (<meta name="Redirect With Session">): both are accepted.
+ * @param {string} name Lower case with hyphens, e.g. 'redirect-with-session'
  * @returns {string}
  */
 function readPageMetadata(name) {
@@ -279,20 +280,19 @@ export function getReturnPath() {
 }
 
 /**
- * Where to send who cannot open the current page: redirectTo, else the "Session Redirect"
- * Metadata row, else DEFAULT_SESSION_REDIRECT; with ?redirect= set to the page to come back to.
+ * Where to send who cannot open the current page: redirectTo, else the "Redirect With Session"
+ * Metadata row, with ?redirect= set to the page to come back to (the login uses it). Without
+ * any of them: DEFAULT_SESSION_REDIRECT, the home page, as is.
  * @param {Object} [options]
  * @param {string} [options.redirectTo] Page to go to (a block that redirects by itself)
  * @param {string} [options.returnTo] Page to come back to (default: the current one)
- * @returns {string} e.g. /login?redirect=%2Fperfil
+ * @returns {string} e.g. /login?redirect=%2Fperfil, or /
  */
 export function getSessionRedirectUrl({ redirectTo, returnTo } = {}) {
+  const configured = toSitePath(redirectTo) || toSitePath(readPageMetadata('redirect-with-session'));
+  if (!configured) return DEFAULT_SESSION_REDIRECT;
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const target = new URL(
-    toSitePath(redirectTo) || toSitePath(readPageMetadata('session-redirect'))
-      || DEFAULT_SESSION_REDIRECT,
-    window.location.origin,
-  );
+  const target = new URL(configured, window.location.origin);
   const back = toSitePath(returnTo ?? current);
   if (back) target.searchParams.set(REDIRECT_PARAM, back);
   return `${target.pathname}${target.search}`;
@@ -326,7 +326,7 @@ function hasSessionAccess(allowGuest) {
  * Never redirects in the editing tool preview.
  * @param {Object} [options]
  * @param {boolean} [options.allowGuest=false]
- * @param {string} [options.redirectTo] Overrides the "Session Redirect" Metadata row
+ * @param {string} [options.redirectTo] Overrides the "Redirect With Session" Metadata row
  * @returns {boolean} true = can stay
  */
 export function requireSession({ allowGuest = false, redirectTo } = {}) {
@@ -336,18 +336,17 @@ export function requireSession({ allowGuest = false, redirectTo } = {}) {
 }
 
 /**
- * Page rule from the Metadata "Session" row: required (session) or guest (session or guest).
- * Called by scripts.js before the page is painted; if the visitor signs out while on the
- * page, the rule runs again.
+ * Page rule from the Metadata "Session" row: true = only visitors with a session (a guest is
+ * not enough); false, empty or no row = public. Without session the page goes to the
+ * "Redirect With Session" row (default home). Called by scripts.js before the page is painted;
+ * if the visitor signs out while on the page, the rule runs again.
  * @returns {boolean} false = the page is being redirected (do not paint it)
  */
 export function guardPage() {
   updateSessionState();
-  const access = readPageMetadata('session').toLowerCase();
-  if (![PAGE_ACCESS.REQUIRED, PAGE_ACCESS.GUEST].includes(access)) return true;
-  const options = { allowGuest: access === PAGE_ACCESS.GUEST };
-  if (!requireSession(options)) return false;
-  document.addEventListener(SESSION_CHANGE_EVENT, () => requireSession(options));
+  if (readPageMetadata('session').toLowerCase() !== PAGE_SESSION_REQUIRED) return true;
+  if (!requireSession()) return false;
+  document.addEventListener(SESSION_CHANGE_EVENT, () => requireSession());
   return true;
 }
 

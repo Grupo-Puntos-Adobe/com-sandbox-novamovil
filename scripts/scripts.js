@@ -162,7 +162,7 @@ export function decorateMain(main) {
  */
 async function loadEager(doc) {
   document.documentElement.lang = 'en';
-  // page Metadata "Session" / "Session Redirect": without access the page is never painted
+  // page Metadata "Session: true" without session: the page is never painted (redirects)
   if (!guardPage()) return false;
   decorateTemplateAndTheme();
   const main = doc.querySelector('main');
