@@ -21,12 +21,16 @@
  *   The state is also a class on <html> (session-state-*), used by sessions.css.
  *
  * Part 2 · Pages and redirects (page Metadata in Drive)
- *   | Session               | true   |   only with a session (false, empty or no row: public)
- *   | Redirect With Session | /login |   where a visitor without session goes (default: home /)
+ *   | Session     | true  |   only WITH a session: without one → Redirect To
+ *   | Session     | false |   only WITHOUT a session (login): with one → Redirect To
+ *   | Redirect To | /x    |   where both go; missing or empty → home /
+ *   No Session row (or empty): public page, nothing is checked. The guest is not a session.
  *   guardPage()               reads both rows; called by scripts.js before painting
- *   requireSession(options)   the same rule for a block that must redirect by itself
- *   getSessionRedirectUrl()   the Redirect With Session path as authored, or / (nothing is
- *                             added to the URL)
+ *   getPageSessionRule()      'true' | 'false' | '' (the Session row of the page)
+ *   requireSession(options)   the "true" rule, for a block that must redirect by itself
+ *   requireNoSession(options) the "false" rule
+ *   getSessionRedirectUrl()   the Redirect To path as authored, or / (nothing is added to the
+ *                             URL)
  *   navigateTo(path)          goes to a page (use it after signIn/continueAsGuest: the page
  *                             does not reload over the navigation)
  *
@@ -63,10 +67,13 @@ export const SESSION_STATES = {
   GUEST: 'guest',
   SIGNED_OUT: 'signed-out',
 };
-// page Metadata "Session" row: only this value protects the page (false / empty = public)
-export const PAGE_SESSION_REQUIRED = 'true';
-// where a protected page sends a visitor without session, when its Metadata has no
-// "Redirect With Session" row: the home page
+// values of the page Metadata "Session" row (empty or no row = public page)
+export const PAGE_SESSION = {
+  REQUIRED: 'true', // only with a session
+  SIGNED_OUT_ONLY: 'false', // only without a session (login)
+};
+// where a page sends the visitor it does not accept, when its Metadata has no "Redirect To"
+// row (or it is empty): the home page
 export const DEFAULT_SESSION_REDIRECT = '/';
 // editing tool preview: no redirects, everything visible
 const EDITOR_PREVIEW_HOSTS = /^preview-aemcoder\.adobe\.io$/;
@@ -246,9 +253,9 @@ updateSessionState();
 // ---------------------------------------------------------------------------------------------
 
 /**
- * A row of the page Metadata. aem.page writes <meta name="redirect-with-session">; some
- * previews keep the authored name (<meta name="Redirect With Session">): both are accepted.
- * @param {string} name Lower case with hyphens, e.g. 'redirect-with-session'
+ * A row of the page Metadata. aem.page writes <meta name="redirect-to">; some previews keep
+ * the authored name (<meta name="Redirect To">): both are accepted.
+ * @param {string} name Lower case with hyphens, e.g. 'redirect-to'
  * @returns {string}
  */
 function readPageMetadata(name) {
@@ -270,7 +277,7 @@ export function toSitePath(path) {
 }
 
 /**
- * Where to send who cannot open the current page: redirectTo, else the "Redirect With Session"
+ * Where to send who cannot stay on the current page: redirectTo, else the "Redirect To"
  * Metadata row (a path of this site, as authored: nothing is added to the URL). Missing or
  * empty: DEFAULT_SESSION_REDIRECT, the home page.
  * @param {Object} [options]
@@ -278,7 +285,7 @@ export function toSitePath(path) {
  * @returns {string} e.g. /login, or /
  */
 export function getSessionRedirectUrl({ redirectTo } = {}) {
-  return toSitePath(redirectTo) || toSitePath(readPageMetadata('redirect-with-session'))
+  return toSitePath(redirectTo) || toSitePath(readPageMetadata('redirect-to'))
     || DEFAULT_SESSION_REDIRECT;
 }
 
@@ -310,7 +317,7 @@ function hasSessionAccess(allowGuest) {
  * Never redirects in the editing tool preview.
  * @param {Object} [options]
  * @param {boolean} [options.allowGuest=false]
- * @param {string} [options.redirectTo] Overrides the "Redirect With Session" Metadata row
+ * @param {string} [options.redirectTo] Overrides the "Redirect To" Metadata row
  * @returns {boolean} true = can stay
  */
 export function requireSession({ allowGuest = false, redirectTo } = {}) {
@@ -320,17 +327,46 @@ export function requireSession({ allowGuest = false, redirectTo } = {}) {
 }
 
 /**
- * Page rule from the Metadata "Session" row: true = only visitors with a session (a guest is
- * not enough); false, empty or no row = public. Without session the page goes to the
- * "Redirect With Session" row (default home). Called by scripts.js before the page is painted;
- * if the visitor signs out while on the page, the rule runs again.
+ * The opposite: lets the visitor stay only WITHOUT a session (the login page); with one sends
+ * them to getSessionRedirectUrl(). A guest can stay. Never redirects in the editing tool preview.
+ * @param {Object} [options]
+ * @param {string} [options.redirectTo] Overrides the "Redirect To" Metadata row
+ * @returns {boolean} true = can stay
+ */
+export function requireNoSession({ redirectTo } = {}) {
+  if (isEditorPreview() || getAccessState() !== SESSION_STATES.SIGNED_IN) return true;
+  navigateTo(getSessionRedirectUrl({ redirectTo }), { replace: true });
+  return false;
+}
+
+/**
+ * The page Metadata "Session" row in lower case: 'true', 'false' or '' (public).
+ * @returns {string}
+ */
+export function getPageSessionRule() {
+  return readPageMetadata('session').toLowerCase();
+}
+
+/**
+ * Page rule from the Metadata "Session" row (case-insensitive):
+ *   true  → only with a session (a guest is not enough); without one → "Redirect To"
+ *   false → only without a session; with one → "Redirect To" (after a login on the page too)
+ *   empty or no row → public, nothing is checked
+ * "Redirect To" missing or empty → home. Called by scripts.js before the page is painted; the
+ * rule runs again whenever the session changes on the page.
  * @returns {boolean} false = the page is being redirected (do not paint it)
  */
 export function guardPage() {
   updateSessionState();
-  if (readPageMetadata('session').toLowerCase() !== PAGE_SESSION_REQUIRED) return true;
-  if (!requireSession()) return false;
-  document.addEventListener(SESSION_CHANGE_EVENT, () => requireSession());
+  const rule = getPageSessionRule();
+  const checks = {
+    [PAGE_SESSION.REQUIRED]: requireSession,
+    [PAGE_SESSION.SIGNED_OUT_ONLY]: requireNoSession,
+  };
+  const check = checks[rule];
+  if (!check) return true;
+  if (!check()) return false;
+  document.addEventListener(SESSION_CHANGE_EVENT, () => check());
   return true;
 }
 

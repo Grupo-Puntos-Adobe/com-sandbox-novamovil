@@ -123,7 +123,12 @@ en todas las resoluciones.
 El autor escribe una tabla **Login** en el documento `login` de Drive. Todas las filas son
 opcionales y pueden ir en cualquier orden. Solo `Error Response Message` tiene valor por defecto
 (mensaje); las demás son contenido o configuración: si la fila no existe o está vacía, esa parte no
-se pinta (en `Redirect With Session`, vacía = modo paso).
+se pinta.
+
+> **A dónde va con sesión no se decide aquí** sino en el **Metadata de la página** `login`:
+> `Session` = `false` y `Redirect To` = `/cuenta`. Así, si ya hay sesión (al abrir la página o justo
+> después de iniciar sesión) la página manda a `/cuenta`; sin `Redirect To`, al home. Ver
+> `documentation/08-sesiones.md`.
 
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
@@ -135,8 +140,9 @@ se pinta (en `Redirect With Session`, vacía = modo paso).
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
 
-    También acepta la fila **`Session`** de cualquier bloque (ver `documentation/08-sesiones.md`);
-    en modo paso el login ya se pone solo `signed-out`.
+    También acepta la fila **`Session`** de cualquier bloque (ver `documentation/08-sesiones.md`).
+    Sin ella el login se oculta solo al tener sesión: en la página `login` (Metadata `Session:
+    false`) el invitado lo sigue viendo; en un paso de compra el invitado ya cumplió el paso.
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -160,58 +166,48 @@ se pinta (en `Redirect With Session`, vacía = modo paso).
       `https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io/api/v1/auth/login`
     - **Por defecto:** ninguno. Sin `Endpoint`, el botón no envía nada
 
-7. **`Redirect With Session`**
-    - **Tipo:** Ruta del sitio (`/perfil`)
-    - **Descripción:** **Con ruta:** siempre que haya sesión va ahí, sin mostrar el formulario (al
-      abrir la página ya con sesión o justo después de iniciar sesión). **Vacía o sin la fila: modo
-      paso**: no redirige; el login solo se ve sin sesión y, al iniciar sesión o entrar como
-      invitado, se oculta solo y el paso queda cumplido (para los pasos de compra). No se lee ni se
-      agrega nada en la URL
-    - **Por defecto:** ninguno (modo paso)
-    - El `nextStep.route` del servicio ya no decide a dónde ir: lo decide la tabla
-
-8. **`User Label`** / **`User Placeholder`**
+7. **`User Label`** / **`User Placeholder`**
     - **Tipo:** Texto
     - **Descripción:** Etiqueta y texto de ejemplo del campo de usuario ("Correo electrónico o
       teléfono" / "correo@ejemplo.com")
     - **Por defecto:** ninguno. Sin etiqueta, el campo conserva su nombre para lectores de pantalla
       (`LABELS` en `login.js`)
 
-9. **`Password Label`** / **`Password Placeholder`**
+8. **`Password Label`** / **`Password Placeholder`**
     - **Tipo:** Texto
     - **Descripción:** Etiqueta y texto de ejemplo del campo de contraseña
     - **Por defecto:** ninguno (igual que el usuario)
 
-10. **`Forgot Password`**
+9. **`Forgot Password`**
     - **Tipo:** Enlace (texto y link en la celda)
     - **Descripción:** "¿Olvidaste tu contraseña?"
     - **Por defecto:** ninguno. Sin texto o sin enlace válido, no se pinta
 
-11. **`Button Text`**
+10. **`Button Text`**
     - **Tipo:** Texto
     - **Descripción:** Botón "Iniciar sesión"
     - **Por defecto:** ninguno
 
-12. **`Divider Text`**
+11. **`Divider Text`**
     - **Tipo:** Texto
     - **Descripción:** Texto del separador ("o")
     - **Por defecto:** ninguno. El separador solo sale entre el botón y **Guest Button**; sin texto
       queda solo la línea
 
-13. **`Guest Button`**
+12. **`Guest Button`**
     - **Tipo:** Texto, con enlace opcional
     - **Descripción:** "Continuar como invitado": activa el modo invitado (`continueAsGuest()`) y
-      luego va a su enlace. Sin enlace se queda (modo paso: el paso queda cumplido) y se pinta como
-      botón
+      luego va a su enlace. Sin enlace se queda (en un paso de compra, el paso queda cumplido) y se
+      pinta como botón
     - **Por defecto:** ninguno. Sin texto, no se pinta
 
-14. **`Legal Text`**
+13. **`Legal Text`**
     - **Tipo:** Texto con enlaces
     - **Descripción:** "Al continuar aceptas nuestros Términos y Condiciones y Aviso de Privacidad."
       Los enlaces se respetan; las negritas las pone el CSS
     - **Por defecto:** ninguno
 
-15. **`Error Response Message`**
+14. **`Error Response Message`**
     - **Tipo:** Texto
     - **Descripción:** Mensaje cuando el servicio falla sin mandar un mensaje propio (sin red, sin
       respuesta, respuesta que no es JSON)
@@ -225,8 +221,8 @@ La tabla en Drive permite al autor configurar:
 - El **título**, la **descripción** y los **tabs**
 - Las **etiquetas** y **textos de ejemplo** de los campos
 - Los **enlaces** de contraseña olvidada, invitado y textos legales
-- El **Endpoint** del servicio, a dónde ir con sesión (**Redirect With Session**) y el **mensaje
-  de error** genérico
+- El **Endpoint** del servicio y el **mensaje de error** genérico (a dónde ir con sesión va en
+  el Metadata de la página)
 - **Estilos** y **clases** extra del bloque
 
 ![Vista Tabla en Drive](/documentation/readme/login/drive-table.png)
@@ -262,7 +258,7 @@ Con `true`, `readLoginCredentials` toma `emailOrPhone` (sin espacios al inicio y
 
 | Respuesta | Qué hace el bloque |
 |---|---|
-| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`); con `Redirect With Session` muestra `status.message` en verde y va a esa ruta. En modo paso no navega: el login se oculta |
+| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`) y el login se oculta. La página decide a dónde ir: en `login` (Metadata `Session: false`) va a `Redirect To`; en un paso de compra no navega |
 | **400** `{ status, errors: [{ field, message }] }` | `status.message` arriba y cada `errors[].message` debajo de su campo (`emailOrPhone`, `password`); al escribir en el campo se quita su mensaje |
 | **401** `{ status, errors: [{ field: "credentials", message }] }` | `status.message` + los mensajes sin campo, arriba ("El correo/teléfono o la contraseña son incorrectos. Verifica tus datos e inténtalo nuevamente.") |
 | **500** `{ status }` | `status.message` arriba ("Ocurrió un error al iniciar sesión.") |
@@ -283,8 +279,10 @@ renovar el token.
 | Clic en **Iniciar sesión** (botón) | Se envía el inicio de sesión; el botón se desactiva hasta la respuesta (ver [Respuestas](#respuestas)) |
 | Error del servicio | El mensaje sale arriba y el cursor va al primer campo con error |
 | Sin `Endpoint` | El botón no envía nada |
-| Abre la página ya con sesión (con `Redirect With Session`) | Va directo a esa ruta, sin ver el formulario |
-| Modo paso (sin `Redirect With Session`) | Sin sesión se ve el login; con sesión o como invitado se oculta y el paso queda cumplido, sin recargar |
+| Abre `/login` ya con sesión | La página va a su `Redirect To` (`/cuenta`) sin pintar el formulario |
+| Inicia sesión en `/login` | Va a `Redirect To` (`/cuenta`) |
+| Invitado en `/login` | Ve el formulario (puede iniciar sesión) |
+| En un paso de compra (página sin `Session`) | Sin sesión se ve el login; con sesión o como invitado se oculta y el paso queda cumplido, sin recargar |
 | Panel de edición | Se ve el formulario y no redirige, para poder editarlo |
 | Falta `Login Tab` o `Register Tab` | Sin tabs, solo el formulario |
 | Falta `Guest Button` | Sin separador ni botón de invitado |
@@ -311,9 +309,9 @@ Móvil:
 - `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
-- `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `navigateTo`, `toSitePath` y
-  `setSessionVisibility` (modo paso)
-- `styles/foundations/sessions.css` – Oculta el login en modo paso cuando ya hay sesión
+- `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `getPageSessionRule`,
+  `navigateTo`, `toSitePath` y `setSessionVisibility`; la regla de la página (`guardPage`)
+- `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`
   (`scripts/api/interceptors.js`)
 - `styles/foundations/grid.css` – Columna centrada (`container-fluid > row row-center > col-24`)
