@@ -43,7 +43,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | Archivo | Origen | Qué hace en la integración | Commit |
 |---|---|---|---|
 | `scripts/api/http-client.js` | 🆕 | **Único punto que llama a `fetch`**: arma la URL, aplica interceptores, timeout, convierte errores | `1bccaff` |
-| `scripts/api/interceptors.js` | 🆕 | `ApiError`, `publicInterceptor`, registro de interceptores y plantilla de `auth` | `1bccaff` |
+| `scripts/api/interceptors.js` | 🆕 | `ApiError`, `REQUEST_TYPE`, `publicRequestInterceptor`, `privateRequestInterceptor` y registro de interceptores | `1bccaff` |
 | `scripts/foundations/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
 | `styles/foundations/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
 | `blocks/empty-list-message/` | 🆕 | Aviso "no hay elementos" compartido por las tres tarjetas: `buildEmptyListMessage({ icon, title, description })` + su CSS. Solo pinta lo que le manda la tarjeta | — |
@@ -138,44 +138,49 @@ Un interceptor es un objeto con hasta tres funciones **opcionales**:
 | `response(response, config)` | Al recibir la respuesta | Validar el estado y convertir a JSON |
 | `error(error, config)` | Si algo falla | Registrar, recuperar (devolver un valor) o relanzar |
 
-El único activo hoy es **`publicInterceptor`** (servicios públicos, sin credenciales):
+Hay **dos tipos de llamada**, con nombre claro en la constante `REQUEST_TYPE`:
+
+| Nombre | Interceptores | Para | Qué hace |
+|---|---|---|---|
+| `REQUEST_TYPE.PUBLIC` = `'public-request'` (por defecto) | `publicRequestInterceptor` | **Llamadas simples, sin sesión**: categorías, catálogo, detalle, login | Headers JSON; OK → JSON; con error (400, 401, 500…) lanza `ApiError` con el JSON del servicio en `error.cause` |
+| `REQUEST_TYPE.PRIVATE` = `'private-request'` | `publicRequestInterceptor` + `privateRequestInterceptor` | **Llamadas privadas, con sesión**: perfil, pedidos, datos de compra | `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. Sin sesión **no llama** (`ApiError` 401). Con un 401: `signOut()` y redirige a `getSessionRedirectUrl()` |
 
 ```js
-export const publicInterceptor = {
-  name: 'public',
+export const REQUEST_TYPE = { PUBLIC: 'public-request', PRIVATE: 'private-request' };
+
+export const publicRequestInterceptor = {
+  name: REQUEST_TYPE.PUBLIC,
   request(config) {
     return { ...config, headers: { Accept: 'application/json', ...config.headers } };
   },
   async response(response, config) {
-    if (!response.ok) {                       // 4xx / 5xx → error
-      throw new ApiError(`HTTP ${response.status} ${response.statusText}`.trim(),
-        { status: response.status, url: config.url });
+    if (!response.ok) {                       // 4xx / 5xx → error con el JSON del servicio
+      throw new ApiError(`HTTP ${response.status}`, { status: response.status, url: config.url, cause: body });
     }
     if (response.status === 204) return null; // sin contenido
-    try {
-      return await response.json();           // OK → JSON
-    } catch (cause) {
-      throw new ApiError('Invalid JSON response', { status: response.status, url: config.url, cause });
-    }
+    return response.json();                   // OK → JSON (o ApiError si no es JSON)
   },
 };
+
+export const privateRequestInterceptor = {
+  name: REQUEST_TYPE.PRIVATE,
+  request(config) { … Authorization: getAccessToken() … },   // sin sesión → ApiError 401
+  error(error) { if (error.status === 401) { signOut(); /* y redirige */ } throw error; },
+};
 ```
+
+El token sale de `scripts/foundations/session.js` (`getAccessToken()`), nunca del código.
 
 Y un **registro** para agregar más sin tocar el cliente:
 
 ```js
-const registry = new Map([['public', [publicInterceptor]]]);
+const registry = new Map([
+  [REQUEST_TYPE.PUBLIC, [publicRequestInterceptor]],
+  [REQUEST_TYPE.PRIVATE, [publicRequestInterceptor, privateRequestInterceptor]],
+]);
 export function registerInterceptor(name, chain) { registry.set(name, [].concat(chain)); }
-export function resolveInterceptors(interceptor = 'public') { … } // nombre, objeto o lista
+export function resolveInterceptors(interceptor = REQUEST_TYPE.PUBLIC) { … } // nombre, objeto o lista
 ```
-
-En el mismo archivo hay una **plantilla comentada** de `authInterceptor` (con
-`Authorization: Bearer …`) para cuando algún servicio requiera token (ver sección 7).
-
-También está registrado `'public-error-body'` = `[errorBodyInterceptor, publicInterceptor]`: igual
-que `'public'`, pero cuando el servicio responde con error (400, 401, 500…) guarda su JSON en
-`error.cause`, para mostrar sus mensajes (`status.message`, `errors[].field / message`). Lo usa el
-bloque `login`.
 
 ### Paso 4 · Crear el cliente HTTP (`scripts/api/http-client.js`)
 
@@ -192,7 +197,7 @@ export const post = (url, body, options = {}) => request(url, { ...options, meth
 
 Qué hace `request`, en orden:
 
-1. **Resuelve la cadena de interceptores** (`'public'` por defecto).
+1. **Resuelve la cadena de interceptores** (`REQUEST_TYPE.PUBLIC` por defecto).
 2. **Corre los `request()`** de cada interceptor, uno tras otro, sobre la configuración.
 3. **Arma la URL**: si empieza con `http` se usa tal cual; si es relativa (`/api/v1/...`) se completa
    con `API_BASE_URL`. Los `params` se agregan como query string con la API nativa `URL`.
@@ -201,7 +206,7 @@ Qué hace `request`, en orden:
 5. **Timeout**: `AbortSignal.timeout(8000)` cancela la petición a los 8 s. Si además se pasa un
    `signal` propio, se combinan con `AbortSignal.any` (cuando el navegador lo soporta).
 6. **`fetch`**: si falla la red o vence el tiempo → `ApiError('Network error' | 'Timeout after 8000ms')`.
-7. **Corre los `response()`**: el `publicInterceptor` valida el estado y devuelve el JSON.
+7. **Corre los `response()`**: el `publicRequestInterceptor` valida el estado y devuelve el JSON.
 8. **Si algo falló**, corre los `error()`; si ninguno recupera, el error llega al bloque.
 
 Opciones disponibles:
@@ -213,7 +218,7 @@ Opciones disponibles:
 | `body` | — | `{ sku: 'IPH-15' }` (se envía como JSON) |
 | `params` | — | `{ page: 2, limit: 8 }` → `?page=2&limit=8` |
 | `timeout` | `8000` ms | `15000` |
-| `interceptor` | `'public'` | `'auth'`, un objeto o una lista |
+| `interceptor` | `REQUEST_TYPE.PUBLIC` | `REQUEST_TYPE.PRIVATE`, un objeto o una lista |
 | `signal` | — | `AbortController().signal` para cancelar |
 
 ### Paso 5 · Crear la alerta flotante (`scripts/foundations/toast.js` + `styles/foundations/toast.css`)
@@ -409,12 +414,17 @@ import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-
 // … mismo patrón del paso 7: endpoint del documento, fallback, esqueleto, try/catch
 ```
 
-### Servicio que requiere token
+### Servicio que requiere token (llamada privada)
 
-1. En `scripts/api/interceptors.js`, descomentar y adaptar `authInterceptor`: toma el token de
-   `getAccessToken()` y con un 401 llama `signOut()` (`scripts/foundations/session.js`).
-2. Registrarlo: `registerInterceptor('auth', [publicInterceptor, authInterceptor]);`
-3. En el bloque: `get(endpoint, { interceptor: 'auth' })`.
+```js
+import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
+const response = await post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
+```
+
+Ya está registrado: manda `Authorization: Bearer …` (y `security.auth.value` si el cuerpo lo trae),
+no llama sin sesión y con un 401 cierra la sesión y redirige. Ejemplo en
+`blocks/block-session-example` (fila `Private Endpoint`). Guía de sesiones:
+`documentation/08-sesiones.md`.
 
 El token lo guarda el bloque `login` con `signIn(data)` cuando el servicio de inicio de sesión
 responde 200 (ver `blocks/login/README.md`).
@@ -442,12 +452,12 @@ const response = await post(settings.searchEndpoint, buildSearchRequest(state, s
 if (controller.signal.aborted) return;          // llegó tarde: ya hay otra búsqueda
 ```
 
-Para un formulario cuyos errores trae el servicio (por ejemplo el inicio de sesión), se usa
-`'public-error-body'` y se leen los mensajes de `error.cause`:
+Para un formulario cuyos errores trae el servicio (por ejemplo el inicio de sesión), los mensajes
+están en `error.cause` (las dos llamadas, pública y privada, lo guardan):
 
 ```js
 try {
-  const response = await post(settings.endpoint, body, { interceptor: 'public-error-body' });
+  const response = await post(settings.endpoint, body, { interceptor: REQUEST_TYPE.PUBLIC });
   signIn(response.data);
 } catch (error) {
   const serviceBody = error.cause;   // { status: { message }, errors: [{ field, message }] } o null

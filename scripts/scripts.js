@@ -11,6 +11,7 @@ import {
   loadCSS,
   buildBlock,
 } from './aem.js';
+import { guardPage } from './foundations/session.js';
 
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
   const innerTT = window.trustedTypes.createPolicy('tt-inner', {
@@ -161,6 +162,8 @@ export function decorateMain(main) {
  */
 async function loadEager(doc) {
   document.documentElement.lang = 'en';
+  // page Metadata "Session" / "Session Redirect": without access the page is never painted
+  if (!guardPage()) return false;
   decorateTemplateAndTheme();
   const main = doc.querySelector('main');
   if (main) {
@@ -177,6 +180,7 @@ async function loadEager(doc) {
   } catch (e) {
     // do nothing
   }
+  return true;
 }
 
 /**
@@ -209,7 +213,8 @@ function loadDelayed() {
 }
 
 async function loadPage() {
-  await loadEager(document);
+  // false: the page is redirecting (scripts/foundations/session.js), nothing else loads
+  if (!(await loadEager(document))) return;
   await loadLazy(document);
   loadDelayed();
 }

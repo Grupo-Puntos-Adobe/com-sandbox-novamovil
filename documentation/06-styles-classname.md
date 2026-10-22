@@ -21,6 +21,9 @@ Drive, para controlar su espacio y su apariencia sin tocar código:
 └───────────┴────────────────────────────────────────┘
 ```
 
+La misma función (`applyBlockOptions`) lee también la fila opcional **`Session`** (quién ve el
+bloque: `signed-in`, `guest` o `signed-out`); se explica en `documentation/08-sesiones.md`.
+
 Resultado en la página:
 
 ```html

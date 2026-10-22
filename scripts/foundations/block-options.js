@@ -5,8 +5,13 @@
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
+ *   | Session   | signed-in, guest                   |  -> who can see the block (sessions.css)
  *
- * Both rows are optional and can be anywhere in the table (usually right after the
+ * Session: signed-in | guest | signed-out, combined with commas; empty → everybody. The block
+ * is only hidden or shown (it never redirects); it changes as soon as the session changes
+ * (scripts/foundations/session.js, styles/foundations/sessions.css).
+ *
+ * The rows are optional and can be anywhere in the table (usually right after the
  * block name). They are removed from the block, so the rest of its code never sees them.
  * Styles: declarations separated by ";" (a comma can be part of a CSS value, e.g.
  * rgba(0, 0, 0, .5) or a font list). Bare numbers get "px" (padding-left: 20 → 20px).
@@ -28,13 +33,16 @@
  * Flow:
  *   applyBlockOptions(block)            default export, one call per block
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
- *     └─ "Classname" row → applyAuthorClasses(block, text)
- *     (both rows are then removed)
+ *     ├─ "Classname" row → applyAuthorClasses(block, text)
+ *     └─ "Session" row   → setSessionVisibility(block, text)
+ *     (the rows are then removed)
  *
  * Guide: documentation/06-styles-classname.md
  */
+import { setSessionVisibility } from './session.js';
 
 const STYLE_KEYS = ['styles', 'style'];
+const SESSION_KEYS = ['session'];
 const CLASS_KEYS = [
   'classname',
   'classnames',
@@ -105,7 +113,7 @@ export function applyAuthorClasses(block, names) {
 }
 
 /**
- * Reads, applies and removes the optional Styles / Classname rows of a block.
+ * Reads, applies and removes the optional Styles / Classname / Session rows of a block.
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
@@ -129,6 +137,12 @@ export default function applyBlockOptions(block) {
       row.remove();
     } else if (CLASS_KEYS.includes(key)) {
       applyAuthorClasses(block, valueCell.textContent);
+      row.remove();
+    } else if (SESSION_KEYS.includes(key)) {
+      // the wrapper too, so a hidden block leaves no empty space
+      const wrapper = block.parentElement?.classList.contains(`${block.classList[0]}-wrapper`)
+        ? block.parentElement : block;
+      setSessionVisibility(wrapper, valueCell.textContent);
       row.remove();
     }
   });

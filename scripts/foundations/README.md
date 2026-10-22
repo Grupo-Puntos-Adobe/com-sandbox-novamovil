@@ -5,22 +5,22 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
 
 | Archivo | Qué hace | Exporta |
 |---|---|---|
-| `block-options.js` | Filas opcionales `Styles` y `Classname` de cualquier bloque: aplica los estilos y las clases que escribe el autor en Drive y quita esas filas | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
+| `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` de cualquier bloque: aplica los estilos, las clases y quién ve el bloque, y quita esas filas | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
 | `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice` |
 | `messages.js` | Mensajes genéricos con valor por defecto (alerta, lista vacía, foto que falla) y el formato de números / precios | `MESSAGES` (default), `LOCALE`, `CURRENCY` |
 | `toast.js` | Alerta flotante arriba a la derecha, apilable, que se cierra sola | `showToast(message, { duration, variant })`, `TOAST_VARIANTS` |
 | `page-context.js` | Datos que un bloque obtiene al cargar y otro bloque de la misma página necesita, sin importarse entre ellos (hoy: el nombre de la página actual) | `setCurrentPageName(name)`, `getCurrentPageName()`, `CURRENT_PAGE_NAME_EVENT` |
-| `session.js` | Sesión del usuario: la guarda el bloque `login` al iniciar sesión y la lee cualquier bloque (usuario y token). Vive en `sessionStorage` y vence con `expiresIn` | `signIn(data)`, `getSession()`, `isSignedIn()`, `getAccessToken()`, `signOut()`, `SESSION_CHANGE_EVENT`, `SESSION_STORAGE_KEY` |
+| `session.js` | **Todo lo de sesión**, en 3 partes: 1) datos (sesión, invitado, estado en `<html>`); 2) páginas que piden sesión (Metadata `Session` y `Session Redirect`) y redirecciones; 3) mostrar u ocultar y pintar según la sesión. Va con `styles/foundations/sessions.css`. Guía: `documentation/08-sesiones.md` | Parte 1: `signIn`, `continueAsGuest`, `signOut`, `getSession`, `isSignedIn`, `getAccessToken`, `getAccessState`, `SESSION_STATES`, `SESSION_CHANGE_EVENT` · Parte 2: `guardPage`, `requireSession`, `getSessionRedirectUrl`, `getReturnPath`, `toSitePath`, `isEditorPreview` · Parte 3: `setSessionVisibility`, `parseSessionStates`, `renderForSession` |
 
 ## Qué necesita cada uno
 
 | Archivo | Depende de |
 |---|---|
-| `block-options.js` | nada |
+| `block-options.js` | `session.js` (fila `Session`) |
 | `block-utils.js` | `messages.js` (para `formatPrice`) |
 | `messages.js` | nada |
 | `page-context.js` | nada |
-| `session.js` | nada |
+| `session.js` | `scripts/aem.js` (`getMetadata`), `block-utils.js` (`getSafeHref`) y `styles/foundations/sessions.css` |
 | `toast.js` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` y sus colores `--toast-*` en `styles/colors.css`, más `--z-index-toast` en `styles/styles.css` |
 
 ## Llevarlos a otro proyecto
@@ -33,7 +33,7 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
    import { readTableCell, formatPrice } from '../../scripts/foundations/block-utils.js';
    import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
    import { showToast } from '../../scripts/foundations/toast.js';
-   import { signIn, getSession, signOut } from '../../scripts/foundations/session.js';
+   import { signIn, getAccessState, renderForSession } from '../../scripts/foundations/session.js';
    ```
 
 3. Ajusta lo propio del sitio:

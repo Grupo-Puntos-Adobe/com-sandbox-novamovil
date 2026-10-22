@@ -5,10 +5,11 @@
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every "Login"
  * table (page /login).
  *
- * Authored rows (all optional): Styles, Classname, Title, Description, Login Tab,
- * Register Tab, Endpoint, Success Link, User Label, User Placeholder, Password Label,
- * Password Placeholder, Forgot Password (link), Button Text, Divider Text, Guest Button (link),
- * Legal Text (text with links), Error Response Message.
+ * Authored rows (all optional): Styles, Classname, Session, Title, Description, Login Tab,
+ * Register Tab, Endpoint, Redirect With Session, Return To Previous Page, User Label,
+ * User Placeholder, Password Label, Password Placeholder, Forgot Password (link), Button Text,
+ * Divider Text, Guest Button (text, optional link), Legal Text (text with links),
+ * Error Response Message.
  * Defaults only for messages and configuration; the rest is content, so without text in the
  * table that part is not painted. Special cases:
  *   - Tabs: only when Login Tab and Register Tab both have text; otherwise only the login
@@ -16,8 +17,16 @@
  *   - User / Password Label missing: the field keeps an accessible name (LABELS below).
  *   - Divider: only between Button Text and Guest Button (both painted).
  *   - Endpoint: login service (POST). Without it the submit only stops the page reload.
- *   - Success Link: where to go after a login when the service sends no nextStep.route
- *     (default DEFAULT_SUCCESS_LINK).
+ *   - Redirect With Session: a path of this site (/perfil). With it the block redirects there
+ *     whenever there is a session: opened already signed in (the form is never shown) or right
+ *     after a login. Without it (empty or no row) = STEP MODE: no redirect; the block is shown
+ *     only to signed-out visitors (Session signed-out, unless the table has its own Session
+ *     row) and hides itself after a login or "Continuar como invitado": the step is done
+ *     (SESSION_CHANGE_EVENT, for the checkout steps).
+ *   - Return To Previous Page: yes → a valid ?redirect= of the URL wins over Redirect With
+ *     Session (pages that sent the visitor here come back). Without it ?redirect= is ignored.
+ *   - Guest Button: continueAsGuest(), then ?redirect= (with Return To Previous Page), then its
+ *     link; without any of them it stays (step mode). Without link it is a button.
  *   - Error Response Message: shown when the service fails without a message of its own
  *     (default errorResponseMessage of scripts/foundations/messages.js, also when empty).
  *
@@ -25,21 +34,25 @@
  * security are fixed (LOGIN_REQUEST_META, LOGIN_REQUEST_SECURITY), as the service expects.
  * For now data is always FIXED_CREDENTIALS (the mock user); set SEND_FORM_CREDENTIALS to true
  * to send what the user types (readLoginCredentials). Answers:
- *   200 → signIn(data) (scripts/foundations/session.js) → success message → go to
- *         ?redirect= | data.nextStep.route | Success Link (only paths of this site)
+ *   200 → signIn(data) (scripts/foundations/session.js) → success message and go to
+ *         getLoginDestination() (step mode: the block hides itself, no navigation).
+ *         The nextStep.route of the service is not used: the table decides.
  *   400 → each errors[].field message under its field + status.message on top
  *   401 / 500 / no answer → status.message (+ errors without field) on top, or
  *         Error Response Message
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)      Styles / Classname rows
- *     ├─ readLoginSettings(block)      texts, links, endpoint, legal cell
+ *     ├─ applyBlockOptions(block)      Styles / Classname / Session rows
+ *     ├─ readLoginSettings(block)      texts, links, endpoint, redirects, legal cell
+ *     ├─ signed in + destination       → location.replace(destination), nothing painted
+ *     ├─ step mode                     → Session signed-out on the block (sessions.css)
  *     └─ renderLogin()
  *          ├─ buildLoginHeader()       title + description
  *          ├─ buildLoginTabs()         tablist (arrows / Home / End move between tabs)
  *          ├─ buildLoginForm()         alert, fields, forgot link, submit, divider, guest link
- *          │    └─ submit → submitLogin()   post → signIn + redirect, or showLoginErrors()
+ *          │    ├─ submit → submitLogin()   post → signIn + destination, or messages
+ *          │    └─ guest  → continueAsGuest() + getGuestDestination()
  *          ├─ register panel           empty (register block, later)
  *          └─ buildLegalText()         authored text, links rebuilt with getSafeHref
  *
@@ -53,8 +66,11 @@
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, getSafeHref } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
-import { signIn } from '../../scripts/foundations/session.js';
-import { post } from '../../scripts/api/http-client.js';
+import {
+  SESSION_STATES, continueAsGuest, getAccessState, getReturnPath, isEditorPreview,
+  setSessionVisibility, signIn, toSitePath,
+} from '../../scripts/foundations/session.js';
+import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
 // fixed parts of the login request (only data changes)
 const LOGIN_REQUEST_META = {
@@ -75,10 +91,8 @@ const SEND_FORM_CREDENTIALS = false;
 const FIXED_CREDENTIALS = { emailOrPhone: 'cliente@ejemplo.com', password: 'Password123' };
 // form fields, named as the service names them (errors[].field)
 const FORM_FIELDS = ['emailOrPhone', 'password'];
-// URL parameter with the page to return to after the login (/login?redirect=/carrito)
-const REDIRECT_PARAM = 'redirect';
-// after a login, when neither the URL, the service nor the table say where to go
-const DEFAULT_SUCCESS_LINK = '/';
+// values of Return To Previous Page that mean "yes"
+const YES_VALUE = /^(yes|si|sí|true)$/i;
 
 // accessible names when the table has no label (only read by screen readers)
 const LABELS = {
@@ -128,7 +142,7 @@ function readLoginSettings(block) {
     return { text: cell.text, href: getSafeHref(cell.href) };
   };
   const endpointCell = readTableCell(block, 'endpoint');
-  const successCell = readTableCell(block, 'success link');
+  const redirectCell = readTableCell(block, 'redirect with session');
   return {
     texts: {
       title: readCellText('title'),
@@ -145,7 +159,9 @@ function readLoginSettings(block) {
     forgotPassword: readLink('forgot password'),
     guest: readLink('guest button'),
     endpoint: endpointCell.href || endpointCell.text,
-    successLink: successCell.href || successCell.text,
+    // '' = step mode (no redirect)
+    redirectWithSession: toSitePath(redirectCell.href || redirectCell.text),
+    returnToPreviousPage: YES_VALUE.test(readCellText('return to previous page')),
     errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
     legalCell: findValueCell(block, 'legal text'),
   };
@@ -338,7 +354,7 @@ function setLoginBusy(form, busy) {
 /**
  * What to show for a failed login, from the error body of the service
  * ({ status: { message }, errors: [{ field, message }] }).
- * @param {Error} error ApiError (its cause is the body, see errorBodyInterceptor) or any error
+ * @param {Error} error ApiError (its cause is the error body, see publicRequestInterceptor)
  * @param {string} fallbackMessage Error Response Message
  * @returns {{message: string, fields: {field: string, message: string}[]}}
  */
@@ -357,30 +373,29 @@ function readLoginErrors(error, fallbackMessage) {
 }
 
 /**
- * A path of this site (/carrito), or null for anything else (other sites, //host…).
- * @param {string} path
- * @returns {string|null}
- */
-function toSitePath(path) {
-  const href = getSafeHref(path);
-  return href && href.startsWith('/') && !href.startsWith('//') ? href : null;
-}
-
-/**
- * Where to go after a login: ?redirect=, then the service nextStep.route, then Success Link.
- * @param {string} serviceRoute data.nextStep.route
- * @param {string} successLink Success Link row
+ * Where a signed-in visitor goes: the valid ?redirect= (only with Return To Previous Page),
+ * else Redirect With Session; '' = step mode (stay, the block hides itself).
+ * @param {Object} settings readLoginSettings() result
  * @returns {string}
  */
-function getLoginRedirect(serviceRoute, successLink) {
-  const fromUrl = new URLSearchParams(window.location.search).get(REDIRECT_PARAM);
-  return [fromUrl, serviceRoute, successLink].map(toSitePath).find(Boolean)
-    || DEFAULT_SUCCESS_LINK;
+function getLoginDestination(settings) {
+  return (settings.returnToPreviousPage && getReturnPath()) || settings.redirectWithSession;
 }
 
 /**
- * Sends the login. 200 → session saved and redirect; any error → messages on the form.
- * Without Endpoint nothing is sent.
+ * Where a guest goes: the valid ?redirect= (only with Return To Previous Page), else the link
+ * of Guest Button; '' = stay (step mode). Redirect With Session is not used: it is for
+ * visitors with a session.
+ * @param {Object} settings readLoginSettings() result
+ * @returns {string}
+ */
+function getGuestDestination(settings) {
+  return (settings.returnToPreviousPage && getReturnPath()) || toSitePath(settings.guest.href);
+}
+
+/**
+ * Sends the login. 200 → session saved, then destination (step mode: the block hides itself);
+ * any error → messages on the form. Without Endpoint nothing is sent.
  * @param {HTMLFormElement} form
  * @param {Object} settings readLoginSettings() result
  */
@@ -395,10 +410,17 @@ async function submitLogin(form, settings) {
       meta: LOGIN_REQUEST_META,
       security: LOGIN_REQUEST_SECURITY,
       data: readLoginCredentials(form),
-    }, { interceptor: 'public-error-body' });
+    }, { interceptor: REQUEST_TYPE.PUBLIC });
     if (!signIn(response?.data)) throw new Error('Login answer without accessToken');
-    showLoginAlert(form, response.status?.message || '', 'success');
-    window.location.assign(getLoginRedirect(response.data.nextStep?.route, settings.successLink));
+    const destination = getLoginDestination(settings);
+    if (destination) {
+      showLoginAlert(form, response.status?.message || '', 'success');
+      window.location.assign(destination);
+      return;
+    }
+    // step mode: the block is hidden now (signed-out only); leave it clean for a sign out
+    form.reset();
+    setLoginBusy(form, false);
   } catch (error) {
     const { message, fields } = readLoginErrors(error, settings.errorResponseMessage);
     fields.forEach(({ field, message: fieldMessage }) => showFieldError(form, field, fieldMessage));
@@ -459,7 +481,7 @@ function buildLoginForm(idPrefix, settings) {
     form.append(submit);
   }
 
-  const hasGuest = guest.text && guest.href;
+  const hasGuest = Boolean(guest.text);
   if (texts.button && hasGuest) {
     const divider = createElementWithClass('div', 'login-divider');
     divider.setAttribute('role', 'separator');
@@ -467,9 +489,17 @@ function buildLoginForm(idPrefix, settings) {
     form.append(divider);
   }
   if (hasGuest) {
-    const guestLink = createElementWithClass('a', 'login-guest', guest.text);
-    guestLink.href = guest.href;
-    form.append(guestLink);
+    // a link when the table has one (works without JS too), else a button
+    const guestAction = createElementWithClass(guest.href ? 'a' : 'button', 'login-guest', guest.text);
+    if (guest.href) guestAction.href = guest.href;
+    else guestAction.type = 'button';
+    guestAction.addEventListener('click', (event) => {
+      event.preventDefault();
+      continueAsGuest();
+      const destination = getGuestDestination(settings);
+      if (destination) window.location.assign(destination);
+    });
+    form.append(guestAction);
   }
 
   form.addEventListener('submit', (event) => {
@@ -562,6 +592,22 @@ function renderLogin(block, settings) {
  * @param {Element} block The login block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the table
-  renderLogin(block, readLoginSettings(block));
+  applyBlockOptions(block); // optional Styles / Classname / Session rows, before reading
+  const settings = readLoginSettings(block);
+  const destination = getLoginDestination(settings);
+
+  // already signed in: go to the destination without painting the form
+  if (destination && getAccessState() === SESSION_STATES.SIGNED_IN && !isEditorPreview()) {
+    block.replaceChildren();
+    window.location.replace(destination);
+    return;
+  }
+
+  // step mode: only signed-out visitors see it (an authored Session row wins)
+  const wrapper = block.parentElement?.classList.contains('login-wrapper')
+    ? block.parentElement : block;
+  if (!destination && !wrapper.classList.contains('session-only')) {
+    setSessionVisibility(wrapper, SESSION_STATES.SIGNED_OUT);
+  }
+  renderLogin(block, settings);
 }

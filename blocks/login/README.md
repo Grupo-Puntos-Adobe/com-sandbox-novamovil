@@ -78,7 +78,7 @@ formulario para funcionar (`form`, `label`, `input`, `button`) y los enlaces (`a
 - `login-forgot` / `login-forgot-link` – Enlace "¿Olvidaste tu contraseña?"
 - `login-submit` – Botón "Iniciar sesión" (`button type="submit"`, `disabled` mientras espera)
 - `login-divider` / `login-divider-text` – Separador con la "o" (`role="separator"`)
-- `login-guest` – Botón "Continuar como invitado" (`a`)
+- `login-guest` – Botón "Continuar como invitado" (`a` con enlace, o `button` sin enlace)
 - `login-legal` / `login-legal-link` – Texto legal y sus enlaces
 
 ```text
@@ -121,9 +121,9 @@ en todas las resoluciones.
 ### Estructura de la tabla en Drive
 
 El autor escribe una tabla **Login** en el documento `login` de Drive. Todas las filas son
-opcionales y pueden ir en cualquier orden. Solo `Success Link` y `Error Response Message` tienen
-valor por defecto (configuración y mensaje); las demás son contenido: si la fila no existe o está
-vacía, esa parte no se pinta.
+opcionales y pueden ir en cualquier orden. Solo `Error Response Message` tiene valor por defecto
+(mensaje); las demás son contenido o configuración: si la fila no existe o está vacía, esa parte no
+se pinta (en `Redirect With Session`, vacía = modo paso).
 
 1. **`Styles`**
     - **Tipo:** Texto (declaraciones CSS separadas por `;`)
@@ -134,6 +134,9 @@ vacía, esa parte no se pinta.
     - **Tipo:** Texto (nombres separados por espacio o coma)
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
+
+    También acepta la fila **`Session`** de cualquier bloque (ver `documentation/08-sesiones.md`);
+    en modo paso el login ya se pone solo `signed-out`.
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -157,11 +160,16 @@ vacía, esa parte no se pinta.
       `https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io/api/v1/auth/login`
     - **Por defecto:** ninguno. Sin `Endpoint`, el botón no envía nada
 
-7. **`Success Link`**
-    - **Tipo:** Ruta del sitio (`/`)
-    - **Descripción:** A dónde ir después de iniciar sesión cuando el servicio no manda
-      `nextStep.route`
-    - **Por defecto:** `/`. Solo acepta rutas del sitio
+7. **`Redirect With Session`** / **`Return To Previous Page`**
+    - **Tipo:** Ruta del sitio (`/perfil`) / `yes`
+    - **Descripción:** **Con ruta:** siempre que haya sesión va ahí, sin mostrar el formulario (al
+      abrir la página ya con sesión o justo después de iniciar sesión). **Vacía o sin la fila: modo
+      paso**: no redirige; el login solo se ve sin sesión y, al iniciar sesión o entrar como
+      invitado, se oculta solo y el paso queda cumplido (para los pasos de compra).
+      `Return To Previous Page` = `yes`: si la URL trae `?redirect=` de una página del sitio, regresa
+      ahí antes que a `Redirect With Session`
+    - **Por defecto:** ninguno (modo paso) / sin la fila se ignora `?redirect=`
+    - El `nextStep.route` del servicio ya no decide a dónde ir: lo decide la tabla
 
 8. **`User Label`** / **`User Placeholder`**
     - **Tipo:** Texto
@@ -192,9 +200,11 @@ vacía, esa parte no se pinta.
       queda solo la línea
 
 13. **`Guest Button`**
-    - **Tipo:** Enlace
-    - **Descripción:** "Continuar como invitado"
-    - **Por defecto:** ninguno. Sin texto o sin enlace válido, no se pinta
+    - **Tipo:** Texto, con enlace opcional
+    - **Descripción:** "Continuar como invitado": activa el modo invitado (`continueAsGuest()`) y
+      luego va al `?redirect=` (con `Return To Previous Page`) o a su enlace. Sin ninguno de los dos
+      se queda (modo paso: el paso queda cumplido). Sin enlace se pinta como botón
+    - **Por defecto:** ninguno. Sin texto, no se pinta
 
 14. **`Legal Text`**
     - **Tipo:** Texto con enlaces
@@ -216,7 +226,8 @@ La tabla en Drive permite al autor configurar:
 - El **título**, la **descripción** y los **tabs**
 - Las **etiquetas** y **textos de ejemplo** de los campos
 - Los **enlaces** de contraseña olvidada, invitado y textos legales
-- El **Endpoint** del servicio, el **Success Link** y el **mensaje de error** genérico
+- El **Endpoint** del servicio, a dónde ir con sesión (**Redirect With Session**,
+  **Return To Previous Page**) y el **mensaje de error** genérico
 - **Estilos** y **clases** extra del bloque
 
 ![Vista Tabla en Drive](/documentation/readme/login/drive-table.png)
@@ -252,13 +263,14 @@ Con `true`, `readLoginCredentials` toma `emailOrPhone` (sin espacios al inicio y
 
 | Respuesta | Qué hace el bloque |
 |---|---|
-| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`), muestra `status.message` en verde y va a `?redirect=` → `nextStep.route` → `Success Link` → `/` (la primera que sea ruta del sitio) |
+| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`); con `Redirect With Session` muestra `status.message` en verde y va al `?redirect=` (si `Return To Previous Page`) o a esa ruta. En modo paso no navega: el login se oculta |
 | **400** `{ status, errors: [{ field, message }] }` | `status.message` arriba y cada `errors[].message` debajo de su campo (`emailOrPhone`, `password`); al escribir en el campo se quita su mensaje |
 | **401** `{ status, errors: [{ field: "credentials", message }] }` | `status.message` + los mensajes sin campo, arriba ("El correo/teléfono o la contraseña son incorrectos. Verifica tus datos e inténtalo nuevamente.") |
 | **500** `{ status }` | `status.message` arriba ("Ocurrió un error al iniciar sesión.") |
 | Sin red, sin respuesta o 200 sin `accessToken` | `Error Response Message` arriba |
 
-Las respuestas de error conservan su JSON gracias al interceptor `public-error-body`
+Es una llamada pública (`REQUEST_TYPE.PUBLIC`); las respuestas de error conservan su JSON gracias a
+`publicRequestInterceptor`
 (`scripts/api/interceptors.js`). La sesión dura `expiresIn` segundos y vive en `sessionStorage`
 (se borra al cerrar la pestaña); el `refreshToken` no se guarda porque aún no hay servicio para
 renovar el token.
@@ -272,7 +284,10 @@ renovar el token.
 | Clic en **Iniciar sesión** (botón) | Se envía el inicio de sesión; el botón se desactiva hasta la respuesta (ver [Respuestas](#respuestas)) |
 | Error del servicio | El mensaje sale arriba y el cursor va al primer campo con error |
 | Sin `Endpoint` | El botón no envía nada |
-| `?redirect=/carrito` en la URL | Después de iniciar sesión, va a `/carrito` (solo rutas del sitio) |
+| Abre la página ya con sesión (con `Redirect With Session`) | Va directo a esa ruta, sin ver el formulario |
+| `?redirect=/perfil` en la URL y `Return To Previous Page: yes` | Después de iniciar sesión regresa a `/perfil` (solo rutas del sitio; `//otro.com` se ignora) |
+| Modo paso (sin `Redirect With Session`) | Sin sesión se ve el login; con sesión o como invitado se oculta y el paso queda cumplido, sin recargar |
+| Panel de edición | Se ve el formulario y no redirige, para poder editarlo |
 | Falta `Login Tab` o `Register Tab` | Sin tabs, solo el formulario |
 | Falta `Guest Button` | Sin separador ni botón de invitado |
 | Un enlace no es del sitio ni `http(s)` (p. ej. `javascript:`) | Se muestra solo el texto, sin enlace |
@@ -298,8 +313,10 @@ Móvil:
 - `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
-- `scripts/foundations/session.js` – `signIn` guarda la sesión
-- `scripts/api/http-client.js` – `post` con el interceptor `public-error-body`
+- `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `getReturnPath`, `toSitePath` y
+  `setSessionVisibility` (modo paso)
+- `styles/foundations/sessions.css` – Oculta el login en modo paso cuando ya hay sesión
+- `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`
   (`scripts/api/interceptors.js`)
 - `styles/foundations/grid.css` – Columna centrada (`container-fluid > row row-center > col-24`)
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)

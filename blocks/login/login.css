@@ -248,6 +248,7 @@
     font-size: 13px;
     font-weight: 700;
     text-align: center;
+    cursor: pointer;
 
     &:hover {
       background: var(--login-guest-hover);

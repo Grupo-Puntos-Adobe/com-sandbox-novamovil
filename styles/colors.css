@@ -209,6 +209,26 @@
   --login-success-background: color-mix(in srgb, var(--color-success) 10%, var(--color-white));
   --login-success-border: color-mix(in srgb, var(--color-success) 35%, var(--color-white));
 
+  /* block-session-example (example of everything that can be built with sessions) */
+  --block-session-example-title: var(--heading-color);
+  --block-session-example-text: var(--text-color);
+  --block-session-example-muted: var(--color-gray-500);
+  --block-session-example-surface: var(--color-white);
+  --block-session-example-border: var(--border-color);
+  --block-session-example-accent: var(--color-primary);
+  --block-session-example-button-background: var(--gradient-brand);
+  --block-session-example-button-text: var(--color-white);
+  --block-session-example-button-secondary-background: color-mix(in srgb, var(--color-primary) 3%, var(--color-gray-100));
+  --block-session-example-button-secondary-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-gray-100));
+  --block-session-example-button-secondary-text: var(--color-gray-900);
+  --block-session-example-tag-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+  --block-session-example-signed-in-background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
+  --block-session-example-signed-in-text: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --block-session-example-guest-background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+  --block-session-example-guest-text: var(--color-primary);
+  --block-session-example-signed-out-background: var(--color-gray-100);
+  --block-session-example-signed-out-text: var(--color-gray-700);
+
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);
   --empty-list-message-background: var(--color-white);

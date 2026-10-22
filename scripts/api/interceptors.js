@@ -7,12 +7,22 @@
  * All three hooks are optional. Add new interceptors here and register them by name.
  *
  * Used by: scripts/api/http-client.js (resolveInterceptors, ApiError).
- * Registry: 'public' → [publicInterceptor]; 'public-error-body' → [errorBodyInterceptor,
- * publicInterceptor] (error answers keep their JSON body in ApiError.cause). Blocks pick a
- * chain with get(url, { interceptor: 'name' }); unknown names fall back to 'public'.
+ * Two kinds of calls, by name (REQUEST_TYPE):
+ *   REQUEST_TYPE.PUBLIC  'public-request'   simple calls, no session (default): categories,
+ *                                            catalog, detail, login…
+ *   REQUEST_TYPE.PRIVATE 'private-request'  calls that need a session: sends the Bearer token
+ *                                            (header Authorization + body security.auth.value)
+ *   get(url)                                              public
+ *   post(url, body, { interceptor: REQUEST_TYPE.PRIVATE }) private
+ * Both keep the JSON body of an error answer in ApiError.cause ({ status, errors }), so a
+ * block can show the messages of the service. Unknown names fall back to the public chain.
  *
  * Guide: documentation/07-integracion-endpoints.md
  */
+
+import {
+  getAccessToken, getSessionRedirectUrl, isEditorPreview, signOut,
+} from '../foundations/session.js';
 
 /**
  * Normalised error thrown by the HTTP client, whatever went wrong
@@ -34,11 +44,18 @@ export class ApiError extends Error {
   }
 }
 
+// names of the two request types (the `interceptor` option of http-client.js)
+export const REQUEST_TYPE = {
+  PUBLIC: 'public-request',
+  PRIVATE: 'private-request',
+};
+
 /**
- * Public requests: only the headers a JSON API needs, no credentials or bearer token.
+ * Simple calls without session: JSON headers, JSON answer. An error answer (400, 401,
+ * 500…) is thrown as an ApiError whose `cause` is its parsed JSON body (null when it has none).
  */
-export const publicInterceptor = {
-  name: 'public',
+export const publicRequestInterceptor = {
+  name: REQUEST_TYPE.PUBLIC,
   request(config) {
     return {
       ...config,
@@ -47,9 +64,16 @@ export const publicInterceptor = {
   },
   async response(response, config) {
     if (!response.ok) {
+      let body = null;
+      try {
+        body = await response.json();
+      } catch {
+        // no JSON body: the status is enough
+      }
       throw new ApiError(`HTTP ${response.status} ${response.statusText}`.trim(), {
         status: response.status,
         url: config.url,
+        cause: body,
       });
     }
     if (response.status === 204) return null;
@@ -62,55 +86,41 @@ export const publicInterceptor = {
 };
 
 /**
- * Keeps the JSON body of an error answer (400, 401, 500…): services send there what went
- * wrong ({ status: { code, message }, errors: [{ field, message }] }). Goes before
- * publicInterceptor: an ok answer passes through untouched; an error one is thrown as an
- * ApiError whose `cause` is the parsed body (null when it is not JSON).
+ * Calls that need a session (goes after publicRequestInterceptor):
+ *   - request: Authorization: Bearer … and, when the body has security.auth (the NovaMóvil
+ *     request format), the same value there. Without session the service is not called.
+ *   - error 401 (no session, expired or rejected token): signOut() and go to the session
+ *     redirect page (getSessionRedirectUrl, never in the editing tool preview).
  */
-export const errorBodyInterceptor = {
-  name: 'error-body',
-  async response(response, config) {
-    if (response.ok) return response;
-    let body = null;
-    try {
-      body = await response.json();
-    } catch {
-      // no JSON body: the status is enough
+export const privateRequestInterceptor = {
+  name: REQUEST_TYPE.PRIVATE,
+  request(config) {
+    const token = getAccessToken();
+    if (!token) {
+      throw new ApiError('Session required', { status: 401, url: config.url });
     }
-    throw new ApiError(`HTTP ${response.status} ${response.statusText}`.trim(), {
-      status: response.status,
-      url: config.url,
-      cause: body,
-    });
+    const { body } = config;
+    const hasSecurity = body && typeof body === 'object' && body.security?.auth;
+    return {
+      ...config,
+      headers: { ...config.headers, Authorization: token },
+      body: hasSecurity
+        ? { ...body, security: { ...body.security, auth: { ...body.security.auth, value: token } } }
+        : body,
+    };
+  },
+  error(error) {
+    if (error.status === 401) {
+      signOut();
+      if (!isEditorPreview()) window.location.replace(getSessionRedirectUrl());
+    }
+    throw error;
   },
 };
 
-/*
- * Template for a protected interceptor (not registered). Copy, adapt and register it:
- *
- * import { getAccessToken, signOut } from '../foundations/session.js';
- * export const authInterceptor = {
- *   name: 'auth',
- *   request(config) {
- *     return {
- *       ...config,
- *       headers: { ...config.headers, Authorization: getAccessToken() },
- *     };
- *   },
- *   error(error) {
- *     if (error.status === 401) { // token expired or invalid: sign out and go to /login
- *       signOut();
- *     }
- *     throw error;
- *   },
- * };
- * registerInterceptor('auth', [publicInterceptor, authInterceptor]);
- */
-
 const registry = new Map([
-  ['public', [publicInterceptor]],
-  // public request whose error answers keep their body (login: field and credential errors)
-  ['public-error-body', [errorBodyInterceptor, publicInterceptor]],
+  [REQUEST_TYPE.PUBLIC, [publicRequestInterceptor]],
+  [REQUEST_TYPE.PRIVATE, [publicRequestInterceptor, privateRequestInterceptor]],
 ]);
 
 /**
@@ -128,9 +138,9 @@ export function registerInterceptor(name, chain) {
  * @param {string|Object|Array} interceptor
  * @returns {Object[]}
  */
-export function resolveInterceptors(interceptor = 'public') {
+export function resolveInterceptors(interceptor = REQUEST_TYPE.PUBLIC) {
   return [].concat(interceptor).flatMap((item) => {
-    if (typeof item === 'string') return registry.get(item) || registry.get('public');
+    if (typeof item === 'string') return registry.get(item) || registry.get(REQUEST_TYPE.PUBLIC);
     return item ? [item] : [];
   });
 }
