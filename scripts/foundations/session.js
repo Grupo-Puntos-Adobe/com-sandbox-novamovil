@@ -235,6 +235,20 @@ updateSessionState();
 // ---------------------------------------------------------------------------------------------
 
 /**
+ * A row of the page Metadata. aem.page writes <meta name="session-redirect">; some previews
+ * keep the authored name (<meta name="Session Redirect">): both are accepted.
+ * @param {string} name Lower case with hyphens, e.g. 'session-redirect'
+ * @returns {string}
+ */
+function readPageMetadata(name) {
+  const value = getMetadata(name);
+  if (value) return value;
+  const meta = [...document.head.querySelectorAll('meta[name]')]
+    .find((candidate) => candidate.name.trim().toLowerCase().replace(/\s+/g, '-') === name);
+  return meta?.content.trim() || '';
+}
+
+/**
  * A path of this site (/perfil?x=1), or '' for anything else (other sites, //host, javascript:).
  * @param {string} path
  * @returns {string}
@@ -263,7 +277,7 @@ export function getReturnPath() {
 export function getSessionRedirectUrl({ redirectTo, returnTo } = {}) {
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const target = new URL(
-    toSitePath(redirectTo) || toSitePath(getMetadata('session-redirect'))
+    toSitePath(redirectTo) || toSitePath(readPageMetadata('session-redirect'))
       || DEFAULT_SESSION_REDIRECT,
     window.location.origin,
   );
@@ -305,7 +319,7 @@ export function requireSession({ allowGuest = false, redirectTo } = {}) {
  */
 export function guardPage() {
   updateSessionState();
-  const access = getMetadata('session').trim().toLowerCase();
+  const access = readPageMetadata('session').toLowerCase();
   if (![PAGE_ACCESS.REQUIRED, PAGE_ACCESS.GUEST].includes(access)) return true;
   const options = { allowGuest: access === PAGE_ACCESS.GUEST };
   if (!requireSession(options)) return false;
