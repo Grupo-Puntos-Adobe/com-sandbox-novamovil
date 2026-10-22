@@ -26,8 +26,8 @@ Sirve para copiar la forma de hacerlo en un bloque nuevo.
 
 ### Características
 
-- **Bloque completo por sesión:** la fila `Session` (cualquier bloque la acepta) lo muestra solo con
-  sesión, solo como invitado o solo sin sesión. Nunca redirige
+- **Bloque completo por sesión:** la fila `Session` (cualquier bloque la acepta): `true` = solo con
+  sesión, `false` = solo sin sesión, sin la fila = siempre. Nunca redirige
 - **Panel de estado:** etiqueta del estado (verde con sesión, azul invitado, gris sin sesión) y un
   texto por estado; con sesión saluda con el nombre (`{name}`)
 - **Filas por sesión, igual que en cualquier bloque:** el estado va en la **última celda**
@@ -107,9 +107,10 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
     - **Por defecto:** ninguno
 
 2. **`Session`**
-    - **Tipo:** Texto: `signed-in`, `guest` o `signed-out`, combinables con coma
-    - **Descripción:** Quién ve el bloque **completo**. No redirige
-    - **Por defecto:** vacía o sin la fila, lo ven todos
+    - **Tipo:** `true` / `false`
+    - **Descripción:** El bloque **completo**: `true` solo se ve con sesión; `false` solo sin sesión
+      (se oculta al iniciar sesión). El invitado cuenta como "sin sesión". No redirige
+    - **Por defecto:** vacía o sin la fila, se ve siempre
 
 3. **`Title`** / **`Status Title`**
     - **Tipo:** Texto
@@ -162,8 +163,8 @@ La tabla en Drive permite al autor configurar:
 | Clic en "Continuar como invitado" | La página se recarga: etiqueta "Invitado", tarjetas `guest` y `signed-in, guest`, botón "Cerrar sesión" |
 | Con sesión | "Hola, Cliente…", tarjetas `signed-in` y `signed-in, guest`, botón "Cerrar sesión" y llamada privada |
 | Clic en "Cerrar sesión" | La página se recarga y vuelve a "Sin sesión" |
-| Fila `Session` = `signed-in` | El bloque entero solo se ve con sesión (la página no redirige) |
-| Fila `Session` = `signed-out` | El bloque entero se oculta al iniciar sesión o entrar como invitado |
+| Fila `Session` = `true` | El bloque entero solo se ve con sesión (la página no redirige) |
+| Fila `Session` = `false` | El bloque entero se oculta al iniciar sesión (el invitado lo sigue viendo) |
 | Panel de edición | Se ve todo, para poder editarlo |
 
 ### Vista previa

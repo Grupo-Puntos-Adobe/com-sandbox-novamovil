@@ -5,10 +5,14 @@
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
- *   | Session   | signed-in, guest                   |  -> who can see the block (sessions.css)
+ *   | Session   | true | false                       |  -> the block depends on the session
  *
- * Session: signed-in | guest | signed-out, combined with commas; empty → everybody. The block
- * is only hidden or shown (it never redirects); it changes as soon as the session changes
+ * Session (the whole block and its wrapper; only "is there a session?", a guest counts as no
+ * session):
+ *   true  → shown only WITH a session (hidden without one)
+ *   false → shown only WITHOUT a session (e.g. an "Iniciar sesión" call to action)
+ *   empty or no row → always shown
+ * It never redirects (that is the page Metadata) and changes as soon as the session changes
  * (scripts/foundations/session.js, styles/foundations/sessions.css).
  *
  * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
@@ -40,15 +44,20 @@
  *     ├─ session rows    → applySessionRows(block) (rows of other states are removed)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
  *     ├─ "Classname" row → applyAuthorClasses(block, text)
- *     └─ "Session" row   → setSessionVisibility(block, text)
+ *     └─ "Session" row   → setSessionVisibility(wrapper, BLOCK_SESSION_STATES[value])
  *     (the rows are then removed)
  *
  * Guide: documentation/06-styles-classname.md
  */
-import { applySessionRows, setSessionVisibility } from './session.js';
+import { SESSION_STATES, applySessionRows, setSessionVisibility } from './session.js';
 
 const STYLE_KEYS = ['styles', 'style'];
 const SESSION_KEYS = ['session'];
+// "Session" row of a block → who sees it (a guest counts as no session)
+const BLOCK_SESSION_STATES = {
+  true: [SESSION_STATES.SIGNED_IN],
+  false: [SESSION_STATES.SIGNED_OUT, SESSION_STATES.GUEST],
+};
 const CLASS_KEYS = [
   'classname',
   'classnames',
@@ -148,10 +157,13 @@ export default function applyBlockOptions(block) {
       applyAuthorClasses(block, valueCell.textContent);
       row.remove();
     } else if (SESSION_KEYS.includes(key)) {
-      // the wrapper too, so a hidden block leaves no empty space
-      const wrapper = block.parentElement?.classList.contains(`${block.classList[0]}-wrapper`)
-        ? block.parentElement : block;
-      setSessionVisibility(wrapper, valueCell.textContent);
+      // true / false; the wrapper too, so a hidden block leaves no empty space
+      const states = BLOCK_SESSION_STATES[valueCell.textContent.trim().toLowerCase()];
+      if (states) {
+        const wrapper = block.parentElement?.classList.contains(`${block.classList[0]}-wrapper`)
+          ? block.parentElement : block;
+        setSessionVisibility(wrapper, states);
+      }
       row.remove();
     }
   });

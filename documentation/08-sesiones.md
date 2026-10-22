@@ -13,8 +13,9 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 | Que una página solo se vea **sin** sesión (login) | Metadata de la página | `Session` \| `false` |
 | Que una página sea **pública** | Metadata | Sin la fila `Session` (o vacía) |
 | Elegir **a dónde** mandar (en los dos casos) | Metadata | `Redirect To` \| `/login` (sin la fila o vacía: al home `/`) |
-| Que un **bloque** solo se vea con sesión (sin redirigir) | Tabla del bloque | `Session` \| `signed-in` |
-| Que un bloque solo se vea **sin** sesión | Tabla del bloque | `Session` \| `signed-out` |
+| Que un **bloque** solo se vea **con** sesión (sin redirigir) | Tabla del bloque | `Session` \| `true` |
+| Que un bloque solo se vea **sin** sesión (p. ej. "Iniciar sesión") | Tabla del bloque | `Session` \| `false` |
+| Que un bloque se vea **siempre** | Tabla del bloque | Sin la fila `Session` (o vacía) |
 | Que una **fila** de la tabla (un valor) solo se vea con sesión | Tabla del bloque | El estado en la **última celda**: `Title` \| `Hola, cliente` \| `signed-in` |
 | Mostrar u ocultar **una parte** de un bloque | Código del bloque | `setSessionVisibility(elemento, 'signed-in')` |
 | Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque | `renderForSession(elemento, { 'signed-in': … })` |
@@ -113,10 +114,19 @@ Cualquier bloque que use `applyBlockOptions` acepta la fila **`Session`**:
 
 ```
 │ Card Promotions │                    │
-│ Session         │ signed-in          │  ← solo con sesión (la página no redirige)
+│ Session         │ true               │  ← true | false | (sin la fila = siempre)
 ```
 
-El bloque **y su wrapper** se ocultan, para no dejar espacio vacío.
+| `Session` | Sin sesión (o invitado) | Con sesión |
+|---|---|---|
+| `true` | Oculto | Se ve |
+| `false` | Se ve | Oculto (p. ej. el botón "Iniciar sesión") |
+| sin la fila o vacía | Se ve | Se ve |
+
+- Solo importa si **hay sesión o no**: el invitado cuenta como "sin sesión".
+- El bloque **y su wrapper** se ocultan, para no dejar espacio vacío. Nunca redirige (eso es del
+  Metadata de la página).
+- Cambia al instante al iniciar o cerrar sesión, sin recargar.
 
 ### 5.3 Una parte de un bloque (código)
 
