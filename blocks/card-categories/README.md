@@ -118,7 +118,9 @@ opcionales y pueden ir en cualquier orden.
 
 4. **`Endpoint`**
     - **Tipo:** URL (texto o enlace)
-    - **Descripción:** Servicio de donde llegan las categorías
+    - **Descripción:** Servicio de donde llegan las categorías.
+      Es un servicio **público** (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en la fila
+      `Private Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** sin fila, se usan las 6 categorías del JSON interno del bloque
       (`FALLBACK_CATEGORIES`)
 

@@ -34,6 +34,10 @@ Drive, para controlar su espacio, su apariencia y quién lo ve, sin tocar códig
 | Estado en la **última columna** | Cualquier fila | `signed-in`, `signed-out` o `guest` (combinables con coma): **esa fila** solo existe para ese estado |
 | Regla de la **página** | Metadata de la página | `Session` `true` / `false` + `Redirect To` (la revisa `block-options.js` una vez por página) |
 
+> `Endpoint` no es una opción de `block-options`: la lee cada bloque. Regla del proyecto: `Endpoint`
+> = servicio público, `Private Endpoint` = servicio privado con Bearer (`readEndpoint` /
+> `readPrivateEndpoint` de `block-utils.js`, ver `scripts/api/README.md`).
+
 Resultado en la página (con `Styles` y `Classname`):
 
 ```html

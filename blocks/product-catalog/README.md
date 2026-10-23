@@ -258,7 +258,9 @@ opcionales y pueden ir en cualquier orden.
 
 9. **`Search Endpoint`**
     - **Tipo:** URL (texto o enlace)
-    - **Descripción:** Servicio POST de la búsqueda de celulares
+    - **Descripción:** Servicio POST de la búsqueda de celulares. `Filters Endpoint` y `Search
+      Endpoint` son servicios **públicos** (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en
+      una fila `Private …Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** sin fila, los 4 celulares básicos del JSON interno (`FALLBACK_PHONES`), tal
       cual, como en las tarjetas de la home (los filtros y el orden no cambian esa lista); si ese
       JSON está vacío, el aviso de lista vacía directo

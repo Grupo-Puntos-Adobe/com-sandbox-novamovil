@@ -172,7 +172,9 @@ se pinta.
 6. **`Endpoint`**
     - **Tipo:** URL
     - **Descripción:** Servicio de inicio de sesión (POST),
-      `https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io/api/v1/auth/login`
+      `https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io/api/v1/auth/login`. Es un servicio
+      **público** (`REQUEST_TYPE.PUBLIC`): todavía no hay sesión, por eso va en `Endpoint` y no en
+      `Private Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** ninguno. Sin `Endpoint`, el botón no envía nada
 
 7. **`User Label`** / **`User Placeholder`**

@@ -173,7 +173,9 @@ y pueden ir en cualquier orden.
 
 5. **`Endpoint`**
     - **Tipo:** URL (texto o enlace)
-    - **Descripción:** Servicio de donde llegan los productos
+    - **Descripción:** Servicio de donde llegan los productos.
+      Es un servicio **público** (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en la fila
+      `Private Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** sin fila, se usan los 4 productos del JSON interno del bloque
       (`FALLBACK_PRODUCTS`)
 

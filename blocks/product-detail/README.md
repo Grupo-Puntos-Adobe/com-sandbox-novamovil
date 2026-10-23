@@ -159,7 +159,9 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 > La página de detalle (`celulares/index`) es **pública**: su Metadata no lleva `Session`.
 
 2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
-   sale el aviso "no disponible" (no hay JSON interno)
+   sale el aviso "no disponible" (no hay JSON interno). Es un servicio **público**
+   (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en `Private Endpoint` (ver
+   `scripts/api/README.md`)
 
 3. **`Catalog Link`** – A dónde regresa la página sin id y el enlace del aviso. Por defecto, la
    carpeta de la página (`/celulares`)
