@@ -16,8 +16,7 @@
  * (scripts/foundations/session.js, styles/foundations/sessions.css).
  *
  * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
- * state (applySessionRows of session.js; scripts.js already runs it on every block, this call
- * only covers a block used without scripts.js); it works with any number of columns:
+ * state (applySessionRows of session.js); it works with any number of columns:
  *   | Title     | Tus promociones, cliente | signed-in        |
  *   | Benefit 1 | 🚚 | Envío gratis          | guest, signed-in |
  *
@@ -50,7 +49,18 @@
  *
  * Guide: documentation/06-styles-classname.md
  */
-import { SESSION_STATES, applySessionRows, setSessionVisibility } from './session.js';
+import { loadCSS } from '../aem.js';
+import {
+  SESSION_STATES, applySessionRows, guardPage, setSessionVisibility,
+} from './session.js';
+
+// Sessions, all from here (nothing in scripts.js or head.html): the classes that show / hide by
+// session are loaded before the first block is decorated, and the page rule of the Metadata
+// (Session true | false + Redirect To) runs once, as soon as the first block of the page loads.
+await loadCSS(`${window.hlx?.codeBasePath || ''}/styles/foundations/sessions.css`);
+const pageAccepted = guardPage();
+// a page that redirects is not painted
+if (!pageAccepted) document.body.style.visibility = 'hidden';
 
 const STYLE_KEYS = ['styles', 'style'];
 const SESSION_KEYS = ['session'];
@@ -134,6 +144,11 @@ export function applyAuthorClasses(block, names) {
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
+  // the page is redirecting (Metadata Session rule): nothing to show
+  if (!pageAccepted) {
+    block.replaceChildren();
+    return;
+  }
   // first: rows that depend on the session (| key | value… | signed-in |)
   applySessionRows(block);
   [...block.querySelectorAll(':scope > div')].forEach((row) => {

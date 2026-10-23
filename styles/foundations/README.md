@@ -7,7 +7,7 @@ igual. Contiene:
 |---|---|
 | `breakpoints.css` | Las 3 resoluciones del sitio (**mobile, tablet, desktop**) con nombre, para usarlas en cualquier CSS sin repetir números |
 | `grid.css` | Sistema de grid: `container`, `row` y columnas de 24 partes por resolución (`sm`, `md`, `lg`). Usa los nombres de `breakpoints.css` (ver sección 8) |
-| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Guía: `documentation/08-sesiones.md` |
+| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/block-options.js` (no va en `head.html`). Guía: `documentation/08-sesiones.md` |
 | `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css` |
 
 Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.css`, que es el CSS
@@ -33,11 +33,11 @@ de la alerta de `scripts/foundations/`). Los JavaScript portables están en `scr
    ```html
    <link rel="stylesheet" href="/styles/foundations/breakpoints.css">
    <link rel="stylesheet" href="/styles/foundations/grid.css">
-   <link rel="stylesheet" href="/styles/foundations/sessions.css">
    <link rel="stylesheet" href="/styles/styles.css">
    ```
 
-   `sessions.css` solo hace falta si usas `scripts/foundations/session.js`.
+   `sessions.css` **no** va en `head.html`: lo carga `scripts/foundations/block-options.js` (junto
+   con `session.js`) antes de decorar el primer bloque.
 
    En AEM Edge Delivery Services va en `head.html` (y en `404.html` si tiene su propio `<head>`).
 3. Listo: ya puedes usar los nombres en cualquier archivo CSS.

@@ -1,6 +1,7 @@
 /*
  * Sessions (foundations): show or hide anything depending on who is visiting.
- * Portable: copy it with scripts/foundations/session.js and link it in head.html.
+ * Portable: copy it with scripts/foundations/session.js and block-options.js, which loads it
+ * (loadCSS) before the first block is decorated: nothing to add to head.html.
  * Only visibility here (no colours, no sizes). How to use it: styles/foundations/README.md
  *
  * session.js puts ONE state class on <html> before the page is painted, and changes it when

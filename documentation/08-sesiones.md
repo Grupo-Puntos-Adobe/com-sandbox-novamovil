@@ -44,10 +44,14 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 |---|---|---|
 | `scripts/foundations/session.js` | Toda la lógica: datos (parte 1), páginas y redirecciones (parte 2), mostrar y pintar (parte 3) | Sí |
 | `styles/foundations/sessions.css` | Solo las clases que ocultan lo que no toca (`session-only-*`) | Sí |
-| `scripts/foundations/block-options.js` | Fila `Session` de cualquier bloque | Sí |
+| `scripts/foundations/block-options.js` | **Punto de entrada**: carga `sessions.css`, aplica la regla de la página (Metadata) y, en cada bloque, las filas por sesión y la fila `Session` | Sí |
 | `scripts/api/interceptors.js` | `REQUEST_TYPE.PUBLIC` y `REQUEST_TYPE.PRIVATE` (con Bearer) | Lleva la configuración de la API del proyecto |
-| `scripts/scripts.js` | `guardPage()` antes de pintar la página | Una línea en `loadEager` |
-| `head.html` | `<link>` a `sessions.css` | Una línea |
+
+`scripts.js`, `head.html` y `404.html` **no se tocan**: todo arranca desde `block-options.js`, en
+cuanto el primer bloque del proyecto (los que llaman `applyBlockOptions`) carga en la página.
+
+> Una página **sin** bloques del proyecto (solo texto) no carga `block-options.js`: su regla de
+> `Session` no corre y la página siempre se muestra.
 | `blocks/login/` | Inicio de sesión (guarda la sesión con `signIn`) | Bloque del sitio |
 | `blocks/block-session-example/` | Ejemplo de todo | Ejemplo para copiar |
 
@@ -72,8 +76,11 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 - `Redirect To` sirve para `true` y para `false`; si no viene o está vacía, manda al home `/`.
   Nada se agrega a la URL.
 - No importan mayúsculas (`TRUE` = `true`). El invitado **no** cuenta como sesión.
-- La página que no acepta al visitante **no se pinta**: `scripts.js` llama `guardPage()` antes de
-  decorar y hace `location.replace(…)`, así "atrás" no regresa a ella.
+- La página que no acepta al visitante **no se pinta**: `block-options.js` llama `guardPage()` al
+  cargar el primer bloque del proyecto (antes de que se muestre su sección), oculta la página y hace
+  `location.replace(…)`, así "atrás" no regresa a ella.
+- Solo corre en páginas con al menos un bloque del proyecto (`hero-novamovil`, `card-*`,
+  `breadcrumb`, `login`, `product-*`, `block-session-example`…).
 - La regla se vuelve a revisar al cambiar la sesión en la página: al iniciar sesión en `login`
   (`false`) va a `Redirect To`; al cerrar sesión en `cuenta` (`true`) va a `Redirect To`.
 - Es **global**: los bloques no tienen que hacer nada.
@@ -82,9 +89,9 @@ Se pueden combinar con coma: `signed-in, guest` = con sesión **o** invitado. Va
 
 ### 5.1 Una fila de la tabla (Drive) — funciona en cualquier bloque
 
-El estado va en la **última celda** de la fila, tenga 2 o más columnas. Funciona en **todos** los
-bloques de la página (los del proyecto, los del template como `columns` o `cards`, y los de los
-fragmentos), porque `scripts.js` lo aplica a cada bloque antes de que se decore:
+El estado va en la **última celda** de la fila, tenga 2 o más columnas. Funciona en **todos los
+bloques del proyecto** (los que llaman `applyBlockOptions`, también dentro de fragmentos), sin
+cambiar su código; los bloques del template (`columns`, `cards`…) no lo usan:
 
 ```
 ┌──────────────┬──────────────────────────┬──────────────┐
@@ -105,8 +112,7 @@ fragmentos), porque `scripts.js` lo aplica a cada bloque antes de que se decore:
 - Si la última celda está vacía o no es un estado, la fila **siempre se muestra**.
 - Si la última celda trae otra cosa además del estado ("guest y otra palabra"), no cuenta: la fila
   se ve siempre.
-- Lo hace `applySessionRows(block)`: lo corre `scripts.js` (`decorateMain`) en cada bloque y
-  `applyBlockOptions` otra vez (no cambia nada la segunda vez).
+- Lo hace `applySessionRows(block)`, que llama `applyBlockOptions` antes de leer la tabla.
 - Cuando la sesión cambia en la misma página (iniciar sesión, invitado, cerrar sesión), la página se
   **recarga** para mostrar las filas del nuevo estado. Si en ese momento se navega a otra página con
   `navigateTo()` (por ejemplo el login), no se recarga.
@@ -174,7 +180,7 @@ Metadata de la página:
 | 1 | `signIn(data)` / `signOut()` / `continueAsGuest()` | Cambiar el estado (disparan `SESSION_CHANGE_EVENT`) |
 | 1 | `getAccessState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
 | 1 | `getSession()` / `isSignedIn()` / `getAccessToken()` | Usuario, ¿hay sesión?, `'Bearer …'` |
-| 2 | `guardPage()` | Regla de la página (la llama `scripts.js`) |
+| 2 | `guardPage()` | Regla de la página (la llama `block-options.js` una vez) |
 | 2 | `requireSession({ allowGuest, redirectTo })` | Un bloque que debe redirigir por sí mismo |
 | 2 | `getSessionRedirectUrl()` / `toSitePath()` | Ruta de `Redirect To` (o `/`) y rutas validadas (solo del sitio) |
 | 2 | `requireNoSession()` / `getPageSessionRule()` | La regla `false` / el valor de `Session` de la página |
@@ -221,9 +227,9 @@ Metadata de la página:
 
 1. Copia `scripts/foundations/session.js`, `block-utils.js`, `block-options.js` y
    `styles/foundations/sessions.css`.
-2. En `head.html`: `<link rel="stylesheet" href="/styles/foundations/sessions.css">`.
-3. En `scripts.js`, al inicio de `loadEager`: `if (!guardPage()) return false;` y en `loadPage`:
-   `if (!(await loadEager(document))) return;`.
-4. Ajusta los ajustes de arriba de `session.js`: `DEFAULT_SESSION_REDIRECT`, las llaves de
+2. Nada más: no se toca `scripts.js` ni `head.html`. Los bloques llaman `applyBlockOptions(block)`
+   al inicio de su `decorate()` y con eso cargan `sessions.css`, la regla de la página y las filas
+   por sesión.
+3. Ajusta los ajustes de arriba de `session.js`: `DEFAULT_SESSION_REDIRECT`, las llaves de
    `sessionStorage` y `EDITOR_PREVIEW_HOSTS`.
-5. Para llamadas privadas, copia `privateRequestInterceptor` de `scripts/api/interceptors.js`.
+4. Para llamadas privadas, copia `privateRequestInterceptor` de `scripts/api/interceptors.js`.

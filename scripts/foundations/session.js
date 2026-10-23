@@ -25,7 +25,8 @@
  *   | Session     | false |   only WITHOUT a session (login): with one → Redirect To
  *   | Redirect To | /x    |   where both go; missing or empty → home /
  *   No Session row (or empty): public page, nothing is checked. The guest is not a session.
- *   guardPage()               reads both rows; called by scripts.js before painting
+ *   guardPage()               reads both rows; called once by block-options.js when the first
+ *                             block of the page loads (before its section is shown)
  *   getPageSessionRule()      'true' | 'false' | '' (the Session row of the page)
  *   requireSession(options)   the "true" rule, for a block that must redirect by itself
  *   requireNoSession(options) the "false" rule
@@ -42,10 +43,9 @@
  *                                | Benefit 1   | 🚚 | Envío gratis | guest, signed-in |
  *                              the rows of other states are removed (and the state cell of the
  *                              others) before the block reads its table; empty last cell or no
- *                              state word → the row is always shown. scripts.js runs it on every
- *                              block of the page (template blocks and fragments too) and
- *                              block-options.js again (no effect the 2nd time); when the session
- *                              changes, a page with such rows reloads.
+ *                              state word → the row is always shown. Called by block-options.js
+ *                              for every block that uses it; when the session changes, a page
+ *                              with such rows reloads.
  *   setSessionVisibility(element, 'signed-in, guest')   classes of sessions.css
  *   parseSessionStates(text)                            'signed-in, guest' → ['signed-in', 'guest']
  *   renderForSession(target, views)                     paints the view of the current state
@@ -356,7 +356,8 @@ export function getPageSessionRule() {
  *   true  → only with a session (a guest is not enough); without one → "Redirect To"
  *   false → only without a session; with one → "Redirect To" (after a login on the page too)
  *   empty or no row → public, nothing is checked
- * "Redirect To" missing or empty → home. Called by scripts.js before the page is painted; the
+ * "Redirect To" missing or empty → home. Called by block-options.js before the first block is
+ * shown; the
  * rule runs again whenever the session changes on the page.
  * @returns {boolean} false = the page is being redirected (do not paint it)
  */
