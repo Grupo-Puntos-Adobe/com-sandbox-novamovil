@@ -17,7 +17,8 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)   scripts/foundations/block-options.js → Styles / Classname rows
+ *     ├─ applyBlockOptions(block)   scripts/foundations/block-options.js → Styles / Classname /
+ *     │                             Session rows and rows with a session state in the last cell
  *     ├─ readHeroRows(block)            { 'tag': [cells], 'button 1': [cells], … }
  *     ├─ buildHeroText()                tag, description · buildHeroTitle() (role=heading, level 1)
  *     ├─ buildHeroButtons()             numbered "Button N" rows → a.hero-button

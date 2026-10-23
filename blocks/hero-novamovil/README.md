@@ -122,6 +122,16 @@ por las estadísticas; en las demás filas el valor ocupa las 2 últimas columna
 > En esta tabla de 3 columnas, el estado va siempre en la **última**: en una fila con el valor en
 > celdas combinadas, se separan y el estado va en la 3.ª (`| Title | Hola, *cliente* | signed-in |`);
 > una `Stat N` con estado necesita una 4.ª columna (`| Stat 1 | 4.9M+ | Usuarios | signed-in |`).
+>
+> Ejemplo: otro título y otro botón principal para quien inició sesión:
+>
+> | Hero Novamovil | | |
+> |---|---|---|
+> | Title | El futuro de la *conectividad* está aquí | signed-out |
+> | Title | Hola de nuevo, tu próximo *celular* te espera | signed-in |
+> | Button 1 | [Ver celulares](/celulares) | |
+> | Button 2 | [Iniciar sesión](/login) | signed-out |
+> | Button 2 | [Mi cuenta](/cuenta) | signed-in |
 
 3. **`Tag`**
     - **Tipo:** Texto corto
@@ -181,6 +191,14 @@ La tabla en Drive permite al autor configurar:
 | Sin fila `Image` | El bloque lleva `no-media` y solo se ve el texto |
 | Móvil o tablet | Una columna, sin imagen |
 
+### Cómo probarlo
+
+1. Home sin sesión: etiqueta, título, descripción, botones, estadísticas e imagen (desktop).
+2. Quitar la fila `Image`: el bloque lleva `no-media` y solo se ve el texto.
+3. Con las filas del ejemplo de sesión: sin sesión se ve el primer título y "Iniciar sesión"; al
+   iniciar sesión (la página se recarga) el segundo título y "Mi cuenta".
+4. Con `Session | false`: el hero completo se oculta al iniciar sesión.
+
 ### Vista previa
 
 Desktop:
@@ -200,6 +218,9 @@ Móvil:
 - `hero-novamovil.js` – Lee las filas de la tabla y construye el bloque
 - `hero-novamovil.css` – Estilos del bloque (tamaños, colores, degradado y resoluciones)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, estado por
-  fila (última columna) y arranque de la regla de sesión de la página
+  fila (última columna) y arranque de la regla de sesión de la página (el hero es el primer bloque
+  del home, así que la regla corre antes de pintar)
+- Guías: `documentation/06-styles-classname.md` (`block-options`) y `documentation/08-sesiones.md`
+  (sesiones)
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--hero-novamovil-*` y `--gradient-brand`)
