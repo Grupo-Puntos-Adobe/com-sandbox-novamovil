@@ -190,6 +190,22 @@ La tabla en Drive permite al autor configurar:
 | Fila `Session` = `true` / `false` y se inicia o cierra sesión | El bloque aparece o desaparece al instante, sin recargar |
 | `Item` con `guest y otra palabra` en la última columna | No cuenta como estado: la tarjeta se ve siempre |
 | Panel de edición | Se ve todo, para poder editarlo |
+| Clic en "Iniciar sesión" (`Login Link` = `/login`) | Va a `/login`; al iniciar sesión, la página `login` manda a su `Redirect To` (`/cuenta`), no de regreso al ejemplo (nada viaja en la URL) |
+| Sin `Private Endpoint` | No se pinta la llamada privada |
+
+### Cómo probarlo
+
+Página `/ejemplo-sesion`:
+
+1. **Sin sesión:** se ven "Ejemplo de sesión" y "Solo sin sesión"; tarjetas "Inicia sesión para ver
+   tus cupones" y "Envío gratis…". "Solo con sesión" está oculto.
+2. **"Continuar como invitado":** la página se recarga; etiqueta "Invitado" y tarjetas `guest` y
+   `signed-in, guest`. "Solo sin sesión" se sigue viendo (el invitado cuenta como sin sesión).
+3. **Iniciar sesión** en `/login` y volver a `/ejemplo-sesion`: "Hola, Cliente…", tarjetas
+   `signed-in` y `signed-in, guest`, "Solo con sesión" visible y "Solo sin sesión" oculto.
+4. **"Cerrar sesión":** vuelve al paso 1.
+5. **Llamada privada:** poner en `Private Endpoint` la URL de un servicio y, con sesión, revisar en
+   la red del navegador el header `Authorization: Bearer …` (sin sesión no se llama).
 
 ### Vista previa
 
