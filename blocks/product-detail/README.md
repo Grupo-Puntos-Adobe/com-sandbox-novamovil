@@ -147,6 +147,16 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
 > columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: un beneficio extra solo para quien inició sesión (la fila `Benefit N` ya tiene 2 valores,
+> el estado va en una 4.ª columna):
+>
+> | Product Detail | | | |
+> |---|---|---|---|
+> | Benefit 1 | 🚚 | Envío gratis en compras mayores a $999 | |
+> | Benefit 4 | 🎁 | Envío gratis en todas tus compras | signed-in |
+>
+> La página de detalle (`celulares/index`) es **pública**: su Metadata no lleva `Session`.
 
 2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
    sale el aviso "no disponible" (no hay JSON interno)
@@ -190,14 +200,15 @@ La tabla en Drive permite al autor configurar:
 
 ### Propiedades del JSON
 
-**Lo que se manda** (`POST Endpoint`): `meta` y `security` son fijos (`DETAIL_REQUEST_META` y
-`DETAIL_REQUEST_SECURITY`); solo cambia `data.productId`, que es el id de la URL (`?id=`) en minúsculas.
+**Lo que se manda** (`POST Endpoint`, llamada pública `REQUEST_TYPE.PUBLIC`: no necesita sesión):
+`meta` y `security` son fijos (`DETAIL_REQUEST_META` y `DETAIL_REQUEST_SECURITY`); solo cambia
+`data.productId`, que es el id de la URL (`?id=`) en minúsculas.
 
 ```json
 {
   "meta": { "requestId": "REQ-DET-001", "correlationId": "CORR-001", "timestamp": "2026-09-17T16:00:00Z", "channel": "WEB", "platform": "DESKTOP" },
   "security": { "auth": { "type": "Bearer", "value": "Bearer {{bearer_token}}" }, "nonce": "NONCE-REQ-DET-001", "signature": "{{hmac_signature}}" },
-  "data": { "productId": "iph-15-128-blk" }
+  "data": { "productId": "prod-001" }
 }
 ```
 
@@ -280,7 +291,8 @@ Móvil:
 - `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
   fila), `block-utils.js` (incluye `formatPrice`), `messages.js` y `page-context.js` (nombre del
   celular para el breadcrumb)
-- `scripts/api/http-client.js` – `post` al servicio de detalle
+- `scripts/api/http-client.js` – `post` al servicio de detalle (llamada pública; ver
+  `scripts/api/README.md`)
 - `blocks/empty-list-message/` – Aviso "no disponible"
 - `blocks/breadcrumb/` – Ruta con el nivel `{product}`
 - `styles/foundations/grid.css` – Columnas y espacios
