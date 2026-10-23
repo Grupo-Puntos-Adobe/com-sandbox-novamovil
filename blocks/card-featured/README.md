@@ -42,6 +42,8 @@ bloque. Se acomoda solo a cada resolución con el grid del proyecto: 1 tarjeta p
 - Alerta flotante configurable (duración y color) cuando el servicio falla
 - Aviso de lista vacía configurable (título, descripción e icono)
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: lista con nombre para lectores de pantalla, títulos con `role="heading"`, calificación y
   precios con etiquetas para lectores de pantalla, foco visible y sin animación si el usuario pide
@@ -144,6 +146,12 @@ y pueden ir en cualquier orden.
     - **Tipo:** Texto (nombres separados por espacio o coma)
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
+
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -276,6 +284,8 @@ Cada producto que llega del servicio (o del JSON interno) dentro de
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sin `Endpoint` y el JSON interno tiene productos | Las tarjetas del JSON interno |
 | Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
 | El servicio está respondiendo | Esqueleto de carga (4 tarjetas grises) |
@@ -303,7 +313,7 @@ Móvil:
 
 - `card-featured.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-featured.css` – Estilos del bloque (tamaños, colores y estados; las columnas vienen del grid)
-- `scripts/foundations/` – `block-options.js`, `block-utils.js` (incluye `formatPrice`), `messages.js`
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por fila), `block-utils.js` (incluye `formatPrice`), `messages.js`
   y `toast.js`
 - `scripts/api/http-client.js` – Llamada al servicio
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido

@@ -37,6 +37,8 @@ a la izquierda y la imagen a la derecha.
 - Fila que no existe o está vacía → ese elemento no aparece (sin `Image`, el bloque lleva `no-media`)
 - Círculos decorativos de fondo
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop (`styles/foundations/breakpoints.css`)
 - Accesible: título principal de la página con `role="heading"` y `aria-level="1"`, estadísticas como
   lista y foco visible en los botones
@@ -111,6 +113,16 @@ por las estadísticas; en las demás filas el valor ocupa las 2 últimas columna
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
 
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
+>
+> En esta tabla de 3 columnas, el estado va siempre en la **última**: en una fila con el valor en
+> celdas combinadas, se separan y el estado va en la 3.ª (`| Title | Hola, *cliente* | signed-in |`);
+> una `Stat N` con estado necesita una 4.ª columna (`| Stat 1 | 4.9M+ | Usuarios | signed-in |`).
+
 3. **`Tag`**
     - **Tipo:** Texto corto
     - **Descripción:** Etiqueta (píldora con punto cian) arriba del título
@@ -159,6 +171,8 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Las filas están en otro orden | Se muestran en el orden del diseño: etiqueta, título, descripción, botones, estadísticas e imagen |
 | Una fila no existe o está vacía | Ese elemento no aparece |
 | Palabra en *cursiva* en `Title` | Sale con el degradado de marca |
@@ -185,6 +199,7 @@ Móvil:
 
 - `hero-novamovil.js` – Lee las filas de la tabla y construye el bloque
 - `hero-novamovil.css` – Estilos del bloque (tamaños, colores, degradado y resoluciones)
-- `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, estado por
+  fila (última columna) y arranque de la regla de sesión de la página
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--hero-novamovil-*` y `--gradient-brand`)

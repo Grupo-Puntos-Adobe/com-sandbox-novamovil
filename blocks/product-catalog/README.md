@@ -50,6 +50,8 @@ a la izquierda; en móvil se abren en un panel con el botón **Filtros**.
 - Móvil: la barra con **Filtros** y **Ordenar por** se queda fija debajo del header mientras se
   recorre la lista, así se pueden abrir los filtros o cambiar el orden desde cualquier parte
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: título principal con `role="heading"` y `aria-level="1"`, contador con `role="status"`,
   grupos de filtros con nombre, deslizador con el precio en `aria-valuetext`, paginador con
@@ -202,6 +204,12 @@ opcionales y pueden ir en cualquier orden.
     - **Tipo:** Texto
     - **Descripción:** Estilos en línea y clases extra del bloque
     - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
+
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
 
 2. **`Title`**
     - **Tipo:** Texto
@@ -402,6 +410,8 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Cargando | Caja de filtros y 4 tarjetas grises |
 | Marcar o desmarcar una casilla, cambiar el orden o soltar el deslizador | Nueva búsqueda desde la página 1 |
 | Cambiar de página | Nueva búsqueda de esa página; la barra superior vuelve a quedar a la vista |
@@ -448,7 +458,8 @@ Móvil con el panel de filtros abierto:
   tarjetas y paginador
 - `product-catalog.css` – Estilos del bloque (tamaños, colores, panel móvil y resoluciones; las
   columnas vienen del grid)
-- `scripts/foundations/` – `block-options.js`, `block-utils.js` (incluye `formatPrice`),
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
+  fila), `block-utils.js` (incluye `formatPrice`),
   `messages.js` y `toast.js`
 - `scripts/api/http-client.js` – `get` (filtros) y `post` (búsqueda, con cancelación)
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
