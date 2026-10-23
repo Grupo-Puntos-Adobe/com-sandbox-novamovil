@@ -271,6 +271,18 @@ La tabla en Drive permite al autor configurar:
 | **Agregar al carrito** | Por ahora no hace nada (se conectará con la pantalla del carrito) |
 | Corazón | Se marca y desmarca (sin guardar todavía) |
 
+### Cómo probarlo
+
+1. **`/celulares/?id=prod-001`:** esqueleto de carga y luego el detalle completo; el breadcrumb y la
+   pestaña muestran "Apple iPhone 15 Pro".
+2. **`/celulares/` sin `?id=`:** regresa a `/celulares` (en el panel de edición pone
+   `?id=prod-001`).
+3. **`/celulares/?id=NO_VALIDO!`:** aviso "Este celular no existe", sin llamar al servicio.
+4. **Desde una tarjeta** del catálogo o de destacados: abre el detalle de ese celular.
+5. **Opciones:** elegir color, capacidad y cantidad (de 1 al stock, máximo 10) y marcar favorito.
+6. **Por sesión:** con el ejemplo de `Benefit 4` (`signed-in`), ese beneficio solo aparece con
+   sesión (la página se recarga al iniciar sesión).
+
 ### Vista previa
 
 Desktop:
@@ -302,4 +314,5 @@ Móvil:
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
   `/celulares/?id={id}`)
 
-Integración de servicios: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).
