@@ -428,6 +428,20 @@ import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-
 
 ### Servicio que requiere token (llamada privada)
 
+En la tabla del bloque, la URL de un servicio privado va en la fila **`Private Endpoint`** (también
+se acepta `PrivateEndpoint`); `Endpoint` queda para los públicos, así los bloques actuales no
+cambian:
+
+| Fila | Llamada |
+|---|---|
+| `Endpoint` | `REQUEST_TYPE.PUBLIC` |
+| `Private Endpoint` | `REQUEST_TYPE.PRIVATE` (con Bearer) |
+
+```js
+import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
+const endpoint = readPrivateEndpoint(block);
+```
+
 ```js
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 const response = await post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });

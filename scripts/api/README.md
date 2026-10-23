@@ -30,6 +30,25 @@ const profile = await post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE }
 El token sale de `scripts/foundations/session.js` (`getAccessToken()`), después del login. **Nunca**
 se escribe un token ni una API key en el código ni en Drive.
 
+### En Drive: `Endpoint` es público, `Private Endpoint` es privado
+
+| Fila en la tabla del bloque | Tipo de llamada | Cómo se lee en el bloque |
+|---|---|---|
+| `Endpoint` (y las de cada bloque: `Search Endpoint`, `Filters Endpoint`) | `REQUEST_TYPE.PUBLIC` | `readEndpoint(block)` o `readTableCell` |
+| `Private Endpoint` (también se acepta `PrivateEndpoint`) | `REQUEST_TYPE.PRIVATE` (con Bearer) | `readPrivateEndpoint(block)` |
+
+Los bloques que ya existen siguen con `Endpoint` y no cambian. Un servicio que necesita sesión va
+**siempre** en `Private Endpoint`, así el autor sabe en la tabla cuál es privado:
+
+```js
+import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
+import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
+
+const privateEndpoint = readPrivateEndpoint(block);
+if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
+```
+
+
 ## 2. `http-client.js`
 
 ### Funciones
@@ -131,7 +150,7 @@ Un nombre que no existe usa la cadena pública.
 | `product-catalog` | `get(Filters Endpoint)` y `post(Search Endpoint, body, { signal })` |
 | `product-detail` | `post(Endpoint, { meta, security, data: { productId } })` |
 | `login` | `post(Endpoint, { meta, security, data: { emailOrPhone, password } })` (pública; lee los errores de `error.cause`) |
-| `block-session-example` | `post(Private Endpoint, …, { interceptor: REQUEST_TYPE.PRIVATE })` |
+| `block-session-example` | `post(Private Endpoint, …, { interceptor: REQUEST_TYPE.PRIVATE })` (fila `Private Endpoint`) |
 
 ## 5. Dependencias y cómo llevarlo a otro proyecto
 

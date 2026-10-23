@@ -20,7 +20,7 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 | Que una fila la vean dos estados | Tabla del bloque | Última columna: `signed-out, guest` |
 | Mostrar u ocultar **una parte** de un bloque | Código del bloque | `setSessionVisibility(elemento, 'signed-in')` |
 | Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque | `renderForSession(elemento, { 'signed-in': … })` |
-| Llamar un **servicio privado** con el token | Código del bloque | `post(url, body, { interceptor: REQUEST_TYPE.PRIVATE })` |
+| Llamar un **servicio privado** con el token | Tabla del bloque + código | Fila `Private Endpoint` (`Endpoint` es para los públicos) y `post(readPrivateEndpoint(block), body, { interceptor: REQUEST_TYPE.PRIVATE })` |
 | Que el **login** mande a "Mi cuenta" al tener sesión | Metadata de `login` | `Session` \| `false` + `Redirect To` \| `/cuenta` |
 | Que el login **no** redirija (paso de compra) | Metadata del paso | Sin la fila `Session` |
 
@@ -204,6 +204,9 @@ Metadata de la página:
 enlace se queda (paso cumplido). Más detalle en `blocks/login/README.md`.
 
 ## 8. Llamadas a servicios
+
+En la tabla del bloque: **`Endpoint`** = servicio público, **`Private Endpoint`** (o
+`PrivateEndpoint`) = servicio privado. Los bloques que ya existen siguen con `Endpoint`.
 
 | Tipo | Uso | Qué hace |
 |---|---|---|

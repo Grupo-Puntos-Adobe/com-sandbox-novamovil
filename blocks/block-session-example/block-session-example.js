@@ -41,7 +41,7 @@
  * Guide: blocks/block-session-example/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
-import { readTableCell } from '../../scripts/foundations/block-utils.js';
+import { readPrivateEndpoint, readTableCell } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
   SESSION_STATES, continueAsGuest, parseSessionStates, renderForSession,
@@ -105,7 +105,6 @@ function readItemRows(block) {
 function readExampleSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
   const loginCell = readTableCell(block, 'login link');
-  const endpointCell = readTableCell(block, 'private endpoint');
   return {
     texts: {
       title: readCellText('title'),
@@ -119,7 +118,8 @@ function readExampleSettings(block) {
     },
     login: { text: loginCell.text, href: toSitePath(loginCell.href || loginCell.text) },
     items: readItemRows(block),
-    privateEndpoint: endpointCell.href || endpointCell.text,
+    // Private Endpoint row → REQUEST_TYPE.PRIVATE (Endpoint rows of other blocks are public)
+    privateEndpoint: readPrivateEndpoint(block),
   };
 }
 

@@ -10,7 +10,7 @@ sesiones.
 | Archivo | Qué hace | Exporta |
 |---|---|---|
 | `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` (`true` / `false`) de los bloques NovaMóvil y las filas con el estado en la última columna. Es el **punto de entrada de las sesiones**: al importarse carga `sessions.css` y revisa la regla de la página. Guía: `documentation/06-styles-classname.md` | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
-| `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice` |
+| `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readEndpoint`, `readPrivateEndpoint`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice` |
 | `messages.js` | Mensajes genéricos con valor por defecto (alerta, lista vacía, foto que falla) y el formato de números / precios | `MESSAGES` (default), `LOCALE`, `CURRENCY` |
 | `toast.js` | Alerta flotante arriba a la derecha, apilable, que se cierra sola | `showToast(message, { duration, variant })`, `TOAST_VARIANTS` |
 | `page-context.js` | Datos que un bloque obtiene al cargar y otro bloque de la misma página necesita, sin importarse entre ellos (hoy: el nombre de la página actual) | `setCurrentPageName(name)`, `getCurrentPageName()`, `CURRENT_PAGE_NAME_EVENT` |
@@ -67,6 +67,8 @@ export default function decorate(block) {
 | Función | Qué hace |
 |---|---|
 | `readTableCell(block, rowName)` | Una fila tal cual: `{ text, href, found }` (sin resolver enlaces contra la página) |
+| `readEndpoint(block)` | La fila `Endpoint`: URL de un servicio **público** (`REQUEST_TYPE.PUBLIC`), o `''` |
+| `readPrivateEndpoint(block)` | La fila `Private Endpoint` (o `PrivateEndpoint`): URL de un servicio **privado** (`REQUEST_TYPE.PRIVATE`), o `''` |
 | `readRowTextOrDefault(block, rowName, defaultText)` | Fila que falta → `defaultText`; fila vacía → `''`; con valor → el valor |
 | `getAlertOptions(config)` | `Alert Duration` / `Alert Color` → opciones de `showToast` |
 | `getSafeHref(path)` | Solo rutas del sitio y `http(s)`; cualquier otra cosa → `null` |

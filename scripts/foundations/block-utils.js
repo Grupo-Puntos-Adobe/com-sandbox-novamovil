@@ -4,6 +4,9 @@
  * Exports (name → what it does → who uses it):
  *   readTableCell(block, rowName)
  *     a row exactly as authored → { text, href, found }      card-* (Endpoint, links)
+ *   readEndpoint(block) / readPrivateEndpoint(block)
+ *     the Endpoint row (public call) / the Private Endpoint row (private call with Bearer;
+ *     "PrivateEndpoint" is accepted too) → URL or ''           card-*, product-*, login, …
  *   readRowTextOrDefault(block, rowName, defaultText)
  *     missing row → default, present but empty → ''          card-* (Empty List *, …)
  *   getAlertOptions(config)
@@ -44,6 +47,42 @@ export function readTableCell(block, rowName) {
     href: (link?.getAttribute('href') || '').trim(),
     found: true,
   };
+}
+
+// rows of the service URL: Endpoint → REQUEST_TYPE.PUBLIC, Private Endpoint → REQUEST_TYPE.PRIVATE
+const ENDPOINT_ROWS = ['endpoint'];
+const PRIVATE_ENDPOINT_ROWS = ['private endpoint', 'privateendpoint'];
+
+/**
+ * URL of the first of these rows that has one (link or text), else ''.
+ * @param {Element} block
+ * @param {string[]} rowNames
+ * @returns {string}
+ */
+function readFirstUrl(block, rowNames) {
+  return rowNames
+    .map((rowName) => readTableCell(block, rowName))
+    .map((cell) => cell.href || cell.text)
+    .find(Boolean) || '';
+}
+
+/**
+ * The Endpoint row: URL of a public service (call it with REQUEST_TYPE.PUBLIC, the default).
+ * @param {Element} block
+ * @returns {string} '' without the row
+ */
+export function readEndpoint(block) {
+  return readFirstUrl(block, ENDPOINT_ROWS);
+}
+
+/**
+ * The Private Endpoint row ("PrivateEndpoint" also accepted): URL of a service that needs a
+ * session (call it with REQUEST_TYPE.PRIVATE, it sends the Bearer token).
+ * @param {Element} block
+ * @returns {string} '' without the row
+ */
+export function readPrivateEndpoint(block) {
+  return readFirstUrl(block, PRIVATE_ENDPOINT_ROWS);
 }
 
 /**

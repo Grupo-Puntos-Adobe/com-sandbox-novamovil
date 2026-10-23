@@ -146,7 +146,8 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
     - **Descripción:** Botón de invitado (solo sin sesión) y de cerrar sesión (con sesión o invitado)
 
 8. **`Private Title`** / **`Private Endpoint`**
-    - **Tipo:** Texto / URL
+    - **Tipo:** Texto / URL (también se acepta `PrivateEndpoint`). Es la regla del proyecto: un
+      servicio que necesita sesión va en `Private Endpoint`; `Endpoint` es para los públicos
     - **Descripción:** Llamada privada: con sesión hace `post(Private Endpoint)` con
       `REQUEST_TYPE.PRIVATE` (Bearer en el header y en `security.auth.value`) y muestra
       `status.message` de la respuesta
@@ -244,6 +245,7 @@ post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, filas por sesión
   (última columna) y arranque de las sesiones (`sessions.css` + regla de la página)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PRIVATE`
+- `scripts/foundations/block-utils.js` – `readPrivateEndpoint` para la fila `Private Endpoint`
 - `styles/foundations/grid.css` y `breakpoints.css` – Columnas y resoluciones
 - Colores en `styles/colors.css` (`--block-session-example-*`)
 - Documento de Drive: `content-drive/ejemplo-sesion.docx` (3 bloques: completo, `Session` `true` y
