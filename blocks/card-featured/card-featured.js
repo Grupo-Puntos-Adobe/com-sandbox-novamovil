@@ -8,6 +8,8 @@
  * Product Link ("/celulares/?id={id}"), Button Text, Alert Duration, Alert Color,
  * Error Response Message, Empty List Title, Empty List Description, Empty List Icon,
  * Image Error Message.
+ * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
+ * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
  * Defaults only for messages and the alert:
  *   - Title, Link, Button Text and Product Link have no default: without text in the
  *     table that part is not painted. Without Button Text the product name is the link;

@@ -13,6 +13,8 @@
  * intereses"), Installments Months, In Stock Text, Sold Out Text, Button Text, Benefit N
  * (icon | text), Specs Title, Empty List Title, Empty List Description, Empty List Icon,
  * Image Error Message.
+ * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
+ * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
  * Defaults only for messages and configuration:
  *   - Content (labels, texts, button, benefits, Specs Title) has no default: without text in
  *     the table that part is not painted.

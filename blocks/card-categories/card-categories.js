@@ -7,6 +7,8 @@
  * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
  * Alert Color, Error Response Message, Empty List Title, Empty List Description,
  * Empty List Icon.
+ * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
+ * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
  * Defaults only for messages and the alert:
  *   - Title has no default: without text in the table the section has no title.
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
