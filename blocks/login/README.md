@@ -40,12 +40,16 @@ muestra uno u otro.
 - Texto legal con enlaces a **Términos y Condiciones** y **Aviso de Privacidad**
 - Todo se configura desde la tabla en Drive; si una fila no tiene texto, esa parte no se pinta
 - Inicio de sesión con el servicio de la fila `Endpoint` (POST): al responder 200 guarda la sesión
-  (`scripts/foundations/session.js`) y lleva a la siguiente página
+  (`scripts/foundations/session.js`) y el login se oculta; **a dónde ir lo decide el Metadata de la
+  página**, no el bloque (ver [Sesión y redirección](#sesión-y-redirección))
+- El mismo bloque sirve en la página `/login` y dentro de un paso de compra (ahí no redirige: el
+  paso queda cumplido)
 - Mensajes del servicio: arriba del formulario (error o éxito) y debajo de cada campo (400)
 - Mientras espera la respuesta, el botón se desactiva para no enviar dos veces
 - Columna centrada con el grid (`container-fluid > row row-center > col-24`): todo el ancho en
   móvil y 420 px desde tablet
-- Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- Estilos y clases extra del autor con las filas `Styles` y `Classname`; también acepta la fila
+  `Session` y el estado en la última columna de cualquier fila (como todo bloque NovaMóvil)
 - Accesible: tabs con `role="tablist"` / `tab` / `tabpanel` (flechas, Inicio y Fin para cambiar
   de tab), cada campo con su `label`, título como encabezado de nivel 1 y foco visible
 - Pintado seguro: los textos se ponen siempre como texto (nunca HTML) y solo acepta enlaces del
@@ -57,6 +61,8 @@ El componente usa el nombre del bloque como prefijo de todas sus clases (`login-
 estilos van dentro de `.login`. Se construye con `div` y roles ARIA, excepto lo que necesita un
 formulario para funcionar (`form`, `label`, `input`, `button`) y los enlaces (`a`).
 
+- `login-wrapper` – Contenedor de la sección; lleva las clases `session-only-*` de
+  `sessions.css` (quién ve el login, ver [Sesión y redirección](#sesión-y-redirección))
 - `login` – Contenedor principal del componente (el bloque)
 - `login-frame` – Columna centrada del grid (`col-24`)
 - `login-header` – Título y descripción
@@ -82,29 +88,30 @@ formulario para funcionar (`form`, `label`, `input`, `button`) y los enlaces (`a
 - `login-legal` / `login-legal-link` – Texto legal y sus enlaces
 
 ```text
-div.login
-└─ div.container-fluid
-   └─ div.row.row-center
-      └─ div.col-24.login-frame
-         ├─ div.login-header
-         │  ├─ div.login-title[role=heading][aria-level=1]
-         │  └─ div.login-description
-         ├─ div.login-tabs[role=tablist]
-         │  ├─ button.login-tab[role=tab][aria-selected=true]    Iniciar sesión
-         │  └─ button.login-tab[role=tab][aria-selected=false]   Crear cuenta
-         ├─ div.login-panel.login-panel-login[role=tabpanel]
-         │  └─ form.login-form[aria-busy]
-         │     ├─ div.login-alert[role=alert][hidden]                      (mensaje del servicio)
-         │     ├─ div.login-field × 2
-         │     │  ├─ label.login-label
-         │     │  ├─ input.login-input[aria-invalid][aria-describedby]
-         │     │  └─ div.login-field-error                                 (solo con error)
-         │     ├─ div.login-forgot > a.login-forgot-link
-         │     ├─ button.login-submit[type=submit]
-         │     ├─ div.login-divider[role=separator] > div.login-divider-text
-         │     └─ a.login-guest
-         ├─ div.login-panel.login-panel-register[role=tabpanel][hidden]   (vacío)
-         └─ div.login-legal > a.login-legal-link × N
+div.login-wrapper.session-only.session-only-signed-out[.session-only-guest]   (ver abajo)
+└─ div.login
+   └─ div.container-fluid
+      └─ div.row.row-center
+         └─ div.col-24.login-frame
+            ├─ div.login-header
+            │  ├─ div.login-title[role=heading][aria-level=1]
+            │  └─ div.login-description
+            ├─ div.login-tabs[role=tablist]
+            │  ├─ button.login-tab[role=tab][aria-selected=true]    Iniciar sesión
+            │  └─ button.login-tab[role=tab][aria-selected=false]   Crear cuenta
+            ├─ div.login-panel.login-panel-login[role=tabpanel]
+            │  └─ form.login-form[aria-busy]
+            │     ├─ div.login-alert[role=alert][hidden]                      (mensaje del servicio)
+            │     ├─ div.login-field × 2
+            │     │  ├─ label.login-label
+            │     │  ├─ input.login-input[aria-invalid][aria-describedby]
+            │     │  └─ div.login-field-error                                 (solo con error)
+            │     ├─ div.login-forgot > a.login-forgot-link
+            │     ├─ button.login-submit[type=submit]
+            │     ├─ div.login-divider[role=separator] > div.login-divider-text
+            │     └─ a.login-guest
+            ├─ div.login-panel.login-panel-register[role=tabpanel][hidden]   (vacío)
+            └─ div.login-legal > a.login-legal-link × N
 ```
 
 ### Resoluciones
@@ -140,9 +147,11 @@ se pinta.
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
 
-    También acepta la fila **`Session`** de cualquier bloque (ver `documentation/08-sesiones.md`).
-    Sin ella el login se oculta solo al tener sesión: en la página `login` (Metadata `Session:
-    false`) el invitado lo sigue viendo; en un paso de compra el invitado ya cumplió el paso.
+    También acepta la fila **`Session`** de cualquier bloque (`true` / `false`, ver
+    `documentation/06-styles-classname.md`); si la tabla la trae, manda sobre la visibilidad
+    automática. Sin ella el login se oculta solo al tener sesión: en la página `login` (Metadata
+    `Session: false`) el invitado lo sigue viendo; en un paso de compra el invitado ya cumplió el
+    paso.
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -227,6 +236,33 @@ La tabla en Drive permite al autor configurar:
 
 ![Vista Tabla en Drive](/documentation/readme/login/drive-table.png)
 
+### Sesión y redirección
+
+El bloque **no redirige**: solo inicia sesión y se muestra u oculta. La página decide a dónde ir con
+su **Metadata** (`documentation/08-sesiones.md`):
+
+| Dónde está el login | Metadata de la página | Sin sesión | Con sesión (al abrir o al iniciar sesión) |
+|---|---|---|---|
+| Página `login` | `Session: false` · `Redirect To: /cuenta` | Se ve el formulario | La página va a `/cuenta` sin pintar el formulario |
+| Página `login` sin `Redirect To` | `Session: false` | Se ve el formulario | La página va al home `/` |
+| Paso de compra | sin `Session` | Se ve el formulario | El login se oculta y el paso queda cumplido (sin recargar ni navegar) |
+
+Quién ve el bloque (clases de `styles/foundations/sessions.css` en `login-wrapper`):
+
+| Página | Lo ven |
+|---|---|
+| `login` (`Session: false`) | Sin sesión **e invitado** (el invitado puede iniciar sesión) |
+| Cualquier otra (paso de compra) | Solo sin sesión (el invitado ya cumplió el paso) |
+| La tabla trae la fila `Session` | Lo que diga esa fila (`true` / `false`) |
+
+- La regla de la página la arranca `block-options.js` al cargar este bloque: la página `login` no
+  necesita nada más.
+- Al iniciar sesión, `signIn()` dispara `SESSION_CHANGE_EVENT`: la página vuelve a revisar su regla
+  (y en `login` redirige) y el bloque se oculta.
+- **"Continuar como invitado"**: `continueAsGuest()` y luego va al enlace de la fila `Guest Button`;
+  sin enlace se queda (paso de compra cumplido).
+- Nada se lee ni se agrega a la URL. El `nextStep.route` del servicio no se usa.
+
 ### Servicio de inicio de sesión
 
 `POST` a la fila `Endpoint`. `meta` y `security` van fijos (`LOGIN_REQUEST_META` y
@@ -306,17 +342,22 @@ Móvil:
 
 - `login.js` – Lee la tabla y construye título, tabs, formulario y texto legal
 - `login.css` – Estilos del bloque, todos dentro de `.login` (tamaños, colores y resoluciones)
-- `scripts/foundations/block-options.js` – Filas `Styles` y `Classname`
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, estado en la
+  última columna y arranque de las sesiones (`sessions.css` + regla de la página)
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
 - `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `getPageSessionRule`,
   `navigateTo`, `toSitePath` y `setSessionVisibility`; la regla de la página (`guardPage`)
-- `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión
+- `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión (lo carga
+  `block-options.js`)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`
   (`scripts/api/interceptors.js`)
 - `styles/foundations/grid.css` – Columna centrada (`container-fluid > row row-center > col-24`)
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--login-*`)
-- Documento de Drive: `content-drive/login.docx` (página `/login`)
+- Documento de Drive: `content-drive/login.docx` (página `/login`, Metadata `Session: false` y
+  `Redirect To: /cuenta`)
+- Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
+  (`block-options`)
 - Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), la página `/datos` a la
   que manda el servicio y el bloque de crear cuenta (tab **Crear cuenta**)
