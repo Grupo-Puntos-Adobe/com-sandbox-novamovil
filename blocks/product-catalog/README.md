@@ -440,6 +440,19 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 | Móvil: bajar por la lista | La barra con **Filtros** y **Ordenar por** se queda fija debajo del header hasta el final del catálogo; al subir vuelve a su lugar |
 | Móvil: abrir **Filtros** | Panel a pantalla completa; se cierra con **Ver resultados**, × o `Escape` |
 
+### Cómo probarlo
+
+1. **Sin `Search Endpoint` ni `Filters Endpoint`:** los 4 celulares básicos y los filtros completos
+   del JSON interno.
+2. **Con los dos servicios:** filtros del servicio; cada cambio de filtro, orden o página manda una
+   búsqueda nueva (la anterior se cancela) y el contador y el paginador se actualizan.
+3. **Tarjeta:** el enlace es `/celulares/?id={id}` y abre el detalle de ese celular.
+4. **Servicio con error:** una sola alerta y el aviso de lista vacía (📱).
+5. **Móvil:** la barra de **Filtros** y **Ordenar por** se queda fija al bajar; **Filtros** abre el
+   panel.
+6. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+   sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
+
 ### Vista previa
 
 Desktop (con paginador):
@@ -479,4 +492,5 @@ Móvil con el panel de filtros abierto:
   `styles/styles.css` para el panel móvil
 - Se usa en: la página Celulares, después de `blocks/breadcrumb/`
 
-Integración de servicios: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicios), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).
