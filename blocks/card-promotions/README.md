@@ -111,6 +111,14 @@ opcionales y pueden ir en cualquier orden.
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
 > columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: otro título y otro aviso de lista vacía para quien inició sesión, sin tocar el código:
+>
+> | Card Promotions | | |
+> |---|---|---|
+> | Title | Promociones | signed-out |
+> | Title | Tus promociones | signed-in |
+> | Empty List Title | Inicia sesión para ver tus promociones | signed-out |
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -246,8 +254,10 @@ Móvil:
 - `card-promotions.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-promotions.css` – Estilos del bloque (tamaños, colores, degradado y estados; las columnas
   vienen del grid)
-- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por fila), `block-utils.js`, `messages.js` y `toast.js`
-- `scripts/api/http-client.js` – Llamada al servicio
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
+  fila), `block-utils.js`, `messages.js` y `toast.js`
+- `scripts/api/http-client.js` – `get(Endpoint)`, llamada pública (`REQUEST_TYPE.PUBLIC`, sin
+  sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-promotions-*`)
