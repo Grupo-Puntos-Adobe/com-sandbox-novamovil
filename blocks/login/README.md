@@ -346,6 +346,13 @@ renovar el token.
 4. Cerrar sesión (por ejemplo desde `/ejemplo-sesion`) y entrar como invitado: `/login` sigue
    mostrando el formulario.
 5. En el panel de edición se ve siempre el formulario y nunca redirige.
+6. **Tabs:** clic en **Crear cuenta** (o flechas / Inicio / Fin): se muestra su panel (vacío por
+   ahora) y se oculta el formulario.
+7. **Errores:** el mock de Postman siempre responde 200; para ver los mensajes de 400, 401 y 500 hay
+   que cambiar la respuesta del mock (o usar el servicio real). Sin red, sale `Error Response
+   Message`.
+8. **Paso de compra:** el mismo bloque en una página sin `Session` en su Metadata: al iniciar sesión o
+   con "Continuar como invitado" el login se oculta y no navega.
 
 ### Vista previa
 
@@ -380,7 +387,8 @@ Móvil:
 - Colores en `styles/colors.css` (`--login-*`)
 - Documento de Drive: `content-drive/login.docx` (página `/login`, Metadata `Session: false` y
   `Redirect To: /cuenta`)
-- Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
+- Guías: `documentation/08-sesiones.md` (sesiones), `documentation/07-integracion-endpoints.md`
+  (servicio) y `documentation/06-styles-classname.md`
   (`block-options`)
 - Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), el bloque de crear cuenta
   (tab **Crear cuenta**) y un bloque del proyecto en `/cuenta` para que su regla `Session: true`
