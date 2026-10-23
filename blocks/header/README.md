@@ -155,6 +155,17 @@ El documento en Drive permite al autor configurar:
 | El documento no trae los enlaces de cuenta o carrito | Llevan a `/cuenta` y `/carrito` |
 | Clic en **Mi cuenta** sin sesión | Va a `/cuenta`; esa página decide con su Metadata (`Session: true` → `Redirect To: /login`) |
 
+### Cómo probarlo
+
+1. **Desktop:** marca, menú y herramientas (lupa, cuenta, carrito con contador) en una barra.
+2. **Móvil o tablet:** marca, lupa, cuenta, carrito y hamburguesa; la hamburguesa abre el menú
+   debajo y `Escape` lo cierra.
+3. **Lupa:** se despliega el buscador; con el campo vacío no se envía.
+4. **Mi cuenta** sin sesión: va a `/cuenta`, y esa página decide con su Metadata (hoy `cuenta` solo
+   tiene texto: se ve; con un bloque del proyecto redirigiría a `/login`).
+5. **Documento `nav` sin logo o sin enlaces de herramientas:** logo por defecto, `/cuenta` y
+   `/carrito`.
+
 ### Vista previa
 
 Desktop:
@@ -201,3 +212,4 @@ El header **no cambia con la sesión** por ahora: siempre muestra los mismos ico
   (`--nav-height`)
 - La marca se construye igual que en `blocks/footer/footer.js`: si cambias la marca, cámbiala en los
   dos bloques
+- Guía de sesiones (página `cuenta` y su Metadata): `documentation/08-sesiones.md`

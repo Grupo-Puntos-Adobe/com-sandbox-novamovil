@@ -137,6 +137,15 @@ El documento en Drive permite al autor configurar:
 | Falta la sección 3 | No se pinta la parte de abajo |
 | El documento `footer` no existe | El footer sale vacío y la página carga normal |
 
+### Cómo probarlo
+
+1. **Móvil:** marca y frase, las 3 columnas y abajo copyright y medios de pago, todo en una columna.
+2. **Tablet o desktop:** marca + 3 columnas en una fila; abajo, copyright y medios de pago en una
+   fila.
+3. **Un título nuevo** en la sección 2 del documento `footer`: aparece otra columna.
+4. **Sin la sección 3:** no se pinta la parte de abajo.
+5. **Sin documento `footer`:** el footer sale vacío y la página carga normal.
+
 ### Vista previa
 
 Desktop:
@@ -170,3 +179,4 @@ El footer **no cambia con la sesión**: siempre muestra lo mismo.
 - Colores en `styles/colors.css` (`--footer-*`)
 - La marca se construye igual que en `blocks/header/header.js`: si cambias la marca, cámbiala en los
   dos bloques
+- Guía de sesiones (por si un enlace llevara a una página privada): `documentation/08-sesiones.md`
