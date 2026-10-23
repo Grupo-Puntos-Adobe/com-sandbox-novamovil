@@ -3,6 +3,10 @@
 Archivos de JavaScript **portables**: no dependen de ningún bloque del proyecto y se pueden llevar
 a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` (CSS).
 
+`scripts/scripts.js`, `head.html` y `404.html` quedan como el template: nada de aquí se carga desde
+ellos. Los bloques importan lo que usan, y `block-options.js` es además el punto de entrada de las
+sesiones.
+
 | Archivo | Qué hace | Exporta |
 |---|---|---|
 | `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` (`true` / `false`) de los bloques NovaMóvil y las filas con el estado en la última columna. Es el **punto de entrada de las sesiones**: al importarse carga `sessions.css` y revisa la regla de la página. Guía: `documentation/06-styles-classname.md` | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
@@ -17,11 +21,82 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
 | Archivo | Depende de |
 |---|---|
 | `block-options.js` | `scripts/aem.js` (`loadCSS`), `session.js` y `styles/foundations/sessions.css` |
-| `block-utils.js` | `messages.js` (para `formatPrice`) |
+| `block-utils.js` | `messages.js` (`LOCALE` y `CURRENCY` para `formatPrice`) |
 | `messages.js` | nada |
 | `page-context.js` | nada |
 | `session.js` | `scripts/aem.js` (`getMetadata`), `block-utils.js` (`getSafeHref`) y `styles/foundations/sessions.css` |
 | `toast.js` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` y sus colores `--toast-*` en `styles/colors.css`, más `--z-index-toast` en `styles/styles.css` |
+
+## Quién usa cada uno
+
+| Archivo | Lo usan |
+|---|---|
+| `block-options.js` | `hero-novamovil`, `card-categories`, `card-featured`, `card-promotions`, `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example` (1.ª línea de `decorate`) |
+| `block-utils.js` | Los mismos bloques (menos `hero-novamovil`) |
+| `messages.js` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `empty-list-message` |
+| `toast.js` | `card-categories`, `card-featured`, `card-promotions`, `product-catalog` |
+| `page-context.js` | `product-detail` (pone el nombre) y `breadcrumb` (lo lee para `{product}`) |
+| `session.js` | `block-options.js`, `login`, `block-session-example` y `scripts/api/interceptors.js` (llamada privada) |
+
+## block-options.js
+
+Filas opcionales de autor y arranque de las sesiones. Guía completa:
+`documentation/06-styles-classname.md`.
+
+| Fila / celda | Qué hace |
+|---|---|
+| `Styles` | Estilos en línea sobre el bloque (números sin unidad → `px`; valores inseguros se ignoran) |
+| `Classname` | Clases extra sobre el bloque |
+| `Session` | `true` = el bloque completo solo con sesión; `false` = solo sin sesión; vacía = siempre |
+| Estado en la **última columna** de cualquier fila | `signed-in`, `signed-out`, `guest` (combinables): la fila solo existe para ese estado |
+
+Al importarse por primera vez en la página: `await loadCSS(sessions.css)` y `guardPage()` (regla
+del Metadata `Session` / `Redirect To`). Un bloque nuevo solo necesita:
+
+```js
+import applyBlockOptions from '../../scripts/foundations/block-options.js';
+
+export default function decorate(block) {
+  applyBlockOptions(block); // FIRST line: Styles / Classname / Session rows and session rows
+  // …
+}
+```
+
+## block-utils.js
+
+| Función | Qué hace |
+|---|---|
+| `readTableCell(block, rowName)` | Una fila tal cual: `{ text, href, found }` (sin resolver enlaces contra la página) |
+| `readRowTextOrDefault(block, rowName, defaultText)` | Fila que falta → `defaultText`; fila vacía → `''`; con valor → el valor |
+| `getAlertOptions(config)` | `Alert Duration` / `Alert Color` → opciones de `showToast` |
+| `getSafeHref(path)` | Solo rutas del sitio y `http(s)`; cualquier otra cosa → `null` |
+| `buildSectionTitle(block, prefix)` | Fila `Title` → `div.{prefix}-header` con el título dentro del bloque |
+| `formatPrice(value, currency)` | `$19,999` con `LOCALE` / `CURRENCY` de `messages.js` |
+
+## messages.js
+
+Solo **mensajes** con valor por defecto (el contenido viene de las tablas, sin defaults). Un bloque
+los usa cuando su tabla no tiene la fila:
+
+| Clave | Fila de Drive |
+|---|---|
+| `errorResponseMessage` | `Error Response Message` (también si la fila está vacía) |
+| `emptyListTitle` / `emptyListDescription` | `Empty List Title` / `Empty List Description` |
+| `imageErrorMessage` | `Image Error Message` |
+
+Además: `LOCALE` (`es-MX`) y `CURRENCY` (`MXN`) para números y precios.
+
+## toast.js
+
+`showToast(message, { duration, variant })`: alerta flotante arriba a la derecha, apilable, que se
+cierra sola (`variant`: `error`, `warning`, `success`, `info` o un color hex). Carga
+`styles/foundations/toast.css` la primera vez.
+
+## page-context.js
+
+Datos que un bloque obtiene al cargar y otro necesita, sin importarse entre ellos:
+`setCurrentPageName(name)` / `getCurrentPageName()` y el evento `CURRENT_PAGE_NAME_EVENT` (hoy: el
+nombre del celular del detalle para el nivel `{product}` del breadcrumb).
 
 ## Llevarlos a otro proyecto
 
@@ -44,7 +119,8 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
 No hay que tocar `scripts.js` ni `head.html`: las sesiones arrancan desde `block-options.js`.
 
 La API (`scripts/api/`: `http-client.js` e `interceptors.js`) no está aquí porque lleva la URL base
-y los interceptores de este proyecto.
+y los interceptores de este proyecto; su referencia está en `scripts/api/README.md`. Su llamada
+privada usa `session.js`.
 
 ---
 
