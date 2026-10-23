@@ -152,6 +152,14 @@ y pueden ir en cualquier orden.
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
 > columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: otro título para quien inició sesión, sin tocar el código:
+>
+> | Card Featured | | |
+> |---|---|---|
+> | Title | Productos destacados | signed-out |
+> | Title | Recomendados para ti | signed-in |
+> | Button Text | Ver producto | |
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -170,9 +178,10 @@ y pueden ir en cualquier orden.
       (`FALLBACK_PRODUCTS`)
 
 6. **`Product Link`**
-    - **Tipo:** Texto (plantilla con `{sku}`, `{productId}` o `{id}`)
-    - **Descripción:** Enlace de cada tarjeta cuando el producto no trae `path`, por ejemplo
-      `/celulares/?id={id}`
+    - **Tipo:** Texto (plantilla con `{id}`, `{productId}` o `{sku}`; el valor va en minúsculas)
+    - **Descripción:** Enlace de cada tarjeta cuando el producto no trae `path`. En el sitio es
+      `/celulares/?id={id}`: la página de detalle (`blocks/product-detail/`) lee el `?id=`. Si un
+      comodín no se puede llenar, la tarjeta queda sin enlace
     - **Por defecto:** ninguno. Sin él (y sin `path`), la tarjeta se muestra sin enlace
 
 7. **`Button Text`**
@@ -313,9 +322,10 @@ Móvil:
 
 - `card-featured.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-featured.css` – Estilos del bloque (tamaños, colores y estados; las columnas vienen del grid)
-- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por fila), `block-utils.js` (incluye `formatPrice`), `messages.js`
-  y `toast.js`
-- `scripts/api/http-client.js` – Llamada al servicio
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
+  fila), `block-utils.js` (incluye `formatPrice`), `messages.js` y `toast.js`
+- `scripts/api/http-client.js` – `get(Endpoint)`, llamada pública (`REQUEST_TYPE.PUBLIC`, sin
+  sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-featured-*`)
