@@ -26,8 +26,9 @@ muestra uno u otro.
 > **Estado actual:** conectado al servicio de inicio de sesión (mock de Postman). Por ahora
 > **siempre se envían los mismos datos** (`cliente@ejemplo.com` / `Password123`), escriba lo que
 > escriba el usuario; ya está preparado para enviar lo del formulario (ver
-> [Datos que se envían](#datos-que-se-envían)). El tab **Crear cuenta** está vacío: su bloque se
-> hace después.
+> [Datos que se envían](#datos-que-se-envían)). A dónde va con sesión lo decide el **Metadata de la
+> página** (`Session: false` + `Redirect To: /cuenta`), no el bloque. El tab **Crear cuenta** está
+> vacío: su bloque se hace después.
 
 ### Características
 
@@ -241,7 +242,17 @@ La tabla en Drive permite al autor configurar:
 ### Sesión y redirección
 
 El bloque **no redirige**: solo inicia sesión y se muestra u oculta. La página decide a dónde ir con
-su **Metadata** (`documentation/08-sesiones.md`):
+su **Metadata** (`documentation/08-sesiones.md`). En el documento `login` de Drive:
+
+```
+┌─────────────┬────────────────────────────┐
+│ Metadata    │                            │
+├─────────────┼────────────────────────────┤
+│ Title       │ Iniciar sesión | NovaMóvil │
+│ Session     │ false                      │  ← la página solo es para quien NO tiene sesión
+│ Redirect To │ /cuenta                    │  ← a dónde va quien ya tiene sesión
+└─────────────┴────────────────────────────┘
+```
 
 | Dónde está el login | Metadata de la página | Sin sesión | Con sesión (al abrir o al iniciar sesión) |
 |---|---|---|---|
@@ -326,6 +337,16 @@ renovar el token.
 | Falta `Guest Button` | Sin separador ni botón de invitado |
 | Un enlace no es del sitio ni `http(s)` (p. ej. `javascript:`) | Se muestra solo el texto, sin enlace |
 
+### Cómo probarlo
+
+1. Abrir `/login` sin sesión: se ve el formulario.
+2. Clic en **Iniciar sesión**: el servicio responde 200, se guarda la sesión y la página va a
+   `/cuenta`.
+3. Volver a abrir `/login`: va directo a `/cuenta`, sin pintar el formulario.
+4. Cerrar sesión (por ejemplo desde `/ejemplo-sesion`) y entrar como invitado: `/login` sigue
+   mostrando el formulario.
+5. En el panel de edición se ve siempre el formulario y nunca redirige.
+
 ### Vista previa
 
 Desktop:
@@ -361,5 +382,6 @@ Móvil:
   `Redirect To: /cuenta`)
 - Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
   (`block-options`)
-- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), la página `/datos` a la
-  que manda el servicio y el bloque de crear cuenta (tab **Crear cuenta**)
+- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), el bloque de crear cuenta
+  (tab **Crear cuenta**) y un bloque del proyecto en `/cuenta` para que su regla `Session: true`
+  corra (hoy solo tiene texto)
