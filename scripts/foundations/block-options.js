@@ -1,7 +1,9 @@
 /*
- * Optional authoring rows for the NovaMóvil blocks (hero-novamovil, card-*). Opt-in:
+ * Optional authoring rows for the NovaMóvil blocks, and the entry point of sessions. Opt-in:
  * a block calls applyBlockOptions(block) as the FIRST line of its decorate(); template
- * blocks (cards, columns, hero…) do not call it and are left untouched.
+ * blocks (cards, columns, hero…) do not call it and are left untouched. scripts.js, head.html
+ * and 404.html stay as the template: importing this file the first time on a page loads
+ * styles/foundations/sessions.css and runs the page Metadata rule (guardPage of session.js).
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
@@ -36,11 +38,14 @@
  *    padding: 0 20px, margin: 10px auto, font: italic bold 12px Arial…)
  *   (Classname acepta ";" de forma defensiva: si el autor lo escribe por error, no rompe)
  *
- * Called by: hero-novamovil, card-categories, card-featured, card-promotions (first line
- * of decorate). New NovaMóvil blocks must do the same.
+ * Called by: hero-novamovil, card-categories, card-featured, card-promotions, breadcrumb,
+ * product-catalog, product-detail, login, block-session-example (first line of decorate).
+ * New NovaMóvil blocks must do the same.
  *
  * Flow:
+ *   import (once per page)  → await loadCSS(sessions.css) · guardPage() (may hide + redirect)
  *   applyBlockOptions(block)            default export, one call per block
+ *     ├─ page redirecting → the block is emptied, nothing else
  *     ├─ session rows    → applySessionRows(block) (rows of other states are removed)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
  *     ├─ "Classname" row → applyAuthorClasses(block, text)
