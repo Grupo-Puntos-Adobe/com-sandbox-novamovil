@@ -229,8 +229,9 @@ Móvil:
 
 ```js
 import {
-  SESSION_STATES, renderForSession, setSessionVisibility, signOut,
+  SESSION_STATES, renderForSession, setSessionVisibility,
 } from '../../scripts/foundations/session.js';
+import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
 // 0) en Drive, sin código (cualquier bloque que llame applyBlockOptions):
@@ -246,8 +247,9 @@ renderForSession(greeting, {
   [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
 });
 
-// 3) una llamada privada (manda el Bearer)
-post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
+// 3) una llamada privada: la URL va en la fila Private Endpoint (Endpoint es para los públicos)
+const privateEndpoint = readPrivateEndpoint(block);
+if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRIVATE }); // Bearer
 ```
 
 ### Archivos y dependencias
@@ -266,5 +268,6 @@ post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
 - Colores en `styles/colors.css` (`--block-session-example-*`)
 - Documento de Drive: `content-drive/ejemplo-sesion.docx` (3 bloques: completo, `Session` `true` y
   `Session` `false`)
-- Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
-  (`block-options`)
+- Guías: `documentation/08-sesiones.md` (sesiones), `documentation/06-styles-classname.md`
+  (`block-options`), `documentation/07-integracion-endpoints.md` y `scripts/api/README.md`
+  (llamadas públicas y privadas)
