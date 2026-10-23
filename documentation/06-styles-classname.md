@@ -3,8 +3,11 @@
 Esta guía explica **qué hace** `scripts/foundations/block-options.js`, **en qué archivos está**,
 **cómo funciona por dentro**, **por qué se hizo así** y **cómo agregarlo a un bloque nuevo**.
 
-Es el **punto de entrada** de las opciones de autor de los bloques NovaMóvil **y de las sesiones**:
-`scripts/scripts.js`, `head.html` y `404.html` quedan como el template original.
+Es el **punto de entrada** de las opciones de autor de los bloques NovaMóvil. La sesión **no**
+arranca aquí: la regla de la página la revisa `scripts/foundations/session.js`, que `head.html`
+carga en todas las páginas. `block-options.js` solo le pregunta a `session.js` por la sesión
+cuando un bloque trae la fila `Session` o un estado en la última columna.
+`scripts/aem.js`, `scripts/scripts.js` y `404.html` quedan como el template original.
 
 ---
 
@@ -32,7 +35,7 @@ Drive, para controlar su espacio, su apariencia y quién lo ve, sin tocar códig
 | `Classname` | Fila | Clases extra sobre el bloque |
 | `Session` | Fila | `true` = el **bloque completo** solo se ve con sesión; `false` = solo sin sesión; sin la fila o vacía = siempre |
 | Estado en la **última columna** | Cualquier fila | `signed-in`, `signed-out` o `guest` (combinables con coma): **esa fila** solo existe para ese estado |
-| Regla de la **página** | Metadata de la página | `Session` `true` / `false` + `Redirect To` (la revisa `block-options.js` una vez por página) |
+| Regla de la **página** | Metadata de la página | `Session` `true` / `false` + `Redirect To`. **No es de `block-options`**: la revisa `session.js` en todas las páginas, tengan bloques o no |
 
 > `Endpoint` no es una opción de `block-options`: la lee cada bloque. Regla del proyecto: `Endpoint`
 > = servicio público, `Private Endpoint` = servicio privado con Bearer (`readEndpoint` /
@@ -72,29 +75,32 @@ Resultado en la página (con `Styles` y `Classname`):
 
 Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloque decide llamarla.
 
-> La regla de la **página** (Metadata `Session`) también arranca desde aquí: corre en cuanto carga
-> el primer bloque que usa `block-options`. Una página **sin** estos bloques (solo texto) no la
-> revisa y siempre se muestra.
+> La regla de la **página** (Metadata `Session`) no depende de estos bloques: la revisa
+> `session.js` desde `head.html` en todas las páginas, también en las de solo texto.
 
 ## 3. Archivos involucrados
 
 | Archivo | Origen | Qué tiene |
 |---|---|---|
-| `scripts/foundations/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions`, sus ayudantes y el arranque de sesiones |
-| `scripts/foundations/session.js` | 🆕 nuevo | Estado de sesión, regla de la página (`guardPage`), filas por sesión (`applySessionRows`) y `setSessionVisibility` |
-| `styles/foundations/sessions.css` | 🆕 nuevo | Clases que muestran u ocultan por sesión; lo carga `block-options.js` |
+| `scripts/foundations/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions` y sus ayudantes |
+| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`startPageSession`), regla de la página (`guardPage`), `isPageAccepted`, filas por sesión (`applySessionRows`) y `setSessionVisibility` |
+| `styles/foundations/sessions.css` | 🆕 nuevo | Clases que muestran u ocultan por sesión; lo carga `session.js` |
 | `scripts/foundations/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
 | `blocks/<bloque NovaMóvil>/<bloque>.js` | 🆕 nuevo | `import` + llamada en la 1.ª línea de `decorate` |
 | `content-drive/*.docx` | 🆕 nuevo | Cada tabla trae las filas `Styles` y `Classname` vacías, listas para usar |
 | 🔒 `migration-work/docx_builder.py` | local | `Doc.options()` genera esas dos filas vacías en cada tabla |
-| `scripts/scripts.js`, `head.html`, `404.html` | 📦 template | **Sin cambios** |
-| `scripts/aem.js` | 📦 template | **Sin cambios.** Nunca se edita (de aquí se usa `loadCSS`) |
+| `head.html` | 📦 ✏️ | Una línea que carga `session.js` antes de `scripts.js` |
+| `scripts/scripts.js`, `404.html` | 📦 template | **Sin cambios** |
+| `scripts/aem.js` | 📦 template | **Sin cambios.** Nunca se edita |
 
 ## 4. Cómo se conecta con el template (orden de ejecución)
 
 AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 
 ```
+0. 🆕 head.html → scripts/foundations/session.js   ← en TODAS las páginas, antes de scripts.js:
+      └─ startPageSession() → sessions.css, estado en <html> y guardPage() (Metadata Session /
+                              Redirect To; si no acepta al visitante: oculta la página y redirige)
 1. 📦 scripts/scripts.js → decorateMain(main)
       ├─ decorateSections   → crea las secciones (div.section)
       ├─ decorateBlocks     → cada tabla se vuelve div.<nombre>.block
@@ -102,14 +108,11 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 2. 📦 scripts/aem.js → loadBlock(block)   (la sección no se muestra hasta que sus bloques terminan)
       ├─ carga blocks/<nombre>/<nombre>.css
       └─ importa blocks/<nombre>/<nombre>.js
-           └─ 🆕 import block-options.js   ← SOLO LA PRIMERA VEZ en la página:
-                ├─ await loadCSS(sessions.css)
-                └─ guardPage()               ← Metadata Session / Redirect To; si no acepta al
-                                               visitante: oculta la página y redirige
+           └─ 🆕 import block-options.js   (session.js ya está cargado: no se repite)
 3. 🆕 decorate(block) del bloque
       ├─ 🆕 applyBlockOptions(block)   ← PRIMERA línea:
-      │     ├─ página redirigiendo → vacía el bloque y termina
-      │     ├─ applySessionRows(block) → quita las filas de otros estados (última columna)
+      │     ├─ página redirigiendo (isPageAccepted) → vacía el bloque y termina
+      │     ├─ applySessionRows(block) → solo si hay filas con estado en la última columna
       │     └─ lee, aplica y QUITA Styles / Classname / Session
       ├─    readTableCell(…)           ← ya no ve esas filas
       ├─    buildSectionTitle(block, …) ← título dentro del bloque
@@ -119,27 +122,26 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 Por qué **primera línea**: si se llamara después, el bloque podría confundir la fila `Styles` (o
 una fila de otro estado) con contenido.
 
-Por qué la regla de la página va al **importar** el módulo: el primer bloque de la página carga
-antes de que se muestre su sección, así que la página que debe redirigir no llega a verse.
+Por qué la regla de la página **no** está aquí: así corre en todas las páginas, tengan bloques o
+no, y antes de `scripts.js`, de modo que la página que debe redirigir no llega a verse.
 
 ## 5. El código, explicado
 
 Archivo: `scripts/foundations/block-options.js`.
 
-### 5.1 Arranque de sesiones (una vez por página)
+### 5.1 Sesión: solo si el bloque trae los campos
 
 ```js
-await loadCSS(`${window.hlx?.codeBasePath || ''}/styles/foundations/sessions.css`);
-const pageAccepted = guardPage();
-if (!pageAccepted) document.body.style.visibility = 'hidden';
+import {
+  SESSION_STATES, applySessionRows, isPageAccepted, setSessionVisibility,
+} from './session.js';
 ```
 
-- `await` al nivel del módulo: el bloque no se decora hasta que `sessions.css` ya cargó, así que lo
-  que debe estar oculto nunca se ve un instante.
-- `guardPage()` (de `session.js`) lee el Metadata de la página: `Session` `true` (solo con sesión),
-  `false` (solo sin sesión) o vacía (pública), y `Redirect To` (por defecto el home). Ver
-  `documentation/08-sesiones.md`.
-- Como es un módulo, esto corre **una sola vez** aunque la página tenga muchos bloques.
+- `block-options.js` no arranca nada: `session.js` ya corrió desde `head.html`.
+- `isPageAccepted()`: si la página está redirigiendo, el bloque se vacía y no hace nada más.
+- `applySessionRows(block)` solo lee la sesión si el bloque tiene una fila con el estado en la
+  última columna; si no, no hace nada.
+- La fila `Session` solo se aplica si el bloque la trae con `true` o `false`.
 
 ### 5.2 Constantes
 
@@ -299,12 +301,12 @@ Se aplica **solo si el autor puso estilos**, así que la página sin filas se ve
 La lógica vive **una sola vez** en `scripts/foundations/block-options.js`. Si mañana se agrega una
 opción nueva, se cambia en un solo archivo y la tienen todos los bloques que la usan.
 
-### 6.5 Las sesiones arrancan aquí, no en `scripts.js`
+### 6.5 La sesión de la página no depende de los bloques
 
-Para poder llevar todo a otro proyecto **sin tocar `scripts.js` ni `head.html`**, `block-options.js`
-carga `sessions.css` y revisa la regla de la página. Lo que cuesta:
+La regla de la página está en `session.js`, que `head.html` carga con **una línea** en todas las
+páginas, sin tocar `scripts.js` ni `aem.js`. Así una página de solo texto también revisa su regla.
+`block-options.js` se queda con lo de cada bloque (fila `Session` y última columna). Lo que cuesta:
 
-- Una página sin bloques NovaMóvil no revisa su regla de `Session` (siempre se muestra).
 - Los bloques del template (`cards`, `columns`…) no tienen filas por sesión.
 
 ## 7. Cómo agregarla a un bloque nuevo
@@ -320,8 +322,8 @@ export default function decorate(block) {
 }
 ```
 
-Con esa línea el bloque ya tiene `Styles`, `Classname`, `Session`, las filas por sesión (última
-columna) y hace que la página revise su regla de sesión.
+Con esa línea el bloque ya tiene `Styles`, `Classname`, `Session` y las filas por sesión (última
+columna). La regla de sesión de la página no depende de esto: corre siempre.
 
 Si el bloque tiene título, usar `buildSectionTitle(block, '<nuevo-bloque>')` de
 `scripts/foundations/block-utils.js` para que quede dentro del bloque.
@@ -364,6 +366,7 @@ propiedades inventadas, valores inválidos, o una última celda con texto ademá
 | `99104c0` | Filas por sesión: el estado en la última columna |
 | `1ef6a22` | `Session` del bloque pasa a `true` / `false` |
 | `13a22ae` | **Sesiones desde aquí:** `block-options.js` carga `sessions.css` y revisa la regla de la página; `scripts.js`, `head.html` y `404.html` vuelven a ser los originales |
+| — | **La sesión se separa:** `session.js` arranca solo desde `head.html` en todas las páginas (`startPageSession`); `block-options.js` solo aplica la fila `Session` y la última columna |
 
 ## 10. Cómo probarlo
 

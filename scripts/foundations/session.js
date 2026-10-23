@@ -1,8 +1,18 @@
 /*
  * Session (foundations): who is visiting, which pages they can open and what they can see.
+ * The only session file of the site, independent of the AEM core (it does not import aem.js).
  * Portable: copy it with styles/foundations/sessions.css (and block-utils.js, used for the
- * safe paths). Everything specific to a site comes from Drive (Metadata / Session rows) or
- * from the settings right below. Guide: documentation/08-sesiones.md
+ * safe paths) and add one line to head.html, before scripts.js:
+ *   <script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>
+ * Everything specific to a site comes from Drive (Metadata / Session rows) or from the
+ * settings right below. Guide: documentation/08-sesiones.md
+ *
+ * Start (every page, with or without blocks): head.html loads this file first, and
+ * startPageSession() runs once when it loads: sessions.css, the state class on <html> and the
+ * page Metadata rule (guardPage). A page without a Session row is left as it is. Blocks,
+ * block-options.js and the interceptors import this same module afterwards (it never runs twice).
+ *   startPageSession()    runs by itself; returns false when the page is being redirected
+ *   isPageAccepted()      false while the page is being redirected (do not paint blocks)
  *
  * Three states (the same words the author writes in Drive):
  *   signed-in    there is a session that has not expired
@@ -25,8 +35,8 @@
  *   | Session     | false |   only WITHOUT a session (login): with one → Redirect To
  *   | Redirect To | /x    |   where both go; missing or empty → home /
  *   No Session row (or empty): public page, nothing is checked. The guest is not a session.
- *   guardPage()               reads both rows; called once by block-options.js when the first
- *                             block of the page loads (before its section is shown)
+ *   guardPage()               reads both rows; called once by startPageSession(), before the
+ *                             page is shown
  *   getPageSessionRule()      'true' | 'false' | '' (the Session row of the page)
  *   requireSession(options)   the "true" rule, for a block that must redirect by itself
  *   requireNoSession(options) the "false" rule
@@ -44,8 +54,9 @@
  *                              the rows of other states are removed (and the state cell of the
  *                              others) before the block reads its table; empty last cell or no
  *                              state word → the row is always shown. Called by block-options.js
- *                              for every block that uses it; when the session changes, a page
- *                              with such rows reloads.
+ *                              for every block that uses it (it reads the session only when the
+ *                              block has such rows); when the session changes, a page with such
+ *                              rows reloads.
  *   setSessionVisibility(element, 'signed-in, guest')   classes of sessions.css
  *   parseSessionStates(text)                            'signed-in, guest' → ['signed-in', 'guest']
  *   renderForSession(target, views)                     paints the view of the current state
@@ -57,7 +68,6 @@
  * Stored in sessionStorage (removed when the tab is closed). The refresh token is not kept.
  * Never log the session: it carries the access token.
  */
-import { getMetadata } from '../aem.js';
 import { getSafeHref } from './block-utils.js';
 
 // ---------------------------------------------------------------------------------------------
@@ -86,8 +96,12 @@ const STATE_CLASS_PREFIX = 'session-state-';
 const EDITOR_STATE_CLASS = `${STATE_CLASS_PREFIX}editor`;
 // longest setTimeout delay (about 24 days)
 const MAX_TIMER_DELAY = 2147483647;
+// show / hide classes by session, next to this file wherever the site is served from
+const SESSIONS_CSS_URL = new URL('../../styles/foundations/sessions.css', import.meta.url).href;
 
 let expiryTimer;
+// false while the page Metadata rule is redirecting (startPageSession)
+let pageAccepted = true;
 // a navigation started by navigateTo(): the session rows reload must not cancel it
 let navigationPending = false;
 let reloadOnChangeRegistered = false;
@@ -249,22 +263,18 @@ export function signIn({
   return session;
 }
 
-// the state class is on <html> as soon as any script imports this file
-updateSessionState();
-
 // ---------------------------------------------------------------------------------------------
 // Part 2 · Pages and redirects
 // ---------------------------------------------------------------------------------------------
 
 /**
- * A row of the page Metadata. aem.page writes <meta name="redirect-to">; some previews keep
- * the authored name (<meta name="Redirect To">): both are accepted.
+ * A row of the page Metadata, read from the <meta> tags of the page. aem.page writes
+ * <meta name="redirect-to">; some previews keep the authored name (<meta name="Redirect To">):
+ * both are accepted.
  * @param {string} name Lower case with hyphens, e.g. 'redirect-to'
  * @returns {string}
  */
 function readPageMetadata(name) {
-  const value = getMetadata(name);
-  if (value) return value;
   const meta = [...document.head.querySelectorAll('meta[name]')]
     .find((candidate) => candidate.name.trim().toLowerCase().replace(/\s+/g, '-') === name);
   return meta?.content.trim() || '';
@@ -356,9 +366,8 @@ export function getPageSessionRule() {
  *   true  → only with a session (a guest is not enough); without one → "Redirect To"
  *   false → only without a session; with one → "Redirect To" (after a login on the page too)
  *   empty or no row → public, nothing is checked
- * "Redirect To" missing or empty → home. Called by block-options.js before the first block is
- * shown; the
- * rule runs again whenever the session changes on the page.
+ * "Redirect To" missing or empty → home. Called by startPageSession() before the page is
+ * shown; the rule runs again whenever the session changes on the page.
  * @returns {boolean} false = the page is being redirected (do not paint it)
  */
 export function guardPage() {
@@ -373,6 +382,40 @@ export function guardPage() {
   if (!check()) return false;
   document.addEventListener(SESSION_CHANGE_EVENT, () => check());
   return true;
+}
+
+/**
+ * False while the page Metadata rule is redirecting: blocks should not paint anything.
+ * @returns {boolean}
+ */
+export function isPageAccepted() {
+  return pageAccepted;
+}
+
+/**
+ * Adds styles/foundations/sessions.css to the page (once).
+ */
+function loadSessionStyles() {
+  const loaded = [...document.head.querySelectorAll('link[rel="stylesheet"]')]
+    .some((link) => link.href === SESSIONS_CSS_URL);
+  if (loaded) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = SESSIONS_CSS_URL;
+  document.head.append(link);
+}
+
+/**
+ * Start of the session on every page (runs once, when this file loads from head.html, before
+ * scripts.js): loads sessions.css, puts the state class on <html> and runs the page Metadata
+ * rule. A page without a Session row is not touched; a page that redirects is hidden.
+ * @returns {boolean} false = the page is being redirected
+ */
+export function startPageSession() {
+  loadSessionStyles();
+  pageAccepted = guardPage();
+  if (!pageAccepted) document.body.style.visibility = 'hidden';
+  return pageAccepted;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -429,13 +472,15 @@ function reloadOnSessionChange() {
  * @returns {boolean} true when the block had session rows
  */
 export function applySessionRows(block) {
-  const state = getAccessState();
+  // the session is read only when the block has a session row
+  let state = null;
   let hasSessionRows = false;
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const cells = [...row.children];
     const lastCell = cells[cells.length - 1];
     if (cells.length < 2 || !isSessionStateText(lastCell.textContent)) return;
     hasSessionRows = true;
+    state = state || getAccessState();
     const states = parseSessionStates(lastCell.textContent);
     lastCell.remove();
     row.dataset.session = states.join(' ');
@@ -482,3 +527,8 @@ export function renderForSession(target, views) {
   document.addEventListener(SESSION_CHANGE_EVENT, render);
   return () => document.removeEventListener(SESSION_CHANGE_EVENT, render);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Start: once per page, as soon as head.html loads this file (before scripts.js and the blocks)
+// ---------------------------------------------------------------------------------------------
+startPageSession();

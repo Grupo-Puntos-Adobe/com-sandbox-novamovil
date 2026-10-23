@@ -6,7 +6,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 |---|---|---|
 | `.hlxignore` | Modificado | No publicar docs ni archivos internos |
 | `404.html` | Modificado | Carga breakpoints, grid y colores |
-| `head.html` | Modificado | Carga breakpoints, grid y colores |
+| `head.html` | Modificado | Carga breakpoints, grid, colores y `session.js` (antes de `scripts.js`) |
 | `AGENTS.md` | Modificado | Reglas del proyecto |
 | `package.json` | Modificado | Lint de CSS en subcarpetas |
 | `styles/styles.css` | Modificado | Fuente, tamaños y capas (z-index) |
@@ -23,12 +23,12 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `scripts/api/http-client.js` | Nuevo | Llamadas a servicios |
 | `scripts/api/interceptors.js` | Nuevo | Llamadas públicas y privadas (Bearer) |
 | `scripts/api/README.md` | Nuevo | Guía de llamadas públicas y privadas |
-| `scripts/foundations/block-options.js` | Nuevo | Filas Styles, Classname y Session, filas por sesión y arranque de las sesiones |
+| `scripts/foundations/block-options.js` | Nuevo | Filas Styles, Classname y Session, y filas por sesión |
 | `scripts/foundations/block-utils.js` | Nuevo | Ayudas compartidas de los bloques |
 | `scripts/foundations/messages.js` | Nuevo | Mensajes, idioma y moneda |
 | `scripts/foundations/toast.js` | Nuevo | Alerta flotante |
 | `scripts/foundations/page-context.js` | Nuevo | Datos compartidos entre bloques |
-| `scripts/foundations/session.js` | Nuevo | Sesión, reglas de página y mostrar u ocultar por sesión |
+| `scripts/foundations/session.js` | Nuevo | Único archivo de sesión: arranca en todas las páginas, reglas de página y mostrar u ocultar por sesión |
 | `scripts/foundations/README.md` | Nuevo | Guía de los JS portables |
 | `blocks/header/` | Modificado | Header NovaMóvil |
 | `blocks/footer/` | Modificado | Footer NovaMóvil |

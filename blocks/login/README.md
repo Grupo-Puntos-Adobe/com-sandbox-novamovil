@@ -268,8 +268,8 @@ Quién ve el bloque (clases de `styles/foundations/sessions.css` en `login-wrapp
 | Cualquier otra (paso de compra) | Solo sin sesión (el invitado ya cumplió el paso) |
 | La tabla trae la fila `Session` | Lo que diga esa fila (`true` / `false`) |
 
-- La regla de la página la arranca `block-options.js` al cargar este bloque: la página `login` no
-  necesita nada más.
+- La regla de la página (Metadata `Session: false` + `Redirect To`) la revisa `session.js` desde
+  `head.html` en todas las páginas, antes de que cargue este bloque: el bloque no necesita nada más.
 - Al iniciar sesión, `signIn()` dispara `SESSION_CHANGE_EVENT`: la página vuelve a revisar su regla
   (y en `login` redirige) y el bloque se oculta.
 - **"Continuar como invitado"**: `continueAsGuest()` y luego va al enlace de la fila `Guest Button`;
@@ -372,14 +372,15 @@ Móvil:
 
 - `login.js` – Lee la tabla y construye título, tabs, formulario y texto legal
 - `login.css` – Estilos del bloque, todos dentro de `.login` (tamaños, colores y resoluciones)
-- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, estado en la
-  última columna y arranque de las sesiones (`sessions.css` + regla de la página)
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y estado en la
+  última columna
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
 - `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `getPageSessionRule`,
-  `navigateTo`, `toSitePath` y `setSessionVisibility`; la regla de la página (`guardPage`)
+  `navigateTo`, `toSitePath` y `setSessionVisibility`; la regla de la página (`guardPage`, que
+  corre en todas las páginas desde `head.html`)
 - `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión (lo carga
-  `block-options.js`)
+  `session.js`)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`
   (`scripts/api/interceptors.js`)
 - `styles/foundations/grid.css` – Columna centrada (`container-fluid > row row-center > col-24`)

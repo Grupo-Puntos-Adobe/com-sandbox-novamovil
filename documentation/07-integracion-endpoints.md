@@ -499,8 +499,8 @@ try {
 | Archivo del template | ¿Se modificó para esta integración? | Detalle |
 |---|---|---|
 | `scripts/aem.js` | ❌ No | Se **usan** `readBlockConfig` y `loadCSS` |
-| `scripts/scripts.js` | ❌ No | Tampoco para las sesiones: arrancan desde `block-options.js` |
-| `head.html` | ❌ No | Ya cargaba `styles/colors.css` desde la rama del header |
+| `scripts/scripts.js` | ❌ No | Tampoco para las sesiones: arrancan desde `session.js`, que carga `head.html` |
+| `head.html` | ✏️ Sí, para las sesiones | Una línea que carga `scripts/foundations/session.js` (no es parte de la integración de endpoints) |
 | `styles/styles.css` | ✅ Sí, 1 variable | `--z-index-toast: 900` |
 | `package.json` | ❌ No | No se instaló ninguna dependencia |
 | `fstab.yaml` / configuración | ❌ No | El endpoint vive en el documento, no en configuración |

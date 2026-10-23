@@ -3,28 +3,29 @@
 Archivos de JavaScript **portables**: no dependen de ningún bloque del proyecto y se pueden llevar
 a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` (CSS).
 
-`scripts/scripts.js`, `head.html` y `404.html` quedan como el template: nada de aquí se carga desde
-ellos. Los bloques importan lo que usan, y `block-options.js` es además el punto de entrada de las
-sesiones.
+`scripts/aem.js`, `scripts/scripts.js` y `404.html` quedan como el template. Los bloques importan
+lo que usan. La única excepción es `session.js`: `head.html` lo carga con **una línea** (antes de
+`scripts.js`) para que la regla de sesión de la página se revise en todas las páginas, tengan
+bloques o no.
 
 | Archivo | Qué hace | Exporta |
 |---|---|---|
-| `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` (`true` / `false`) de los bloques NovaMóvil y las filas con el estado en la última columna. Es el **punto de entrada de las sesiones**: al importarse carga `sessions.css` y revisa la regla de la página. Guía: `documentation/06-styles-classname.md` | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
+| `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` (`true` / `false`) de los bloques NovaMóvil y las filas con el estado en la última columna. Solo le pregunta a `session.js` por la sesión si el bloque trae la fila `Session` o un estado en la última columna. Guía: `documentation/06-styles-classname.md` | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
 | `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readEndpoint`, `readPrivateEndpoint`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice` |
 | `messages.js` | Mensajes genéricos con valor por defecto (alerta, lista vacía, foto que falla) y el formato de números / precios | `MESSAGES` (default), `LOCALE`, `CURRENCY` |
 | `toast.js` | Alerta flotante arriba a la derecha, apilable, que se cierra sola | `showToast(message, { duration, variant })`, `TOAST_VARIANTS` |
 | `page-context.js` | Datos que un bloque obtiene al cargar y otro bloque de la misma página necesita, sin importarse entre ellos (hoy: el nombre de la página actual) | `setCurrentPageName(name)`, `getCurrentPageName()`, `CURRENT_PAGE_NAME_EVENT` |
-| `session.js` | **Todo lo de sesión**, en 3 partes: datos, reglas de página y mostrar / pintar según la sesión (ver [session.js](#sessionjs) abajo). Va con `styles/foundations/sessions.css`. Guía: `documentation/08-sesiones.md` | Ver la sección [session.js](#sessionjs) |
+| `session.js` | **Todo lo de sesión en un solo archivo**: arranque en cada página, datos, reglas de página y mostrar / pintar según la sesión (ver [session.js](#sessionjs) abajo). Lo carga `head.html`. Va con `styles/foundations/sessions.css`. Guía: `documentation/08-sesiones.md` | Ver la sección [session.js](#sessionjs) |
 
 ## Qué necesita cada uno
 
 | Archivo | Depende de |
 |---|---|
-| `block-options.js` | `scripts/aem.js` (`loadCSS`), `session.js` y `styles/foundations/sessions.css` |
+| `block-options.js` | `session.js` |
 | `block-utils.js` | `messages.js` (`LOCALE` y `CURRENCY` para `formatPrice`) |
 | `messages.js` | nada |
 | `page-context.js` | nada |
-| `session.js` | `scripts/aem.js` (`getMetadata`), `block-utils.js` (`getSafeHref`) y `styles/foundations/sessions.css` |
+| `session.js` | `block-utils.js` (`getSafeHref`) y `styles/foundations/sessions.css` (no usa `aem.js`) |
 | `toast.js` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` y sus colores `--toast-*` en `styles/colors.css`, más `--z-index-toast` en `styles/styles.css` |
 
 ## Quién usa cada uno
@@ -36,11 +37,11 @@ sesiones.
 | `messages.js` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `empty-list-message` |
 | `toast.js` | `card-categories`, `card-featured`, `card-promotions`, `product-catalog` |
 | `page-context.js` | `product-detail` (pone el nombre) y `breadcrumb` (lo lee para `{product}`) |
-| `session.js` | `block-options.js`, `login`, `block-session-example` y `scripts/api/interceptors.js` (llamada privada) |
+| `session.js` | `head.html` (arranque en todas las páginas), `block-options.js`, `login`, `block-session-example` y `scripts/api/interceptors.js` (llamada privada) |
 
 ## block-options.js
 
-Filas opcionales de autor y arranque de las sesiones. Guía completa:
+Filas opcionales de autor. Guía completa:
 `documentation/06-styles-classname.md`.
 
 | Fila / celda | Qué hace |
@@ -50,8 +51,9 @@ Filas opcionales de autor y arranque de las sesiones. Guía completa:
 | `Session` | `true` = el bloque completo solo con sesión; `false` = solo sin sesión; vacía = siempre |
 | Estado en la **última columna** de cualquier fila | `signed-in`, `signed-out`, `guest` (combinables): la fila solo existe para ese estado |
 
-Al importarse por primera vez en la página: `await loadCSS(sessions.css)` y `guardPage()` (regla
-del Metadata `Session` / `Redirect To`). Un bloque nuevo solo necesita:
+No arranca nada al importarse: la regla del Metadata (`Session` / `Redirect To`) la revisa
+`session.js` desde `head.html`. Si la página está redirigiendo (`isPageAccepted()` en `false`), el
+bloque se vacía. Un bloque nuevo solo necesita:
 
 ```js
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
@@ -155,7 +157,9 @@ nombre del celular del detalle para el nivel `{product}` del breadcrumb).
    - **la alerta:** sus colores (`--toast-*`) y la capa `--z-index-toast`;
    - **`session.js`:** sus ajustes (ver [Ajustes](#ajustes)).
 
-No hay que tocar `scripts.js` ni `head.html`: las sesiones arrancan desde `block-options.js`.
+Para las sesiones, agrega a `head.html`, antes de `scripts.js`, una línea:
+`<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`. No hay que
+tocar `scripts.js` ni `aem.js`.
 
 La API (`scripts/api/`: `http-client.js` e `interceptors.js`) no está aquí porque lleva la URL base
 y los interceptores de este proyecto; su referencia está en `scripts/api/README.md`. Su llamada
@@ -171,13 +175,23 @@ Guía completa para autores y desarrolladores: `documentation/08-sesiones.md`.
 
 ### Cómo arranca
 
-No se llama desde `scripts.js`. La primera vez que un bloque importa `block-options.js`:
+`head.html` lo carga en **todas las páginas**, antes de `scripts.js`, y al cargar corre solo
+`startPageSession()` (una vez por página):
 
-1. `session.js` pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o
-   `-editor` en el panel de edición).
-2. `block-options.js` carga `styles/foundations/sessions.css` y llama `guardPage()`, que revisa el
-   Metadata de la página y redirige si no acepta al visitante.
-3. En cada bloque, `applyBlockOptions` llama `applySessionRows(block)` y aplica la fila `Session`.
+1. Agrega `styles/foundations/sessions.css`.
+2. Pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
+   el panel de edición).
+3. Llama `guardPage()`: sin la fila `Session` en el Metadata no hace nada; con `true` / `false`
+   revisa la regla y, si no acepta al visitante, oculta la página y redirige.
+
+Después, en cada bloque del proyecto, `applyBlockOptions` usa `isPageAccepted()` y, **solo si el
+bloque los trae**, aplica las filas por sesión (`applySessionRows`) y la fila `Session`. Los bloques
+y los interceptores importan este mismo módulo: el arranque no se repite.
+
+| Función | Qué hace |
+|---|---|
+| `startPageSession()` | El arranque de arriba; corre sola al cargar el archivo. Devuelve `false` si la página redirige |
+| `isPageAccepted()` | `false` mientras la página redirige (los bloques no pintan nada) |
 
 ### Los tres estados
 
@@ -216,7 +230,7 @@ sesión.
 
 | Función | Qué hace |
 |---|---|
-| `guardPage()` | Aplica la regla de la página; la llama `block-options.js` una vez. Se repite al cambiar la sesión |
+| `guardPage()` | Aplica la regla de la página; la llama `startPageSession()` una vez. Se repite al cambiar la sesión |
 | `requireSession({ allowGuest, redirectTo })` | La regla `true` para un bloque que deba redirigir por sí mismo |
 | `requireNoSession({ redirectTo })` | La regla `false` |
 | `getPageSessionRule()` | `'true'`, `'false'` o `''` (la fila `Session` de la página) |

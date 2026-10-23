@@ -36,8 +36,6 @@ Solo sale en las páginas que agregan la tabla **Breadcrumb** en Drive. Cada niv
 - **Por sesión** (como todo bloque NovaMóvil): la fila `Session` (`true` / `false`) muestra u oculta
   la ruta completa, y un nivel puede llevar el estado en la **última columna** (`Level 2 | Mi cuenta
   | signed-in`) para cambiar según quién visita
-- Al estar arriba de la página, también hace que corra la **regla de sesión de la página**
-  (Metadata `Session` / `Redirect To`): sirve para páginas que solo tienen texto
 - Accesible: navegación con nombre ("Ruta de navegación"), lista de niveles y la página actual con
   `aria-current="page"`
 
@@ -133,29 +131,6 @@ La tabla en Drive permite al autor configurar:
 | Niveles con estado en la última columna | Solo se pintan los del estado de quien visita ("Inicio › Visitante" sin sesión, "Inicio › Mi cuenta" con sesión); al cambiar la sesión la página se recarga |
 | Fila `Session` = `true` / `false` | La ruta completa se oculta sin sesión / con sesión, al instante |
 
-### Uso en páginas privadas de solo texto
-
-Una página que solo tiene texto (por ejemplo `cuenta` o `perfil`) no carga ningún bloque del
-proyecto, así que su regla de `Session` del Metadata **no corre**. Agregarle un Breadcrumb arriba
-la activa: el breadcrumb carga antes de que se muestre su sección, y si la página no acepta al
-visitante, redirige sin que se vea nada.
-
-```
-┌───────────────────────────────┐
-│ Breadcrumb   │                │
-│ Level 1      │ [Inicio](/)    │
-│ Level 2      │ Mi cuenta      │
-└───────────────────────────────┘
-# Mi cuenta
-Consulta tus pedidos, datos personales y métodos de pago.
-
-┌─────────────┬───────────────────────┐
-│ Metadata    │                       │
-│ Session     │ true                  │
-│ Redirect To │ /login                │
-└─────────────┴───────────────────────┘
-```
-
 ### Cómo probarlo
 
 1. Una página con `Level 1 | Inicio` y `Level 2 | Celulares`: se ve "Inicio › Celulares".
@@ -183,13 +158,12 @@ Móvil:
 
 - `breadcrumb.js` – Lee los niveles de la tabla y construye la ruta
 - `breadcrumb.css` – Estilos de la ruta (tamaños, colores y separador)
-- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, niveles por
-  sesión (última columna) y arranque de la regla de sesión de la página
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y niveles por
+  sesión (última columna)
 - `scripts/foundations/block-utils.js` – `getSafeHref` para validar los enlaces
 - `scripts/foundations/page-context.js` – Nombre de la página para el nivel `{product}`
 - Colores en `styles/colors.css` (`--breadcrumb-*`)
 - Se usa en: la página Celulares (junto con `blocks/product-catalog/`) y la de detalle (junto con
-  `blocks/product-detail/`). Recomendado también en `cuenta` y `perfil` para que corra su regla de
-  sesión (hoy solo tienen texto)
+  `blocks/product-detail/`)
 - Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
   (`block-options`)

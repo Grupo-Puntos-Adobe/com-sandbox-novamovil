@@ -1,9 +1,10 @@
 /*
- * Optional authoring rows for the NovaMóvil blocks, and the entry point of sessions. Opt-in:
- * a block calls applyBlockOptions(block) as the FIRST line of its decorate(); template
- * blocks (cards, columns, hero…) do not call it and are left untouched. scripts.js, head.html
- * and 404.html stay as the template: importing this file the first time on a page loads
- * styles/foundations/sessions.css and runs the page Metadata rule (guardPage of session.js).
+ * Optional authoring rows for the NovaMóvil blocks. Opt-in: a block calls
+ * applyBlockOptions(block) as the FIRST line of its decorate(); template blocks (cards,
+ * columns, hero…) do not call it and are left untouched.
+ * The page Metadata rule (Session / Redirect To) is not here: it runs on every page, with or
+ * without blocks, from scripts/foundations/session.js (loaded first by head.html). This file
+ * only asks session.js about the session when a block has a Session row or session rows.
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
@@ -43,10 +44,10 @@
  * New NovaMóvil blocks must do the same.
  *
  * Flow:
- *   import (once per page)  → await loadCSS(sessions.css) · guardPage() (may hide + redirect)
  *   applyBlockOptions(block)            default export, one call per block
- *     ├─ page redirecting → the block is emptied, nothing else
- *     ├─ session rows    → applySessionRows(block) (rows of other states are removed)
+ *     ├─ page redirecting → the block is emptied, nothing else (isPageAccepted of session.js)
+ *     ├─ session rows    → applySessionRows(block) (rows of other states are removed; the
+ *     │                     session is read only if the block has such rows)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
  *     ├─ "Classname" row → applyAuthorClasses(block, text)
  *     └─ "Session" row   → setSessionVisibility(wrapper, BLOCK_SESSION_STATES[value])
@@ -54,18 +55,9 @@
  *
  * Guide: documentation/06-styles-classname.md
  */
-import { loadCSS } from '../aem.js';
 import {
-  SESSION_STATES, applySessionRows, guardPage, setSessionVisibility,
+  SESSION_STATES, applySessionRows, isPageAccepted, setSessionVisibility,
 } from './session.js';
-
-// Sessions, all from here (nothing in scripts.js or head.html): the classes that show / hide by
-// session are loaded before the first block is decorated, and the page rule of the Metadata
-// (Session true | false + Redirect To) runs once, as soon as the first block of the page loads.
-await loadCSS(`${window.hlx?.codeBasePath || ''}/styles/foundations/sessions.css`);
-const pageAccepted = guardPage();
-// a page that redirects is not painted
-if (!pageAccepted) document.body.style.visibility = 'hidden';
 
 const STYLE_KEYS = ['styles', 'style'];
 const SESSION_KEYS = ['session'];
@@ -149,8 +141,8 @@ export function applyAuthorClasses(block, names) {
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
-  // the page is redirecting (Metadata Session rule): nothing to show
-  if (!pageAccepted) {
+  // the page is redirecting (Metadata Session rule, session.js): nothing to show
+  if (!isPageAccepted()) {
     block.replaceChildren();
     return;
   }

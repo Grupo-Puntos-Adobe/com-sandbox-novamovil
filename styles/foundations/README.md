@@ -7,7 +7,7 @@ igual. Contiene:
 |---|---|
 | `breakpoints.css` | Las 3 resoluciones del sitio (**mobile, tablet, desktop**) con nombre, para usarlas en cualquier CSS sin repetir números |
 | `grid.css` | Sistema de grid: `container`, `row` y columnas de 24 partes por resolución (`sm`, `md`, `lg`). Usa los nombres de `breakpoints.css` (ver sección 8) |
-| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/block-options.js` (no va en `head.html`). Ver sección 9 |
+| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/session.js` al arrancar en cada página (no va como `<link>` en `head.html`). Ver sección 9 |
 | `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css`. Ver sección 10 |
 
 `breakpoints.css` y `grid.css` son solo CSS: no necesitan JavaScript, Sass, PostCSS ni paso de
@@ -20,7 +20,7 @@ carga su JavaScript. Los JavaScript portables están en `scripts/foundations/` (
 |---|---|---|
 | `breakpoints.css` | `head.html` (y `404.html`) | Siempre, **antes** del resto del CSS |
 | `grid.css` | `head.html` (y `404.html`) | Siempre, justo después de `breakpoints.css` |
-| `sessions.css` | `scripts/foundations/block-options.js` (`loadCSS`) | Antes de decorar el primer bloque del proyecto |
+| `sessions.css` | `scripts/foundations/session.js` (`startPageSession`) | En todas las páginas, antes de `scripts.js` |
 | `toast.css` | `scripts/foundations/toast.js` (`loadCSS`) | La primera vez que se muestra una alerta |
 
 ---
@@ -333,9 +333,9 @@ colores, tamaños ni variables, así que se lleva tal cual a otro proyecto.
 
 ### Quién lo carga
 
-No va en `head.html`. Lo carga `scripts/foundations/block-options.js` (con `loadCSS`) antes de
-decorar el primer bloque de la página, así que ya está listo cuando se pinta cualquier bloque.
-Va siempre con `scripts/foundations/session.js`.
+No va como `<link>` en `head.html`. Lo agrega `scripts/foundations/session.js` al arrancar
+(`startPageSession`), que `head.html` carga en todas las páginas antes de `scripts.js`, así que ya
+está pedido antes de que se pinte cualquier bloque. Va siempre con `session.js`.
 
 ### El estado: una clase en `<html>`
 

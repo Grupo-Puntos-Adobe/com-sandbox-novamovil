@@ -49,38 +49,47 @@ Cada regla mira la sesión a su manera:
 
 | Archivo | Qué tiene | ¿Portable? |
 |---|---|---|
-| `scripts/foundations/session.js` | Toda la lógica: datos (parte 1), páginas y redirecciones (parte 2), mostrar y pintar (parte 3) | Sí |
-| `styles/foundations/sessions.css` | Solo las clases que ocultan lo que no toca (`session-only-*`) | Sí |
-| `scripts/foundations/block-options.js` | **Punto de entrada**: carga `sessions.css`, aplica la regla de la página (Metadata) y, en cada bloque, las filas por sesión y la fila `Session` | Sí |
+| `scripts/foundations/session.js` | **El único archivo de sesión y el punto de entrada**: lo carga `head.html` en todas las páginas. Toda la lógica: datos (parte 1), páginas y redirecciones (parte 2), mostrar y pintar (parte 3) y el arranque (`startPageSession`). No importa `aem.js` | Sí |
+| `styles/foundations/sessions.css` | Solo las clases que ocultan lo que no toca (`session-only-*`); lo carga `session.js` | Sí |
+| `scripts/foundations/block-options.js` | En cada bloque: las filas por sesión (última columna) y la fila `Session`. Solo le pregunta a `session.js` por la sesión si el bloque trae esos campos | Sí |
 | `scripts/api/interceptors.js` | `REQUEST_TYPE.PUBLIC` y `REQUEST_TYPE.PRIVATE` (con Bearer) | Lleva la configuración de la API del proyecto |
 | `blocks/login/` | Inicio de sesión (guarda la sesión con `signIn`) | Bloque del sitio |
 | `blocks/block-session-example/` | Ejemplo de todo | Ejemplo para copiar |
 
-`scripts.js`, `head.html` y `404.html` **no se tocan**: quedan como el template original.
+`head.html` lleva **una sola línea** para la sesión, antes de `scripts.js`:
+
+```html
+<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>
+```
+
+`scripts/aem.js`, `scripts.js` y `404.html` **no se tocan**: quedan como el template original.
 
 ## 4. Cómo arranca
 
-Todo empieza la primera vez que un bloque del proyecto (los que llaman `applyBlockOptions`) carga
-en la página:
+Todo empieza en `head.html`, en **todas las páginas**, tengan bloques o no:
 
 ```
-importa block-options.js (una vez por página)
-  ├─ session.js pone el estado en <html> (session-state-…)
-  ├─ await loadCSS(sessions.css)
-  └─ guardPage()  → Metadata Session / Redirect To; si no acepta al visitante: oculta y redirige
-decorate(block) de cada bloque
-  └─ applyBlockOptions(block)
-       ├─ applySessionRows(block)  → quita las filas de otros estados (última columna)
+head.html carga session.js (antes de scripts.js; una vez por página)
+  └─ startPageSession()
+       ├─ agrega sessions.css
+       ├─ pone el estado en <html> (session-state-…)
+       └─ guardPage()  → Metadata Session / Redirect To
+            ├─ sin la fila Session (o vacía): no hace nada
+            └─ si no acepta al visitante: oculta la página y redirige
+scripts.js → decorate(block) de cada bloque
+  └─ applyBlockOptions(block)            (solo bloques del proyecto)
+       ├─ la página redirige → el bloque se vacía (isPageAccepted)
+       ├─ applySessionRows(block)  → solo si hay filas con estado en la última columna
        └─ Styles / Classname / Session (true | false)
 ```
 
-El primer bloque carga **antes** de que se muestre su sección, así que una página que redirige no
-llega a verse.
+El navegador corre los módulos de `head.html` en orden, así que la regla se revisa **antes** de
+`scripts.js` y la página sigue oculta hasta que `scripts.js` la muestra: una página que redirige no
+llega a verse. Un módulo se carga una sola vez: cuando `block-options.js`, el login o los
+interceptores importan `session.js`, el arranque ya corrió y no se repite.
 
-> **Importante:** una página **sin** bloques del proyecto (solo texto) no carga `block-options.js`:
-> su regla de `Session` no corre y la página siempre se muestra. Hoy es el caso de `cuenta` y
-> `perfil` (solo texto, se ven siempre). Para que su regla funcione basta con agregarles un bloque
-> del proyecto (por ejemplo un `Breadcrumb`).
+Una página **sin** bloques del proyecto (solo texto, como `cuenta` o `perfil`) también revisa su
+regla.
 
 ## 5. Páginas: todo se controla en el Metadata
 
@@ -222,7 +231,9 @@ Guía de la API: `documentation/07-integracion-endpoints.md`.
 | 1 | `signIn(data)` / `signOut()` / `continueAsGuest()` | Cambiar el estado (disparan `SESSION_CHANGE_EVENT`) |
 | 1 | `getAccessState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
 | 1 | `getSession()` / `isSignedIn()` / `getAccessToken()` | Usuario, ¿hay sesión?, `'Bearer …'` |
-| 2 | `guardPage()` | Regla de la página (la llama `block-options.js` una vez) |
+| 0 | `startPageSession()` | Arranque en cada página: `sessions.css`, estado y `guardPage()` (corre sola al cargar `session.js`) |
+| 0 | `isPageAccepted()` | `false` mientras la página redirige (los bloques no pintan nada) |
+| 2 | `guardPage()` | Regla de la página (la llama `startPageSession()` una vez) |
 | 2 | `requireSession({ allowGuest, redirectTo })` | La regla `true` para un bloque que debe redirigir por sí mismo |
 | 2 | `requireNoSession({ redirectTo })` | La regla `false` |
 | 2 | `getPageSessionRule()` | El valor de `Session` de la página: `'true'`, `'false'` o `''` |
@@ -240,11 +251,11 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 | # | Caso | Resultado |
 |---|---|---|
 | 1 | Página pública sin reglas | Igual que antes |
-| 2 | Página `Session: true` + `Redirect To: /login` (con un bloque del proyecto), sin sesión | Va a `/login` |
+| 2 | Página `Session: true` + `Redirect To: /login`, sin sesión | Va a `/login` |
 | 2b | `Session: true` sin `Redirect To` o vacía | Va al home `/` |
 | 2c | `Session: false` sin `Redirect To`, con sesión | Va al home `/` |
 | 2d | Sin la fila `Session` o vacía | La página se ve siempre |
-| 2e | Página `Session: true` solo con texto (`cuenta`, `perfil` hoy) | Se ve siempre: la regla no corre (sección 4) |
+| 2e | Página `Session: true` solo con texto (`cuenta`, `perfil`), sin sesión | Va a `/login`: la regla corre aunque no haya bloques |
 | 3 | Página `Session: true` como invitado | Redirige (el invitado no cuenta como sesión) |
 | 4 | Cerrar sesión en una página `Session: true` | Redirige |
 | 5 | `/login` (`Session: false`) ya con sesión, o al iniciar sesión | Va a `/cuenta` |
@@ -274,7 +285,7 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 
 | Síntoma | Causa | Solución |
 |---|---|---|
-| La página privada no redirige | No tiene ningún bloque del proyecto (solo texto) | Agregar un bloque del proyecto (p. ej. `Breadcrumb`) |
+| La página privada no redirige | Falta la línea de `session.js` en `head.html`, o la fila `Session` no dice `true` / `false` | Revisar `head.html` y el Metadata |
 | Redirige al home y no a donde quería | `Redirect To` falta, está vacía o no es una ruta del sitio | Escribir una ruta como `/login` |
 | `Session` del bloque no hace nada | El valor no es `true` ni `false` | Escribir `true` o `false` |
 | Una fila por sesión siempre se ve | El estado no está en la **última** columna o trae más texto | Dejar en la última celda solo `signed-in`, `signed-out` o `guest` |
@@ -282,11 +293,12 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 
 ## 13. Llevarlo a otro proyecto
 
-1. Copia `scripts/foundations/session.js`, `block-options.js`, `block-utils.js` y `messages.js`, y
-   `styles/foundations/sessions.css`.
-2. Nada más: no se toca `scripts.js` ni `head.html`. Los bloques llaman `applyBlockOptions(block)`
-   al inicio de su `decorate()` y con eso cargan `sessions.css`, la regla de la página y las filas
-   por sesión.
+1. Copia `scripts/foundations/session.js` y `block-utils.js` (con `messages.js`), y
+   `styles/foundations/sessions.css`. Para las filas por sesión de los bloques, también
+   `block-options.js`.
+2. Agrega a `head.html`, antes de `scripts.js`:
+   `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`.
+   Con eso todas las páginas revisan su regla de Metadata. No se toca `scripts.js` ni `aem.js`.
 3. Ajusta los ajustes de arriba de `session.js`: `DEFAULT_SESSION_REDIRECT`, las llaves de
    `sessionStorage` y `EDITOR_PREVIEW_HOSTS`.
 4. Para llamadas privadas, copia `privateRequestInterceptor` de `scripts/api/interceptors.js`.

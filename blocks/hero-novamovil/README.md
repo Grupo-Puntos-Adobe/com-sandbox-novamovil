@@ -217,9 +217,8 @@ Móvil:
 
 - `hero-novamovil.js` – Lee las filas de la tabla y construye el bloque
 - `hero-novamovil.css` – Estilos del bloque (tamaños, colores, degradado y resoluciones)
-- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, estado por
-  fila (última columna) y arranque de la regla de sesión de la página (el hero es el primer bloque
-  del home, así que la regla corre antes de pintar)
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y estado por
+  fila (última columna)
 - Guías: `documentation/06-styles-classname.md` (`block-options`) y `documentation/08-sesiones.md`
   (sesiones)
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
