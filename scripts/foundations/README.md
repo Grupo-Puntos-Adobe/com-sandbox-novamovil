@@ -217,6 +217,30 @@ y los interceptores importan este mismo módulo: el arranque no se repite.
 La sesión vive en `sessionStorage` (se borra al cerrar la pestaña) y se cierra sola al vencer. El
 `refreshToken` no se guarda. Nunca se escribe la sesión en `console`.
 
+#### Revisar la sesión desde cualquier bloque
+
+Cualquier bloque (con o sin `block-options`) puede preguntar si hay una sesión activa:
+
+| Quiero saber… | Función | Devuelve |
+|---|---|---|
+| ¿Hay sesión activa? | `isSignedIn()` | `true` / `false` (el invitado da `false`) |
+| ¿Quién visita, contando al invitado? | `getAccessState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
+| Los datos del usuario | `getSession()` | `{ user, accessToken, … }` o `null` |
+| Cuándo cambia | `SESSION_CHANGE_EVENT` | Evento en `document` (`detail = { state, session }`) |
+
+```js
+import { isSignedIn, getSession, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
+
+if (isSignedIn()) {
+  const { user } = getSession(); // e.g. user.firstName
+}
+document.addEventListener(SESSION_CHANGE_EVENT, () => { /* check again */ });
+```
+
+- Una sesión vencida cuenta como "sin sesión": se borra sola e `isSignedIn()` da `false`.
+- Importar `session.js` en un bloque no vuelve a correr el arranque: ya corrió desde `head.html`.
+- Para pintar algo distinto por estado y que se repinte solo, usar `renderForSession` (Parte 3).
+
 ### Parte 2 · Páginas y redirecciones (Metadata de la página)
 
 | Metadata | Sin sesión | Con sesión |

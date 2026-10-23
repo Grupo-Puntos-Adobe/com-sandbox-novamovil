@@ -244,6 +244,20 @@ Guía de la API: `documentation/07-integracion-endpoints.md`.
 | 3 | `setSessionVisibility(el, states)` / `parseSessionStates(text)` | Mostrar u ocultar |
 | 3 | `renderForSession(target, views)` | Pintar según el estado |
 
+**¿Hay sesión activa?** Cualquier bloque, con o sin `block-options`, lo puede revisar:
+
+```js
+import { isSignedIn, getSession, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
+
+if (isSignedIn()) {            // true / false; el invitado da false
+  const { user } = getSession(); // e.g. user.firstName
+}
+document.addEventListener(SESSION_CHANGE_EVENT, () => { /* check again */ });
+```
+
+Una sesión vencida cuenta como "sin sesión". Si también importa el invitado, usar
+`getAccessState()`.
+
 Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sección `session.js`).
 
 ## 10. Casos probados
