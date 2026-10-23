@@ -123,7 +123,7 @@ por las estadísticas; en las demás filas el valor ocupa las 2 últimas columna
 > celdas combinadas, se separan y el estado va en la 3.ª (`| Title | Hola, *cliente* | signed-in |`);
 > una `Stat N` con estado necesita una 4.ª columna (`| Stat 1 | 4.9M+ | Usuarios | signed-in |`).
 >
-> Ejemplo: otro título y otro botón principal para quien inició sesión:
+> Ejemplo: otro título y otro botón secundario (`Button 2`) para quien inició sesión:
 >
 > | Hero Novamovil | | |
 > |---|---|---|
