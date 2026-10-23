@@ -3,21 +3,23 @@
  *
  * Exports (name → what it does → who uses it):
  *   readTableCell(block, rowName)
- *     a row exactly as authored → { text, href, found }      card-* (Endpoint, links)
+ *     a row exactly as authored → { text, href, found }      card-*, product-*, login, example
  *   readEndpoint(block) / readPrivateEndpoint(block)
  *     the Endpoint row (public call) / the Private Endpoint row (private call with Bearer;
- *     "PrivateEndpoint" is accepted too) → URL or ''           card-*, product-*, login, …
+ *     "PrivateEndpoint" is accepted too) → URL or ''           new blocks / block-session-example
  *   readRowTextOrDefault(block, rowName, defaultText)
- *     missing row → default, present but empty → ''          card-* (Empty List *, …)
+ *     missing row → default, present but empty → ''          card-*, product-* (Empty List *, …)
  *   getAlertOptions(config)
- *     Alert Duration / Alert Color → showToast options       card-*
+ *     Alert Duration / Alert Color → showToast options       card-*, product-catalog
  *   getSafeHref(path)
- *     only same-site paths and http(s) URLs, else null       card-* (service links, images)
+ *     only same-site paths and http(s) URLs, else null       breadcrumb, card-*, product-*, login,
+ *                                                             session.js
  *   buildSectionTitle(block, prefix)
  *     Title row → div.{prefix}-header > section title        card-* (any block with a Title)
  *   formatPrice(value, currency)
- *     $19,999 with LOCALE / CURRENCY of messages.js          card-featured (any price)
+ *     $19,999 with LOCALE / CURRENCY of messages.js          card-featured, product-*
  *
+ * Guide: scripts/foundations/README.md (block-utils.js).
  * Card columns come from the grid (styles/foundations/grid.css): container > row > col.
  */
 import { LOCALE, CURRENCY } from './messages.js';

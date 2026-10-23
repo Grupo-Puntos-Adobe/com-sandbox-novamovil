@@ -64,16 +64,53 @@ export default function decorate(block) {
 
 ## block-utils.js
 
+Ayudas **sin red** para leer la tabla de un bloque y validar lo que llega de un servicio. Depende
+solo de `messages.js` (`LOCALE` y `CURRENCY`).
+
+### Leer la tabla
+
+| Función | Devuelve | Úsala para |
+|---|---|---|
+| `readTableCell(block, rowName)` | `{ text, href, found }` de la fila, **tal cual** (el enlace sin resolver contra la página) | Cualquier fila; `found` dice si la fila existe |
+| `readEndpoint(block)` | URL de la fila `Endpoint` (texto o enlace), o `''` | Servicio **público** → `get` / `post` (`REQUEST_TYPE.PUBLIC`) |
+| `readPrivateEndpoint(block)` | URL de la fila `Private Endpoint` (o `PrivateEndpoint`), o `''` | Servicio **privado** → `post(…, { interceptor: REQUEST_TYPE.PRIVATE })` |
+| `readRowTextOrDefault(block, rowName, defaultText)` | Fila que falta → `defaultText`; fila vacía → `''`; con valor → el valor | Mensajes con valor por defecto (`Empty List Title`…) |
+| `getAlertOptions(config)` | `{ duration, variant }` desde `Alert Duration` (segundos, por defecto 5) y `Alert Color` (`error` por defecto) | Las opciones de `showToast` |
+
+El nombre de la fila **no distingue mayúsculas** (`endpoint` = `Endpoint`). Las filas por sesión
+(estado en la última columna) ya llegan resueltas: `block-options.js` las aplica antes.
+
+```js
+import {
+  readTableCell, readEndpoint, readPrivateEndpoint, readRowTextOrDefault,
+} from '../../scripts/foundations/block-utils.js';
+
+const title = readTableCell(block, 'title').text;                    // '' sin la fila
+const endpoint = readEndpoint(block);                                // público
+const privateEndpoint = readPrivateEndpoint(block);                  // privado (con Bearer)
+const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle);
+```
+
+### Validar y pintar
+
 | Función | Qué hace |
 |---|---|
-| `readTableCell(block, rowName)` | Una fila tal cual: `{ text, href, found }` (sin resolver enlaces contra la página) |
-| `readEndpoint(block)` | La fila `Endpoint`: URL de un servicio **público** (`REQUEST_TYPE.PUBLIC`), o `''` |
-| `readPrivateEndpoint(block)` | La fila `Private Endpoint` (o `PrivateEndpoint`): URL de un servicio **privado** (`REQUEST_TYPE.PRIVATE`), o `''` |
-| `readRowTextOrDefault(block, rowName, defaultText)` | Fila que falta → `defaultText`; fila vacía → `''`; con valor → el valor |
-| `getAlertOptions(config)` | `Alert Duration` / `Alert Color` → opciones de `showToast` |
-| `getSafeHref(path)` | Solo rutas del sitio y `http(s)`; cualquier otra cosa → `null` |
-| `buildSectionTitle(block, prefix)` | Fila `Title` → `div.{prefix}-header` con el título dentro del bloque |
-| `formatPrice(value, currency)` | `$19,999` con `LOCALE` / `CURRENCY` de `messages.js` |
+| `getSafeHref(path)` | Solo rutas del sitio y `http(s)`: `/celulares` → `/celulares`; `https://otro.com/x` → la URL; `javascript:…`, `data:…`, vacío → `null` |
+| `buildSectionTitle(block, prefix)` | Fila `Title` → `div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]` **dentro** del bloque (así `Styles` lo rodea); sin texto → `null` |
+| `formatPrice(value, currency)` | `$19,999` en `LOCALE`, sin decimales; un código de moneda inválido usa `CURRENCY` |
+
+### Quién usa cada una
+
+| Función | Bloques |
+|---|---|
+| `readTableCell` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example` |
+| `readEndpoint` | Disponible para bloques nuevos (los actuales leen su `Endpoint` con `readTableCell`) |
+| `readPrivateEndpoint` | `block-session-example` (y los bloques privados que vengan) |
+| `readRowTextOrDefault` | `card-*`, `product-catalog`, `product-detail` |
+| `getAlertOptions` | `card-*`, `product-catalog` |
+| `getSafeHref` | `breadcrumb`, `card-*`, `product-catalog`, `product-detail`, `login` y `session.js` |
+| `buildSectionTitle` | `card-*` |
+| `formatPrice` | `card-featured`, `product-catalog`, `product-detail` |
 
 ## messages.js
 
