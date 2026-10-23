@@ -8,11 +8,20 @@ igual. Contiene:
 | `breakpoints.css` | Las 3 resoluciones del sitio (**mobile, tablet, desktop**) con nombre, para usarlas en cualquier CSS sin repetir números |
 | `grid.css` | Sistema de grid: `container`, `row` y columnas de 24 partes por resolución (`sm`, `md`, `lg`). Usa los nombres de `breakpoints.css` (ver sección 8) |
 | `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/block-options.js` (no va en `head.html`). Ver sección 9 |
-| `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css` |
+| `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css`. Ver sección 10 |
 
-Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.css` y
-`sessions.css`, que son el CSS de la alerta y de las sesiones de `scripts/foundations/`). Los JavaScript portables están en `scripts/foundations/`
-(ver su `README.md`).
+`breakpoints.css` y `grid.css` son solo CSS: no necesitan JavaScript, Sass, PostCSS ni paso de
+build. `sessions.css` y `toast.css` son el CSS de `scripts/foundations/` (sesiones y alerta) y los
+carga su JavaScript. Los JavaScript portables están en `scripts/foundations/` (ver su `README.md`).
+
+### Cómo se carga cada uno
+
+| Archivo | Dónde se carga | Cuándo |
+|---|---|---|
+| `breakpoints.css` | `head.html` (y `404.html`) | Siempre, **antes** del resto del CSS |
+| `grid.css` | `head.html` (y `404.html`) | Siempre, justo después de `breakpoints.css` |
+| `sessions.css` | `scripts/foundations/block-options.js` (`loadCSS`) | Antes de decorar el primer bloque del proyecto |
+| `toast.css` | `scripts/foundations/toast.js` (`loadCSS`) | La primera vez que se muestra una alerta |
 
 ---
 
@@ -28,7 +37,8 @@ Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.c
 
 1. Copia la carpeta `styles/foundations/` a tu proyecto.
 2. Enlaza `breakpoints.css` **antes** que el resto de tu CSS y, si usas el grid, `grid.css`
-   justo después:
+   justo después. En AEM Edge Delivery Services va en `head.html` (y en `404.html` si tiene su
+   propio `<head>`):
 
    ```html
    <link rel="stylesheet" href="/styles/foundations/breakpoints.css">
@@ -36,11 +46,10 @@ Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.c
    <link rel="stylesheet" href="/styles/styles.css">
    ```
 
-   `sessions.css` **no** va en `head.html`: lo carga `scripts/foundations/block-options.js` (junto
-   con `session.js`) antes de decorar el primer bloque.
-
-   En AEM Edge Delivery Services va en `head.html` (y en `404.html` si tiene su propio `<head>`).
-3. Listo: ya puedes usar los nombres en cualquier archivo CSS.
+3. `sessions.css` y `toast.css` **no** van en `head.html`: los cargan
+   `scripts/foundations/block-options.js` y `scripts/foundations/toast.js`. Solo cópialos junto
+   con `scripts/foundations/`.
+4. Listo: ya puedes usar los nombres en cualquier archivo CSS.
 
 ## 3. Cómo se usa
 
@@ -393,3 +402,40 @@ Normalmente nadie las escribe a mano:
 
 Ocultar no es proteger: lo oculto sigue en el HTML. Los datos privados deben llegar del servicio con
 el token, nunca escritos en la página. Guía completa: `documentation/08-sesiones.md`.
+
+---
+
+## 10. Alerta (`toast.css`)
+
+Estilos de la alerta flotante de `scripts/foundations/toast.js` (`showToast`): arriba a la
+derecha, debajo del header, apilable y con botón de cerrar.
+
+### Quién lo carga
+
+`toast.js` lo pide con `loadCSS` la primera vez que se muestra una alerta: no va en `head.html`.
+
+### Clases
+
+Todas las reglas viven dentro de `.toast-novamovil`:
+
+| Clase | Qué es |
+|---|---|
+| `toast-novamovil` | La alerta (un `popover`) |
+| `toast-novamovil-error` / `-warning` / `-success` / `-info` | Variante de color |
+| `toast-novamovil-message` | El texto |
+| `toast-novamovil-close` | El botón de cerrar |
+
+### Variables que necesita
+
+| Variable | Dónde está | Para qué |
+|---|---|---|
+| `--toast-text`, `--toast-error-background`, `--toast-warning-background`, `--toast-success-background`, `--toast-info-background`, `--toast-close-hover`, `--toast-shadow` | `styles/colors.css` | Colores (error, aviso y éxito están oscurecidos para que el texto blanco pase 4.5:1) |
+| `--z-index-toast` (`900`) | `styles/styles.css` | Queda debajo del header (`1000`) |
+| `--nav-height` | `styles/styles.css` | Para quedar justo debajo del header |
+| `--toast-background` | La pone cada variante (o `showToast` con un color hex) | Fondo de la alerta |
+| `--toast-offset` | La pone `toast.js` | Apilar varias alertas una debajo de otra |
+
+### Llevarlo a otro proyecto
+
+Copia `toast.css` con `scripts/foundations/toast.js` y define en tu proyecto las variables de la
+tabla (colores, `--z-index-toast` y `--nav-height`).
