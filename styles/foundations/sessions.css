@@ -16,7 +16,8 @@
  *   <div class="session-only session-only-signed-out">                only without session
  *   <div class="session-only session-only-guest">                     only guests
  *   <div class="session-only session-only-signed-in session-only-guest">  session or guest
- * From JS: setSessionVisibility(element, 'signed-in, guest'). In Drive: the Session row.
+ * From JS: setSessionVisibility(element, 'signed-in, guest'). In Drive: the Session row of a
+ * block (true → session-only-signed-in; false → session-only-signed-out + session-only-guest).
  *
  * It only hides what does not match (display: none); what matches keeps its own display.
  */

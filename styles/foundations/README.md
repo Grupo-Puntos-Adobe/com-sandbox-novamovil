@@ -1,4 +1,4 @@
-# Foundations · Breakpoints, Grid y alerta
+# Foundations · Breakpoints, Grid, sesiones y alerta
 
 Bases de CSS **portables**: copias la carpeta `foundations/` a cualquier proyecto y funcionan
 igual. Contiene:
@@ -7,11 +7,11 @@ igual. Contiene:
 |---|---|
 | `breakpoints.css` | Las 3 resoluciones del sitio (**mobile, tablet, desktop**) con nombre, para usarlas en cualquier CSS sin repetir números |
 | `grid.css` | Sistema de grid: `container`, `row` y columnas de 24 partes por resolución (`sm`, `md`, `lg`). Usa los nombres de `breakpoints.css` (ver sección 8) |
-| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/block-options.js` (no va en `head.html`). Guía: `documentation/08-sesiones.md` |
+| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/block-options.js` (no va en `head.html`). Ver sección 9 |
 | `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css` |
 
-Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.css`, que es el CSS
-de la alerta de `scripts/foundations/`). Los JavaScript portables están en `scripts/foundations/`
+Solo CSS: no necesita JavaScript, Sass, PostCSS ni paso de build (salvo `toast.css` y
+`sessions.css`, que son el CSS de la alerta y de las sesiones de `scripts/foundations/`). Los JavaScript portables están en `scripts/foundations/`
 (ver su `README.md`).
 
 ---
@@ -315,3 +315,81 @@ Está **solo** al inicio de `grid.css`:
 Igual que `breakpoints.css` (sección 6): en navegadores sin *style queries* se ven las clases sin
 prefijo y las `sm` en todas las resoluciones (diseño mobile). Escribe primero la versión mobile.
 
+---
+
+## 9. Sesiones (`sessions.css`)
+
+Clases para **mostrar u ocultar cualquier elemento según quién visita**. Solo visibilidad: no tiene
+colores, tamaños ni variables, así que se lleva tal cual a otro proyecto.
+
+### Quién lo carga
+
+No va en `head.html`. Lo carga `scripts/foundations/block-options.js` (con `loadCSS`) antes de
+decorar el primer bloque de la página, así que ya está listo cuando se pinta cualquier bloque.
+Va siempre con `scripts/foundations/session.js`.
+
+### El estado: una clase en `<html>`
+
+`session.js` pone **una** clase en `<html>` antes de pintar y la cambia al iniciar sesión, entrar
+como invitado o cerrar sesión:
+
+| Clase en `<html>` | Cuándo |
+|---|---|
+| `session-state-signed-in` | Hay sesión |
+| `session-state-guest` | "Continuar como invitado" |
+| `session-state-signed-out` | Ninguna de las dos (o la sesión venció) |
+| `session-state-editor` | Panel de edición: **se ve todo**, para poder editar |
+
+### Las clases para los elementos
+
+Un elemento lleva `session-only` y **quién lo ve**. Se combinan para decir "o":
+
+| Clases | Se ve con |
+|---|---|
+| `session-only session-only-signed-in` | Sesión |
+| `session-only session-only-signed-out` | Sin sesión |
+| `session-only session-only-guest` | Invitado |
+| `session-only session-only-signed-in session-only-guest` | Sesión **o** invitado |
+| `session-only session-only-signed-out session-only-guest` | Sin sesión **o** invitado |
+| sin `session-only` | Todos (no depende de la sesión) |
+
+```html
+<div class="session-only session-only-signed-in">Tienes 2 cupones disponibles</div>
+<a class="session-only session-only-signed-out" href="/login">Iniciar sesión</a>
+```
+
+### Cómo funciona
+
+```css
+/* mientras no hay estado, lo que depende de la sesión queda oculto (sin parpadeo) */
+:root:not([class*='session-state-']) .session-only { display: none !important; }
+
+/* con estado: se oculta lo que NO es para ese estado */
+.session-state-signed-in .session-only:not(.session-only-signed-in),
+.session-state-guest .session-only:not(.session-only-guest),
+.session-state-signed-out .session-only:not(.session-only-signed-out) { display: none !important; }
+```
+
+- **Solo oculta** (`display: none`) lo que no toca. Lo que sí toca conserva su propio `display`
+  (`flex`, `grid`…): no lo pisa.
+- **Cambia al instante**, sin recargar: basta con que cambie la clase de `<html>`.
+- **Sin parpadeo:** mientras el estado no se conoce, todo lo marcado con `session-only` está oculto.
+- En el panel de edición (`session-state-editor`) ninguna regla aplica: se ve todo.
+
+### Quién pone las clases
+
+Normalmente nadie las escribe a mano:
+
+| Desde | Cómo |
+|---|---|
+| Drive, un bloque completo | Fila `Session` del bloque: `true` → `session-only-signed-in`; `false` → `session-only-signed-out session-only-guest` (lo hace `block-options.js` en el bloque y su `-wrapper`) |
+| JavaScript de un bloque | `setSessionVisibility(element, 'signed-in, guest')` de `scripts/foundations/session.js` |
+| HTML o CSS propio | Escribir las clases directamente |
+
+> Las **filas** por sesión (estado en la última columna de una tabla) no usan estas clases: esas
+> filas se quitan antes de que el bloque lea su tabla (`applySessionRows`).
+
+### Seguridad
+
+Ocultar no es proteger: lo oculto sigue en el HTML. Los datos privados deben llegar del servicio con
+el token, nunca escritos en la página. Guía completa: `documentation/08-sesiones.md`.
