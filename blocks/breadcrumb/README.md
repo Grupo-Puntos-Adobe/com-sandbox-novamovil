@@ -133,6 +133,38 @@ La tabla en Drive permite al autor configurar:
 | Niveles con estado en la última columna | Solo se pintan los del estado de quien visita ("Inicio › Visitante" sin sesión, "Inicio › Mi cuenta" con sesión); al cambiar la sesión la página se recarga |
 | Fila `Session` = `true` / `false` | La ruta completa se oculta sin sesión / con sesión, al instante |
 
+### Uso en páginas privadas de solo texto
+
+Una página que solo tiene texto (por ejemplo `cuenta` o `perfil`) no carga ningún bloque del
+proyecto, así que su regla de `Session` del Metadata **no corre**. Agregarle un Breadcrumb arriba
+la activa: el breadcrumb carga antes de que se muestre su sección, y si la página no acepta al
+visitante, redirige sin que se vea nada.
+
+```
+┌───────────────────────────────┐
+│ Breadcrumb   │                │
+│ Level 1      │ [Inicio](/)    │
+│ Level 2      │ Mi cuenta      │
+└───────────────────────────────┘
+# Mi cuenta
+Consulta tus pedidos, datos personales y métodos de pago.
+
+┌─────────────┬───────────────────────┐
+│ Metadata    │                       │
+│ Session     │ true                  │
+│ Redirect To │ /login                │
+└─────────────┴───────────────────────┘
+```
+
+### Cómo probarlo
+
+1. Una página con `Level 1 | Inicio` y `Level 2 | Celulares`: se ve "Inicio › Celulares".
+2. En el detalle (`Level 3 | {product}`): al cargar el celular sale "Inicio › Celulares › Apple
+   iPhone 15 Pro".
+3. Con `Level 2 | Visitante | signed-out` y `Level 2 | Mi cuenta | signed-in`: sin sesión
+   "Inicio › Visitante"; al iniciar sesión (la página se recarga) "Inicio › Mi cuenta".
+4. Con `Session | true`: la ruta no se ve sin sesión y aparece al iniciar sesión.
+
 ### Vista previa
 
 Desktop:
@@ -157,4 +189,7 @@ Móvil:
 - `scripts/foundations/page-context.js` – Nombre de la página para el nivel `{product}`
 - Colores en `styles/colors.css` (`--breadcrumb-*`)
 - Se usa en: la página Celulares (junto con `blocks/product-catalog/`) y la de detalle (junto con
-  `blocks/product-detail/`)
+  `blocks/product-detail/`). Recomendado también en `cuenta` y `perfil` para que corra su regla de
+  sesión (hoy solo tienen texto)
+- Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
+  (`block-options`)
