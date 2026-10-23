@@ -103,6 +103,13 @@ opcionales y pueden ir en cualquier orden.
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
 > columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: otro título para quien inició sesión, sin tocar el código:
+>
+> | Card Categories | | |
+> |---|---|---|
+> | Title | Categorías | signed-out |
+> | Title | Tus categorías | signed-in |
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -221,7 +228,8 @@ Móvil:
 - `card-categories.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-categories.css` – Estilos del bloque (tamaños, colores y estados; las columnas vienen del grid)
 - `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por fila), `block-utils.js`, `messages.js` y `toast.js`
-- `scripts/api/http-client.js` – Llamada al servicio
+- `scripts/api/http-client.js` – `get(Endpoint)`, llamada pública (`REQUEST_TYPE.PUBLIC`, sin
+  sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-categories-*`)
