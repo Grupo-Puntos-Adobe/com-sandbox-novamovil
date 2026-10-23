@@ -21,8 +21,13 @@ limitations under the License.
 Este componente es un **ejemplo de todo lo que se puede armar con sesiones**: mostrar u ocultar un
 bloque completo, filas sueltas o botones según quién visita, pintar datos del usuario y hacer una
 llamada privada con su token.
-Es solo de muestra (página `/ejemplo-sesion`): los bloques del sitio siguen públicos y no cambian.
-Sirve para copiar la forma de hacerlo en un bloque nuevo.
+Es solo de muestra (página `/ejemplo-sesion`, pública): los bloques del sitio siguen públicos y no
+cambian. Sirve para copiar la forma de hacerlo en un bloque nuevo.
+
+Lo de sesiones **no** está en este bloque: viene de `scripts/foundations/block-options.js` (filas
+`Session` y estados en la última columna, igual en cualquier bloque NovaMóvil) y de
+`scripts/foundations/session.js` (estado, `renderForSession`, `setSessionVisibility`). Este bloque
+solo lo pone en práctica.
 
 ### Características
 
@@ -30,9 +35,9 @@ Sirve para copiar la forma de hacerlo en un bloque nuevo.
   sesión, `false` = solo sin sesión, sin la fila = siempre. Nunca redirige
 - **Panel de estado:** etiqueta del estado (verde con sesión, azul invitado, gris sin sesión) y un
   texto por estado; con sesión saluda con el nombre (`{name}`)
-- **Filas por sesión, igual que en cualquier bloque:** el estado va en la **última celda**
-  (`Item | texto | signed-in`); las filas de otros estados se quitan antes de pintar y la página se
-  recarga al cambiar la sesión
+- **Filas por sesión, igual que en cualquier bloque NovaMóvil:** el estado va en la **última
+  columna** (`Item | texto | signed-in`), tenga la fila 2 o más columnas; las filas de otros estados
+  se quitan antes de pintar y la página se recarga al cambiar la sesión
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
 - **Llamada privada:** con `Private Endpoint` y sesión, llama con el token (Bearer) y muestra la
@@ -65,11 +70,12 @@ sesión **no** está en su CSS: lo hacen las clases `session-only-*` de
 - `block-session-example-item-tag` – Quién la ve ("Lo ve: Con sesión")
 - `block-session-example-item-text` – Texto de la tarjeta
 - `block-session-example-private` – Llamada privada (`-private-title`, `-private-text`)
-- `session-only session-only-*` – Clases de `sessions.css` que pone el JS en los botones y la
-  llamada privada
+- `session-only session-only-*` – Clases de `sessions.css`: las pone el JS en los botones y la
+  llamada privada, y `block-options.js` en el wrapper cuando la tabla tiene la fila `Session`
 
 ```text
-div.block-session-example-wrapper[.session-only …]      (fila Session: el bloque entero)
+div.block-session-example-wrapper            (fila Session: true → .session-only-signed-in;
+│                                              false → .session-only-signed-out.session-only-guest)
 └─ div.block-session-example
    └─ div.container-fluid
       └─ div.row.row-gutter-16.row-gutter-y-16
@@ -123,10 +129,11 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
     - **Por defecto:** ninguno. Sin `Guest Text`, el invitado ve solo su etiqueta
 
 5. **`Item`** (las que quieras)
-    - **Tipo:** `Item` | texto | estado (opcional, en la **última celda**)
+    - **Tipo:** `Item` | texto | estado (opcional, en la **última columna**)
     - **Descripción:** Una tarjeta. Estado: `signed-in`, `guest`, `signed-out` o combinados
-      (`signed-in, guest`); sin estado la ven todos. Es la regla general: **cualquier fila de
-      cualquier bloque** puede terminar con un estado
+      (`signed-in, guest`); sin estado (o vacía) la ven todos. Es la regla general: **cualquier
+      fila de cualquier bloque NovaMóvil** puede terminar con un estado, sin importar cuántas
+      columnas tenga; si la celda trae otro texto además del estado, no cuenta
     - **Por defecto:** ninguna
 
 6. **`Login Link`**
@@ -144,6 +151,20 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
       `REQUEST_TYPE.PRIVATE` (Bearer en el header y en `security.auth.value`) y muestra
       `status.message` de la respuesta
     - **Por defecto:** sin `Private Endpoint`, no se pinta
+
+### La página de ejemplo (`ejemplo-sesion`)
+
+`content-drive/ejemplo-sesion.docx` es una página **pública** (sin `Session` en su Metadata) con 3
+tablas **Block Session Example**:
+
+| # | Fila `Session` | Qué demuestra |
+|---|---|---|
+| 1 | vacía | El bloque completo: estado, tarjetas por estado, botones y llamada privada. Se ve siempre |
+| 2 | `true` | "Solo con sesión": el bloque entero se oculta sin sesión (y como invitado) |
+| 3 | `false` | "Solo sin sesión": el bloque entero se oculta al iniciar sesión; el invitado lo sigue viendo |
+
+La regla de la **página** (Metadata `Session` / `Redirect To`) no se usa aquí: se ve en `login`,
+`cuenta` y `perfil` (ver `documentation/08-sesiones.md`).
 
 ### Vista previa de la tabla en Drive
 
@@ -165,6 +186,8 @@ La tabla en Drive permite al autor configurar:
 | Clic en "Cerrar sesión" | La página se recarga y vuelve a "Sin sesión" |
 | Fila `Session` = `true` | El bloque entero solo se ve con sesión (la página no redirige) |
 | Fila `Session` = `false` | El bloque entero se oculta al iniciar sesión (el invitado lo sigue viendo) |
+| Fila `Session` = `true` / `false` y se inicia o cierra sesión | El bloque aparece o desaparece al instante, sin recargar |
+| `Item` con `guest y otra palabra` en la última columna | No cuenta como estado: la tarjeta se ve siempre |
 | Panel de edición | Se ve todo, para poder editarlo |
 
 ### Vista previa
@@ -193,8 +216,9 @@ import {
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
-// 0) en Drive, sin código: cualquier fila con el estado en la última celda
-//    | Title | Tus promociones | signed-in |
+// 0) en Drive, sin código (cualquier bloque que llame applyBlockOptions):
+//    | Session | true |                          ← el bloque entero solo con sesión
+//    | Title   | Tus promociones | signed-in |   ← esta fila solo con sesión (última columna)
 
 // 1) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
 setSessionVisibility(couponCard, 'signed-in');
@@ -215,11 +239,14 @@ post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
 - `scripts/foundations/session.js` – Estado, `renderForSession`, `setSessionVisibility`,
   `continueAsGuest`, `signOut`
-- `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan
-- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`
+- `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
+  `block-options.js`)
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, filas por sesión
+  (última columna) y arranque de las sesiones (`sessions.css` + regla de la página)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PRIVATE`
 - `styles/foundations/grid.css` y `breakpoints.css` – Columnas y resoluciones
 - Colores en `styles/colors.css` (`--block-session-example-*`)
-- Documento de Drive: `content-drive/ejemplo-sesion.docx` (3 bloques: completo, solo con sesión y
-  solo sin sesión)
-- Guía: `documentation/08-sesiones.md`
+- Documento de Drive: `content-drive/ejemplo-sesion.docx` (3 bloques: completo, `Session` `true` y
+  `Session` `false`)
+- Guías: `documentation/08-sesiones.md` (sesiones) y `documentation/06-styles-classname.md`
+  (`block-options`)
