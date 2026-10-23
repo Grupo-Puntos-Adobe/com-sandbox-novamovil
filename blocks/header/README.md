@@ -153,6 +153,7 @@ El documento en Drive permite al autor configurar:
 | Seguir un enlace del menú móvil | El menú se cierra |
 | El documento no trae logo | Se pinta el logo por defecto |
 | El documento no trae los enlaces de cuenta o carrito | Llevan a `/cuenta` y `/carrito` |
+| Clic en **Mi cuenta** sin sesión | Va a `/cuenta`; esa página decide con su Metadata (`Session: true` → `Redirect To: /login`) |
 
 ### Vista previa
 
@@ -175,6 +176,18 @@ Móvil:
 Móvil con el menú abierto:
 
 ![Vista Componente móvil con menú](/documentation/readme/header/component-mobile-menu.png)
+
+### Sesión
+
+El header **no cambia con la sesión** por ahora: siempre muestra los mismos iconos.
+
+- **No usa `block-options.js`**, así que no tiene fila `Session` ni filas por sesión: el documento
+  `nav` son secciones y listas, no una tabla.
+- El icono de **Mi cuenta** lleva a `/cuenta`. Quien decide si se puede entrar es esa página, con su
+  Metadata (`Session: true` + `Redirect To: /login`; ver `documentation/08-sesiones.md`). La regla
+  corre cuando la página tiene al menos un bloque del proyecto.
+- Pendiente para otra entrega: mostrar "Hola, {nombre}" y "Cerrar sesión" con sesión, usando
+  `renderForSession` de `scripts/foundations/session.js`.
 
 ### Archivos y dependencias
 

@@ -151,6 +151,15 @@ Móvil:
 
 ![Vista Componente móvil](/documentation/readme/footer/component-mobile.png)
 
+### Sesión
+
+El footer **no cambia con la sesión**: siempre muestra lo mismo.
+
+- **No usa `block-options.js`**, así que no tiene fila `Session` ni filas por sesión: el documento
+  `footer` son secciones, títulos y listas, no una tabla.
+- Sus enlaces llevan a páginas normales; si alguna fuera privada, la protege esa página con su
+  Metadata (`Session` / `Redirect To`; ver `documentation/08-sesiones.md`).
+
 ### Archivos y dependencias
 
 - `footer.js` – Carga el documento `footer` y construye la marca, las columnas y la parte de abajo
