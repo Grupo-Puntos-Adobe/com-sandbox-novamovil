@@ -237,6 +237,18 @@ Cada promoción que llega del servicio (o del JSON interno) dentro de
 | La foto de una promoción falta o no carga | La tarjeta queda con el degradado y los textos |
 | Sin `Promo Link` y la promoción sin `path` | La tarjeta se muestra sin enlace y no sube al pasar el mouse |
 
+### Cómo probarlo
+
+1. **Sin `Endpoint`:** se ven las 3 promociones del JSON interno, cada una con su foto y el degradado
+   de su color.
+2. **Con `Endpoint`:** mientras responde, el esqueleto de carga; luego las promociones del servicio,
+   con su enlace (`path` o `Promo Link` = `/promociones/{id}`).
+3. **Servicio con error** (por ejemplo una URL que no existe): alerta arriba a la derecha y aviso de
+   lista vacía (🏷️).
+4. **Por sesión:** con el ejemplo de la tabla, el título cambia al iniciar sesión (la página se
+   recarga) y sin sesión el aviso de lista vacía dice "Inicia sesión para ver tus promociones"; con
+   `Session | true`, el bloque completo solo se ve con sesión.
+
 ### Vista previa
 
 Desktop:
@@ -264,4 +276,5 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-promotions-*`)
 
-Integración del servicio: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).
