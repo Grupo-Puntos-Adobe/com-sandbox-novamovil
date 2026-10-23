@@ -210,6 +210,13 @@ opcionales y pueden ir en cualquier orden.
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
 > columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: un título distinto para quien inició sesión, sin tocar el código del catálogo:
+>
+> | Product Catalog | | |
+> |---|---|---|
+> | Title | Celulares | signed-out |
+> | Title | Celulares para ti | signed-in |
 
 2. **`Title`**
     - **Tipo:** Texto
@@ -268,8 +275,9 @@ opcionales y pueden ir en cualquier orden.
     - **Por defecto:** `30`
 
 12. **`Product Link`**
-    - **Tipo:** Texto (plantilla con `{sku}`, `{productId}` o `{id}`)
-    - **Descripción:** Enlace de cada tarjeta cuando el celular no trae `path`
+    - **Tipo:** Texto (plantilla con `{id}`, `{productId}` o `{sku}`)
+    - **Descripción:** Enlace de cada tarjeta cuando el celular no trae `path`. En el sitio es
+      `/celulares/?id={id}`: la página de detalle (`blocks/product-detail/`) lee el `?id=`
     - **Por defecto:** ninguno. Sin él (y sin `path`), la tarjeta se muestra sin enlace
 
 13. **`Button Text`**
@@ -461,7 +469,8 @@ Móvil con el panel de filtros abierto:
 - `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
   fila), `block-utils.js` (incluye `formatPrice`),
   `messages.js` y `toast.js`
-- `scripts/api/http-client.js` – `get` (filtros) y `post` (búsqueda, con cancelación)
+- `scripts/api/http-client.js` – `get` (filtros) y `post` (búsqueda, con cancelación). Las dos son
+  llamadas públicas (`REQUEST_TYPE.PUBLIC`, sin sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-catalog-*`); `--nav-height` y `--z-index-panel` en
