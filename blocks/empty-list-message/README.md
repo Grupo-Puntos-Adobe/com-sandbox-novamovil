@@ -21,7 +21,8 @@ limitations under the License.
 Este componente permite a los usuarios **ver un aviso con icono, título y descripción cuando una
 lista no tiene nada que mostrar**.
 Es un bloque compartido: otro bloque lo importa, le manda los textos y pone el aviso donde iría su
-lista.
+lista. **No tiene tabla propia en Drive**: sus textos vienen de las filas `Empty List …` del bloque
+que lo usa. Junto con `fragment` es la única importación permitida entre bloques (`AGENTS.md`).
 
 ### Características
 
@@ -84,6 +85,33 @@ block.replaceChildren(header, buildEmptyListMessage({
 }));
 ```
 
+### Cómo lo configura el autor (en la tabla del bloque que lo usa)
+
+| Fila del bloque que lo usa | Parte del aviso | Sin la fila | Fila vacía |
+|---|---|---|---|
+| `Empty List Title` | Título | Texto por defecto de `messages.js` | Genérico del aviso (el mismo de `messages.js`) |
+| `Empty List Description` | Descripción | Texto por defecto de `messages.js` | Genérico del aviso |
+| `Empty List Icon` | Icono | Icono propio del bloque (abajo) | `📭` |
+
+| Bloque | Cuándo lo muestra | Icono por defecto |
+|---|---|---|
+| `card-categories` | Lista vacía o servicio con error | `🗂️` |
+| `card-featured` | Lista vacía o servicio con error | `📦` |
+| `card-promotions` | Lista vacía o servicio con error | `🏷️` |
+| `product-catalog` | Búsqueda sin resultados o servicio con error | `📱` |
+| `product-detail` | Celular que no existe, id inválido o servicio con error | `📱` |
+
+**Por sesión:** como esas filas están en la tabla del bloque que lo usa (que pasa por
+`block-options.js`), pueden llevar el estado en la **última columna** para cambiar el aviso según
+quién visita. Por ejemplo, en `card-promotions`:
+
+| Card Promotions | | |
+|---|---|---|
+| Empty List Title | Inicia sesión para ver tus promociones | signed-out |
+| Empty List Title | Por ahora no hay promociones para ti | signed-in |
+
+El aviso no sabe nada de sesiones: solo pinta lo que le llega. Ver `documentation/08-sesiones.md`.
+
 ### Comportamiento
 
 | Caso | Qué se ve |
@@ -118,4 +146,5 @@ Móvil:
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--empty-list-message-*`)
 - Lo usan: `blocks/card-categories/`, `blocks/card-featured/`, `blocks/card-promotions/`,
-  `blocks/product-catalog/` y `blocks/product-detail/`
+  `blocks/product-catalog/` y `blocks/product-detail/` (cada uno lee sus filas `Empty List …`; las
+  filas por sesión las resuelve su `block-options.js` antes)
