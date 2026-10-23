@@ -122,6 +122,18 @@ El aviso no sabe nada de sesiones: solo pinta lo que le llega. Ver `documentatio
 | Llega vacía la descripción | `Vuelve pronto para descubrir nuestras novedades.` (`messages.js`) |
 | Llegan vacíos los 3 | `📭` y los dos mensajes genéricos |
 
+### Cómo probarlo
+
+1. **Con texto en sus filas:** en `card-categories`, poner un `Endpoint` que no exista: sale la
+   alerta y el aviso con 🗂️ y los textos de `Empty List Title` / `Empty List Description`.
+2. **Sin las filas `Empty List …`:** el aviso usa los textos por defecto de `messages.js` y el icono
+   del bloque.
+3. **Con las filas vacías:** el aviso usa los genéricos ("Por ahora no hay elementos disponibles",
+   📭).
+4. **En el detalle:** `/celulares/?id=NO_VALIDO!` muestra "Este celular no existe" con 📱.
+5. **Por sesión:** con dos filas `Empty List Title` (`signed-out` / `signed-in`) el texto del aviso
+   cambia al iniciar sesión.
+
 ### Vista previa
 
 Desktop:
@@ -148,3 +160,5 @@ Móvil:
 - Lo usan: `blocks/card-categories/`, `blocks/card-featured/`, `blocks/card-promotions/`,
   `blocks/product-catalog/` y `blocks/product-detail/` (cada uno lee sus filas `Empty List …`; las
   filas por sesión las resuelve su `block-options.js` antes)
+- Guías: `documentation/08-sesiones.md` (filas por sesión) y `documentation/07-integracion-endpoints.md`
+  (cuándo lo muestran las tarjetas)
