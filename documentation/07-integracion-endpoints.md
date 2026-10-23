@@ -1,9 +1,12 @@
-# 02 · Integración de peticiones a endpoints (cliente HTTP, interceptores y alertas)
+# 07 · Integración de peticiones a endpoints (cliente HTTP, interceptores y alertas)
 
 Esta guía explica, paso a paso, cómo los componentes `card-categories`, `card-featured` y
 `card-promotions` obtienen sus datos de un servicio: **qué se instaló**, **qué archivos se crearon
 o modificaron desde el inicio**, **si se tocó el template de AEM Edge Delivery** y **cómo funciona
 todo por dentro**.
+
+Referencia rápida de los dos archivos (funciones, opciones, `ApiError`, tipos de llamada):
+`scripts/api/README.md`.
 
 ---
 
@@ -54,7 +57,11 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
 | `blocks/card-*/card-*.css` | 🆕 | Esqueleto de carga y mensaje de "no hay elementos" | mismos commits |
 | `blocks/product-catalog/product-catalog.js` | 🆕 | Pide los filtros con `get` (`data.brands`, `operatingSystems`, `storages`, `priceRange`) y busca con `post` (`data` con los filtros elegidos; `pagination` + lista en `data`), cancelando la búsqueda anterior. Guía: `blocks/product-catalog/README.md` | — |
-| `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = id de la URL `/celulares/?id={id}`); sin JSON interno: si falla, alerta + aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
+| `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = id de la URL `/celulares/?id={id}`); sin JSON interno: si falla, aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
+| `blocks/login/login.js` | 🆕 | Inicio de sesión con `post` (pública); muestra los mensajes de error del servicio (`error.cause`) y guarda la sesión con `signIn`. Guía: `blocks/login/README.md` | — |
+| `blocks/block-session-example/block-session-example.js` | 🆕 | Ejemplo de llamada **privada** (`REQUEST_TYPE.PRIVATE`, con Bearer) | — |
+| `scripts/foundations/session.js` | 🆕 | El token de la llamada privada (`getAccessToken`) y qué hacer con un 401 (`signOut`, `Redirect To`). Guía: `documentation/08-sesiones.md` | — |
+| `scripts/api/README.md` | 🆕 | Referencia de `http-client.js` e `interceptors.js` | — |
 | `content-drive/index.docx` | 🆕 | Filas `Endpoint`, `Alert Duration`, `Alert Color` en cada tabla | mismos commits |
 | `styles/styles.css` | 📦 ✏️ | Agrega `--z-index-toast: 900` (la alerta queda bajo el header, `1000`) | `db5a73d` |
 | `head.html` | 📦 ✏️ | Ya cargaba `styles/colors.css` desde el header; **no se cambió para esto** | `5fa25e7` (header) |
@@ -399,9 +406,14 @@ o se descartan.
 | El servidor responde 404, 500… | `HTTP 404 Not Found` | `404`, `500`… |
 | Responde algo que no es JSON | `Invalid JSON response` | el HTTP recibido |
 | JSON sin la lista esperada | `Unexpected response: data.categories is not a list` | — |
+| Llamada privada sin sesión (no se llama al servicio) | `Session required` | `401` |
 
-En **todos** los casos el usuario ve lo mismo: alerta + mensaje de "no hay elementos". El detalle
-técnico queda en la consola del navegador (`[card-categories] Could not load …`).
+Con un error HTTP, `error.cause` trae el JSON de error del servicio (`{ status, errors }`) o `null`.
+En una llamada **privada**, un 401 además cierra la sesión y manda a `Redirect To` de la página.
+
+En las tarjetas (`card-*`) el usuario ve lo mismo en todos los casos: alerta + mensaje de "no hay
+elementos". El detalle técnico queda en la consola del navegador (`[card-categories] Could not load
+…`). El login, en cambio, muestra los mensajes que manda el servicio.
 
 ## 7. Cómo extenderlo
 
@@ -473,11 +485,12 @@ try {
 | Archivo del template | ¿Se modificó para esta integración? | Detalle |
 |---|---|---|
 | `scripts/aem.js` | ❌ No | Se **usan** `readBlockConfig` y `loadCSS` |
-| `scripts/scripts.js` | ❌ No | — |
-| `head.html` | ❌ No (para esto) | Ya cargaba `styles/colors.css` desde la rama del header |
+| `scripts/scripts.js` | ❌ No | Tampoco para las sesiones: arrancan desde `block-options.js` |
+| `head.html` | ❌ No | Ya cargaba `styles/colors.css` desde la rama del header |
 | `styles/styles.css` | ✅ Sí, 1 variable | `--z-index-toast: 900` |
 | `package.json` | ❌ No | No se instaló ninguna dependencia |
 | `fstab.yaml` / configuración | ❌ No | El endpoint vive en el documento, no en configuración |
 
-Todo lo demás es **nuevo** y vive en `scripts/api/`, `scripts/foundations/toast.js`, `scripts/foundations/block-utils.js`,
-`styles/foundations/toast.css`, `styles/colors.css` y los bloques `card-*`.
+Todo lo demás es **nuevo** y vive en `scripts/api/` (con su `README.md`), `scripts/foundations/`
+(`toast.js`, `block-utils.js`, `session.js`), `styles/foundations/toast.css`, `styles/colors.css` y
+los bloques que consumen servicios.
