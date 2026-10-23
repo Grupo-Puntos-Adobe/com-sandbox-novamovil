@@ -304,6 +304,6 @@ function renderSessionExample(block, settings) {
  * @param {Element} block The block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname / Session rows, before reading
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   renderSessionExample(block, readExampleSettings(block));
 }

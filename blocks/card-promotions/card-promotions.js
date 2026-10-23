@@ -20,7 +20,8 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)        Styles / Classname rows (foundations/block-options.js)
+ *     ├─ applyBlockOptions(block)        Styles / Classname / Session rows + session rows
+ *     │                                  (last cell; foundations/block-options.js)
  *     ├─ readPromotionsSettings(block)             endpoint, promo link, alert, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions (foundations/block-utils.js)
  *     ├─ buildSectionTitle(block, prefix) div[role=heading] from Title (foundations/block-utils.js)
@@ -295,7 +296,7 @@ async function loadPromotionsFromService(block, header, settings) {
  * @param {Element} block The card-promotions block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readPromotionsSettings(block);
   const header = buildSectionTitle(block, 'card-promotions');
 

@@ -33,7 +33,7 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)          Styles / Classname rows
+ *     ├─ applyBlockOptions(block)          Styles / Classname / Session rows + session rows
  *     ├─ readDetailSettings(block)         texts, endpoint, messages, benefits
  *     ├─ readIdFromUrl()                   none → location.replace(catalogLink)
  *     ├─ buildDetailSkeleton()
@@ -651,7 +651,7 @@ async function loadProductFromService(block, id, settings) {
  * @param {Element} block The product-detail block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readDetailSettings(block);
   let id = readIdFromUrl();
   if (!id && EDITOR_PREVIEW_HOSTS.test(window.location.hostname)) {

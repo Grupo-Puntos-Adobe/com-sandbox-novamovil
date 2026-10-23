@@ -306,6 +306,16 @@ Cada producto que llega del servicio (o del JSON interno) dentro de
 | Sin `Button Text` | El nombre del producto es el enlace |
 | Sin `Product Link` y el producto sin `path` | La tarjeta se muestra sin enlace y no sube al pasar el mouse |
 
+### Cómo probarlo
+
+1. **Sin `Endpoint`:** se ven los 4 productos del JSON interno.
+2. **Con `Endpoint`:** mientras responde, 4 tarjetas grises; luego los productos del servicio, cada
+   uno con su enlace `/celulares/?id={id}`.
+3. **Servicio con error** (por ejemplo una URL que no existe): alerta arriba a la derecha y aviso de
+   lista vacía.
+4. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+   sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
+
 ### Vista previa
 
 Desktop:
@@ -332,4 +342,5 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-featured-*`)
 
-Integración del servicio: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).

@@ -565,7 +565,7 @@ function renderLogin(block, settings) {
  * @param {Element} block The login block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname / Session rows, before reading
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readLoginSettings(block);
 
   // hidden once signed in (an authored Session row wins). On the login page (Metadata

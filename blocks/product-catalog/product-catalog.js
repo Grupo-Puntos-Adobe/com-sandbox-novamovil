@@ -27,7 +27,7 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)                  Styles / Classname rows
+ *     ├─ applyBlockOptions(block)                  Styles / Classname / Session rows + session rows
  *     ├─ readCatalogSettings(block)                texts, endpoints, alert, messages
  *     ├─ buildCatalogToolbar() · buildCatalogLayout() + skeletons → buildCatalogFrame()
  *     └─ startCatalog()
@@ -871,7 +871,7 @@ async function startCatalog(catalog) {
  * @param {Element} block The product-catalog block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readCatalogSettings(block);
   catalogCount += 1;
   const idPrefix = `product-catalog-${catalogCount}`;

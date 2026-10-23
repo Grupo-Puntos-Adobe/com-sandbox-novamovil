@@ -190,7 +190,7 @@ function buildHeroMedia(imageCells) {
  * @param {Element} block The hero-novamovil block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the rows
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const rows = readHeroRows(block);
 
   const content = document.createElement('div');

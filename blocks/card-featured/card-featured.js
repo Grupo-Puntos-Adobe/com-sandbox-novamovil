@@ -24,7 +24,8 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)        Styles / Classname rows (foundations/block-options.js)
+ *     ├─ applyBlockOptions(block)        Styles / Classname / Session rows + session rows
+ *     │                                  (last cell; foundations/block-options.js)
  *     ├─ readFeaturedSettings(block)             endpoint, product link, alert, title, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions (foundations/block-utils.js)
  *     ├─ buildProductsHeader(block)      title: buildSectionTitle() (foundations/block-utils.js)
@@ -522,7 +523,7 @@ function buildProductsHeader(block) {
  * @param {Element} block The card-featured block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readFeaturedSettings(block);
   const header = buildProductsHeader(block);
 

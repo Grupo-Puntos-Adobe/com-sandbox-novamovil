@@ -124,7 +124,7 @@ function renderBreadcrumbTrail(block, levels, pageName) {
  * @param {Element} block The breadcrumb block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the levels
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const levels = readBreadcrumbLevels(block);
   renderBreadcrumbTrail(block, levels, getCurrentPageName());
   if (levels.some((level) => level.text.includes(PAGE_NAME_PLACEHOLDER))) {

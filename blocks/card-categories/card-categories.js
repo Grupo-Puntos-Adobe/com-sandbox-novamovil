@@ -18,7 +18,8 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)        Styles / Classname rows (foundations/block-options.js)
+ *     ├─ applyBlockOptions(block)        Styles / Classname / Session rows + session rows
+ *     │                                  (last cell; foundations/block-options.js)
  *     ├─ readCategoriesSettings(block)             endpoint, alert, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions (foundations/block-utils.js)
  *     ├─ buildSectionTitle(block, prefix) div[role=heading] from Title (foundations/block-utils.js)
@@ -246,7 +247,7 @@ async function loadCategoriesFromService(block, header, settings) {
  * @param {Element} block The card-categories block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readCategoriesSettings(block);
   const header = buildSectionTitle(block, 'card-categories');
 
