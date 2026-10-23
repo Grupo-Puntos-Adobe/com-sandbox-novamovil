@@ -211,6 +211,16 @@ Cada categoría que llega del servicio (o del JSON interno) dentro de
 | El servicio responde la lista vacía (o sin categorías activas) | Aviso de lista vacía, sin alerta |
 | El servicio falla, no responde o la respuesta no trae la lista | Alerta (`Error Response Message`) + aviso de lista vacía |
 
+### Cómo probarlo
+
+1. **Sin `Endpoint`:** se ven las 6 categorías del JSON interno.
+2. **Con `Endpoint`:** mientras responde, el esqueleto de carga; luego las categorías del servicio,
+   cada una con su enlace (`path`) y su color de hover (`color`).
+3. **Servicio con error** (por ejemplo una URL que no existe): alerta arriba a la derecha y aviso de
+   lista vacía (🗂️).
+4. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+   sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
+
 ### Vista previa
 
 Desktop:
@@ -236,4 +246,5 @@ Móvil:
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-categories-*`)
 
-Integración del servicio: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).
