@@ -19,21 +19,23 @@
  *   - Endpoint: login service (POST). Without it the submit only stops the page reload.
  *   - Redirects are NOT here: the page decides them in its Metadata (Session false +
  *     Redirect To on /login: with a session, also right after signing in, the page goes to
- *     Redirect To; see guardPage in scripts/foundations/session.js). The block only signs in
- *     hides itself once signed in (unless the table has its own Session row). On the login
- *     page (Metadata Session false) a guest still sees it; on a checkout step (page without
- *     Session in its Metadata) a guest has done the step, so it hides too (SESSION_CHANGE_EVENT).
+ *     Redirect To; see applyPageSessionRule in scripts/foundations/session.js). The block only
+ *     logs in and hides itself once signed in (unless the table has its own Session row). On
+ *     the login page (Metadata Session false) a guest still sees it; on a checkout step (page
+ *     without Session in its Metadata) a guest has done the step, so it hides too
+ *     (SESSION_CHANGE_EVENT).
  *   - Guest Button: continueAsGuest(), then its link; without link it stays (the step is done)
  *     and is painted as a button.
  *   Nothing is read from or added to the URL.
  *   - Error Response Message: shown when the service fails without a message of its own
  *     (default errorResponseMessage of scripts/foundations/messages.js, also when empty).
  *
- * Login request: post(Endpoint, { meta, security, data: { emailOrPhone, password } }); meta and
+ * Login request: loginUser(Endpoint, { meta, security, data: { emailOrPhone, password } })
+ * (scripts/foundations/session.js makes the POST and stores the session); meta and
  * security are fixed (LOGIN_REQUEST_META, LOGIN_REQUEST_SECURITY), as the service expects.
  * For now data is always FIXED_CREDENTIALS (the mock user); set SEND_FORM_CREDENTIALS to true
  * to send what the user types (readLoginCredentials). Answers:
- *   200 → signIn(data) (scripts/foundations/session.js): the block hides itself and the page
+ *   200 → session stored by loginUser(): the block hides itself and the page
  *         Metadata decides where to go. The nextStep.route of the service is not used.
  *   400 → each errors[].field message under its field + status.message on top
  *   401 / 500 / no answer → status.message (+ errors without field) on top, or
@@ -48,7 +50,7 @@
  *          ├─ buildLoginHeader()       title + description
  *          ├─ buildLoginTabs()         tablist (arrows / Home / End move between tabs)
  *          ├─ buildLoginForm()         alert, fields, forgot link, submit, divider, guest link
- *          │    ├─ submit → submitLogin()   post → signIn + destination, or messages
+ *          │    ├─ submit → submitLogin()   loginUser(endpoint, body), or messages
  *          │    └─ guest  → continueAsGuest() + getGuestDestination()
  *          ├─ register panel           empty (register block, later)
  *          └─ buildLegalText()         authored text, links rebuilt with getSafeHref
@@ -64,10 +66,9 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, getSafeHref } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  PAGE_SESSION, SESSION_STATES, continueAsGuest, getPageSessionRule, navigateTo,
-  setSessionVisibility, signIn, toSitePath,
+  PAGE_SESSION_RULES, SESSION_STATES, continueAsGuest, readPageSessionRule, goToPage,
+  loginUser, showOnlyForSessionStates, toSafeSitePath,
 } from '../../scripts/foundations/session.js';
-import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
 // fixed parts of the login request (only data changes)
 const LOGIN_REQUEST_META = {
@@ -369,11 +370,12 @@ function readLoginErrors(error, fallbackMessage) {
  * @returns {string}
  */
 function getGuestDestination(settings) {
-  return toSitePath(settings.guest.href);
+  return toSafeSitePath(settings.guest.href);
 }
 
 /**
- * Sends the login. 200 → session saved: the block hides itself and the page Metadata decides
+ * Sends the login through loginUser() (scripts/foundations/session.js), which makes the
+ * request and stores the session. 200 → the block hides itself and the page Metadata decides
  * where to go; any error → messages on the form. Without Endpoint nothing is sent.
  * @param {HTMLFormElement} form
  * @param {Object} settings readLoginSettings() result
@@ -385,12 +387,11 @@ async function submitLogin(form, settings) {
 
   setLoginBusy(form, true);
   try {
-    const response = await post(settings.endpoint, {
+    await loginUser(settings.endpoint, {
       meta: LOGIN_REQUEST_META,
       security: LOGIN_REQUEST_SECURITY,
       data: readLoginCredentials(form),
-    }, { interceptor: REQUEST_TYPE.PUBLIC });
-    if (!signIn(response?.data)) throw new Error('Login answer without accessToken');
+    });
     // the block is hidden now (signed-out only); leave it clean for a later sign out
     form.reset();
     setLoginBusy(form, false);
@@ -470,7 +471,7 @@ function buildLoginForm(idPrefix, settings) {
       event.preventDefault();
       continueAsGuest();
       const destination = getGuestDestination(settings);
-      if (destination) navigateTo(destination);
+      if (destination) goToPage(destination);
     });
     form.append(guestAction);
   }
@@ -574,8 +575,8 @@ export default function decorate(block) {
   const wrapper = block.parentElement?.classList.contains('login-wrapper')
     ? block.parentElement : block;
   if (!wrapper.classList.contains('session-only')) {
-    const isLoginPage = getPageSessionRule() === PAGE_SESSION.SIGNED_OUT_ONLY;
-    setSessionVisibility(wrapper, isLoginPage
+    const isLoginPage = readPageSessionRule() === PAGE_SESSION_RULES.SIGNED_OUT_ONLY;
+    showOnlyForSessionStates(wrapper, isLoginPage
       ? [SESSION_STATES.SIGNED_OUT, SESSION_STATES.GUEST]
       : [SESSION_STATES.SIGNED_OUT]);
   }

@@ -20,7 +20,7 @@ carga su JavaScript. Los JavaScript portables están en `scripts/foundations/` (
 |---|---|---|
 | `breakpoints.css` | `head.html` (y `404.html`) | Siempre, **antes** del resto del CSS |
 | `grid.css` | `head.html` (y `404.html`) | Siempre, justo después de `breakpoints.css` |
-| `sessions.css` | `scripts/foundations/session.js` (`startPageSession`) | En todas las páginas, antes de `scripts.js` |
+| `sessions.css` | `scripts/foundations/session.js` (`initPageSession`) | En todas las páginas, antes de `scripts.js` |
 | `toast.css` | `scripts/foundations/toast.js` (`loadCSS`) | La primera vez que se muestra una alerta |
 
 ---
@@ -334,7 +334,7 @@ colores, tamaños ni variables, así que se lleva tal cual a otro proyecto.
 ### Quién lo carga
 
 No va como `<link>` en `head.html`. Lo agrega `scripts/foundations/session.js` al arrancar
-(`startPageSession`), que `head.html` carga en todas las páginas antes de `scripts.js`, así que ya
+(`initPageSession`), que `head.html` carga en todas las páginas antes de `scripts.js`, así que ya
 está pedido antes de que se pinte cualquier bloque. Va siempre con `session.js`.
 
 ### El estado: una clase en `<html>`
@@ -392,11 +392,11 @@ Normalmente nadie las escribe a mano:
 | Desde | Cómo |
 |---|---|
 | Drive, un bloque completo | Fila `Session` del bloque: `true` → `session-only-signed-in`; `false` → `session-only-signed-out session-only-guest` (lo hace `block-options.js` en el bloque y su `-wrapper`) |
-| JavaScript de un bloque | `setSessionVisibility(element, 'signed-in, guest')` de `scripts/foundations/session.js` |
+| JavaScript de un bloque | `showOnlyForSessionStates(element, 'signed-in, guest')` de `scripts/foundations/session.js` |
 | HTML o CSS propio | Escribir las clases directamente |
 
 > Las **filas** por sesión (estado en la última columna de una tabla) no usan estas clases: esas
-> filas se quitan antes de que el bloque lea su tabla (`applySessionRows`).
+> filas se quitan antes de que el bloque lea su tabla (`filterRowsBySessionState`).
 
 ### Seguridad
 

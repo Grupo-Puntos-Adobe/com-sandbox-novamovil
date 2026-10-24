@@ -198,7 +198,7 @@ El header **no cambia con la sesión** por ahora: siempre muestra los mismos ico
   Metadata (`Session: true` + `Redirect To: /login`; ver `documentation/08-sesiones.md`). La regla
   corre cuando la página tiene al menos un bloque del proyecto.
 - Pendiente para otra entrega: mostrar "Hola, {nombre}" y "Cerrar sesión" con sesión, usando
-  `renderForSession` de `scripts/foundations/session.js`.
+  `renderBySessionState` de `scripts/foundations/session.js`.
 
 ### Archivos y dependencias
 

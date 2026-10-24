@@ -83,7 +83,7 @@ Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloq
 | Archivo | Origen | Qué tiene |
 |---|---|---|
 | `scripts/foundations/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions` y sus ayudantes |
-| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`startPageSession`), regla de la página (`guardPage`), `isPageAccepted`, filas por sesión (`applySessionRows`) y `setSessionVisibility` |
+| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`initPageSession`), regla de la página (`applyPageSessionRule`), `isPageAccessAllowed`, filas por sesión (`filterRowsBySessionState`) y `showOnlyForSessionStates` |
 | `styles/foundations/sessions.css` | 🆕 nuevo | Clases que muestran u ocultan por sesión; lo carga `session.js` |
 | `scripts/foundations/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
 | `blocks/<bloque NovaMóvil>/<bloque>.js` | 🆕 nuevo | `import` + llamada en la 1.ª línea de `decorate` |
@@ -99,7 +99,7 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 
 ```
 0. 🆕 head.html → scripts/foundations/session.js   ← en TODAS las páginas, antes de scripts.js:
-      └─ startPageSession() → sessions.css, estado en <html> y guardPage() (Metadata Session /
+      └─ initPageSession() → sessions.css, estado en <html> y applyPageSessionRule() (Metadata Session /
                               Redirect To; si no acepta al visitante: oculta la página y redirige)
 1. 📦 scripts/scripts.js → decorateMain(main)
       ├─ decorateSections   → crea las secciones (div.section)
@@ -111,8 +111,8 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
            └─ 🆕 import block-options.js   (session.js ya está cargado: no se repite)
 3. 🆕 decorate(block) del bloque
       ├─ 🆕 applyBlockOptions(block)   ← PRIMERA línea:
-      │     ├─ página redirigiendo (isPageAccepted) → vacía el bloque y termina
-      │     ├─ applySessionRows(block) → solo si hay filas con estado en la última columna
+      │     ├─ página redirigiendo (isPageAccessAllowed) → vacía el bloque y termina
+      │     ├─ filterRowsBySessionState(block) → solo si hay filas con estado en la última columna
       │     └─ lee, aplica y QUITA Styles / Classname / Session
       ├─    readTableCell(…)           ← ya no ve esas filas
       ├─    buildSectionTitle(block, …) ← título dentro del bloque
@@ -133,13 +133,13 @@ Archivo: `scripts/foundations/block-options.js`.
 
 ```js
 import {
-  SESSION_STATES, applySessionRows, isPageAccepted, setSessionVisibility,
+  SESSION_STATES, filterRowsBySessionState, isPageAccessAllowed, showOnlyForSessionStates,
 } from './session.js';
 ```
 
 - `block-options.js` no arranca nada: `session.js` ya corrió desde `head.html`.
-- `isPageAccepted()`: si la página está redirigiendo, el bloque se vacía y no hace nada más.
-- `applySessionRows(block)` solo lee la sesión si el bloque tiene una fila con el estado en la
+- `isPageAccessAllowed()`: si la página está redirigiendo, el bloque se vacía y no hace nada más.
+- `filterRowsBySessionState(block)` solo lee la sesión si el bloque tiene una fila con el estado en la
   última columna; si no, no hace nada.
 - La fila `Session` solo se aplica si el bloque la trae con `true` o `false`.
 
@@ -218,11 +218,11 @@ ignora.
 
 ```js
 export default function applyBlockOptions(block) {
-  if (!pageAccepted) {            // la página está redirigiendo: no hay nada que mostrar
+  if (!pageAccessAllowed) {            // la página está redirigiendo: no hay nada que mostrar
     block.replaceChildren();
     return;
   }
-  applySessionRows(block);        // filas con el estado en la última columna
+  filterRowsBySessionState(block);        // filas con el estado en la última columna
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     if (!keyCell || !valueCell || extraCells.some((cell) => cell.textContent.trim())) return;
@@ -231,7 +231,7 @@ export default function applyBlockOptions(block) {
     else if (CLASS_KEYS.includes(key)) { applyAuthorClasses(…); row.remove(); }
     else if (SESSION_KEYS.includes(key)) {
       const states = BLOCK_SESSION_STATES[valueCell.textContent.trim().toLowerCase()];
-      if (states) setSessionVisibility(wrapperOrBlock, states);   // true / false
+      if (states) showOnlyForSessionStates(wrapperOrBlock, states);   // true / false
       row.remove();                                               // vacía: siempre se ve
     }
   });
@@ -244,7 +244,7 @@ export default function applyBlockOptions(block) {
   no aplica nada.
 - Usa `textContent`: aunque el autor ponga negritas o enlaces en la celda, solo se lee el texto.
 
-### 5.6 Filas por sesión: `applySessionRows(block)` (de `session.js`)
+### 5.6 Filas por sesión: `filterRowsBySessionState(block)` (de `session.js`)
 
 Una fila de **2 o más columnas** cuya **última celda** es **solo** un estado:
 
@@ -366,7 +366,7 @@ propiedades inventadas, valores inválidos, o una última celda con texto ademá
 | `99104c0` | Filas por sesión: el estado en la última columna |
 | `1ef6a22` | `Session` del bloque pasa a `true` / `false` |
 | `13a22ae` | **Sesiones desde aquí:** `block-options.js` carga `sessions.css` y revisa la regla de la página; `scripts.js`, `head.html` y `404.html` vuelven a ser los originales |
-| — | **La sesión se separa:** `session.js` arranca solo desde `head.html` en todas las páginas (`startPageSession`); `block-options.js` solo aplica la fila `Session` y la última columna |
+| — | **La sesión se separa:** `session.js` arranca solo desde `head.html` en todas las páginas (`initPageSession`); `block-options.js` solo aplica la fila `Session` y la última columna |
 
 ## 10. Cómo probarlo
 

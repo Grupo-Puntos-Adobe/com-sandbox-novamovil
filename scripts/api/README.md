@@ -17,7 +17,7 @@ Guía paso a paso de cómo se integró: `documentation/07-integracion-endpoints.
 | `REQUEST_TYPE` | Nombre | Para | Qué hace |
 |---|---|---|---|
 | `PUBLIC` (por defecto) | `'public-request'` | **Llamadas simples, sin sesión**: categorías, catálogo, detalle, login | Headers JSON; OK → JSON; 204 → `null`; error (400, 401, 500…) → `ApiError` con el JSON del servicio en `error.cause` |
-| `PRIVATE` | `'private-request'` | **Llamadas con sesión**: perfil, pedidos, datos de compra | Lo mismo que `PUBLIC` y además `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. **Sin sesión no llama** (`ApiError` 401). Con un 401: `signOut()` y va a `Redirect To` de la página (o al home) |
+| `PRIVATE` | `'private-request'` | **Llamadas con sesión**: perfil, pedidos, datos de compra | Lo mismo que `PUBLIC` y además `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. **Sin sesión no llama** (`ApiError` 401). Con un 401: `clearUserSession()` y va a `Redirect To` de la página (o al home) |
 
 ```js
 import { get, post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -27,7 +27,7 @@ const result = await post(endpoint, body);                                // pú
 const profile = await post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE }); // privada
 ```
 
-El token sale de `scripts/foundations/session.js` (`getAccessToken()`), después del login. **Nunca**
+El token sale de `scripts/foundations/session.js` (`getAuthorizationHeader()`), después del login. **Nunca**
 se escribe un token ni una API key en el código ni en Drive.
 
 ### En Drive: `Endpoint` es público, `Private Endpoint` es privado
@@ -84,7 +84,7 @@ get(url) / post(url, body)
        ├─ request(config) de cada interceptor   → headers, token…  (PRIVATE sin sesión: ApiError 401)
        ├─ fetch(…) + timeout                    → red / tiempo: ApiError status 0
        ├─ response(response) de cada uno        → JSON  |  ApiError (con el JSON de error)
-       └─ si algo falló: error(e) de cada uno   → PRIVATE con 401: signOut + redirección
+       └─ si algo falló: error(e) de cada uno   → PRIVATE con 401: clearUserSession + redirección
 ```
 
 ## 3. `interceptors.js`
@@ -121,7 +121,7 @@ Un interceptor es un objeto con tres ganchos, todos opcionales:
 | Interceptor | En qué cadena | Qué hace |
 |---|---|---|
 | `publicRequestInterceptor` | `PUBLIC` y `PRIVATE` | `Accept: application/json`; valida el estado; JSON; guarda el JSON de error en `cause` |
-| `privateRequestInterceptor` | `PRIVATE` (después del público) | Agrega el Bearer (header y `security.auth.value`); sin sesión no llama; 401 → `signOut()` + `Redirect To` (nunca redirige en el panel de edición) |
+| `privateRequestInterceptor` | `PRIVATE` (después del público) | Agrega el Bearer (header y `security.auth.value`); sin sesión no llama; 401 → `clearUserSession()` + `Redirect To` (nunca redirige en el panel de edición) |
 
 ### Agregar otro tipo de llamada
 
@@ -155,8 +155,8 @@ Un nombre que no existe usa la cadena pública.
 ## 5. Dependencias y cómo llevarlo a otro proyecto
 
 - `http-client.js` → `interceptors.js`.
-- `interceptors.js` → `scripts/foundations/session.js` (`getAccessToken`, `signOut`,
-  `getSessionRedirectUrl`, `navigateTo`, `isEditorPreview`), solo para la llamada privada.
+- `interceptors.js` → `scripts/foundations/session.js` (`getAuthorizationHeader`, `clearUserSession`,
+  `getPageRedirectPath`, `goToPage`, `isEditingToolPreview`), solo para la llamada privada.
 
 Para llevarlo: copia `scripts/api/` (y `scripts/foundations/` si usas la llamada privada) y cambia
 `API_BASE_URL` en `http-client.js`. Un servicio nuevo debe contestar la consulta `OPTIONS` (CORS)

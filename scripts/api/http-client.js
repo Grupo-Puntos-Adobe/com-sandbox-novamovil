@@ -21,6 +21,8 @@
  *
  * Guide: documentation/07-integracion-endpoints.md
  */
+// session.js loads this client on demand for loginUser(): not a cycle when the page loads
+// eslint-disable-next-line import/no-cycle
 import { ApiError, REQUEST_TYPE, resolveInterceptors } from './interceptors.js';
 
 export { REQUEST_TYPE };

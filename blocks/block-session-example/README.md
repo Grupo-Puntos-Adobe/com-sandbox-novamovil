@@ -26,7 +26,7 @@ cambian. Sirve para copiar la forma de hacerlo en un bloque nuevo.
 
 Lo de sesiones **no** está en este bloque: viene de `scripts/foundations/block-options.js` (filas
 `Session` y estados en la última columna, igual en cualquier bloque NovaMóvil) y de
-`scripts/foundations/session.js` (estado, `renderForSession`, `setSessionVisibility`). Este bloque
+`scripts/foundations/session.js` (estado, `renderBySessionState`, `showOnlyForSessionStates`). Este bloque
 solo lo pone en práctica.
 
 ### Características
@@ -82,7 +82,7 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24 > div.block-session-example-title[role=heading]
          ├─ div.col-24 > div.block-session-example-status
          │  ├─ div.block-session-example-status-title
-         │  ├─ div.block-session-example-status-current[aria-live]   (renderForSession)
+         │  ├─ div.block-session-example-status-current[aria-live]   (renderBySessionState)
          │  │  └─ div.-status-body > div.-badge.-badge-{estado} + div.-status-text
          │  └─ div.block-session-example-actions
          │     ├─ a.-button.-button-primary.session-only.session-only-signed-out
@@ -229,7 +229,7 @@ Móvil:
 
 ```js
 import {
-  SESSION_STATES, renderForSession, setSessionVisibility,
+  SESSION_STATES, renderBySessionState, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -239,10 +239,10 @@ import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 //    | Title   | Tus promociones | signed-in |   ← esta fila solo con sesión (última columna)
 
 // 1) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
-setSessionVisibility(couponCard, 'signed-in');
+showOnlyForSessionStates(couponCard, 'signed-in');
 
 // 2) datos del usuario que se vuelven a pintar al cambiar la sesión
-renderForSession(greeting, {
+renderBySessionState(greeting, {
   [SESSION_STATES.SIGNED_IN]: (session) => `Hola, ${session.user.firstName}`,
   [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
 });
@@ -256,8 +256,8 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 
 - `block-session-example.js` – Lee la tabla y arma el estado, las tarjetas y los botones
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
-- `scripts/foundations/session.js` – Estado, `renderForSession`, `setSessionVisibility`,
-  `continueAsGuest`, `signOut`
+- `scripts/foundations/session.js` – Estado, `renderBySessionState`, `showOnlyForSessionStates`,
+  `continueAsGuest`, `logoutUser`
 - `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
   `session.js`)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por

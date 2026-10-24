@@ -19,7 +19,7 @@
  * (scripts/foundations/session.js, styles/foundations/sessions.css).
  *
  * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
- * state (applySessionRows of session.js); it works with any number of columns:
+ * state (filterRowsBySessionState of session.js); it works with any number of columns:
  *   | Title     | Tus promociones, cliente | signed-in        |
  *   | Benefit 1 | 🚚 | Envío gratis          | guest, signed-in |
  *
@@ -45,18 +45,18 @@
  *
  * Flow:
  *   applyBlockOptions(block)            default export, one call per block
- *     ├─ page redirecting → the block is emptied, nothing else (isPageAccepted of session.js)
- *     ├─ session rows    → applySessionRows(block) (rows of other states are removed; the
+ *     ├─ page redirecting → the block is emptied, nothing else (isPageAccessAllowed of session.js)
+ *     ├─ session rows    → filterRowsBySessionState(block) (rows of other states are removed; the
  *     │                     session is read only if the block has such rows)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
  *     ├─ "Classname" row → applyAuthorClasses(block, text)
- *     └─ "Session" row   → setSessionVisibility(wrapper, BLOCK_SESSION_STATES[value])
+ *     └─ "Session" row   → showOnlyForSessionStates(wrapper, BLOCK_SESSION_STATES[value])
  *     (the rows are then removed)
  *
  * Guide: documentation/06-styles-classname.md
  */
 import {
-  SESSION_STATES, applySessionRows, isPageAccepted, setSessionVisibility,
+  SESSION_STATES, filterRowsBySessionState, isPageAccessAllowed, showOnlyForSessionStates,
 } from './session.js';
 
 const STYLE_KEYS = ['styles', 'style'];
@@ -142,12 +142,12 @@ export function applyAuthorClasses(block, names) {
  */
 export default function applyBlockOptions(block) {
   // the page is redirecting (Metadata Session rule, session.js): nothing to show
-  if (!isPageAccepted()) {
+  if (!isPageAccessAllowed()) {
     block.replaceChildren();
     return;
   }
   // first: rows that depend on the session (| key | value… | signed-in |)
-  applySessionRows(block);
+  filterRowsBySessionState(block);
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     // name | value; extra cells are allowed only if empty (tables with 3+ columns)
@@ -175,7 +175,7 @@ export default function applyBlockOptions(block) {
       if (states) {
         const wrapper = block.parentElement?.classList.contains(`${block.classList[0]}-wrapper`)
           ? block.parentElement : block;
-        setSessionVisibility(wrapper, states);
+        showOnlyForSessionStates(wrapper, states);
       }
       row.remove();
     }

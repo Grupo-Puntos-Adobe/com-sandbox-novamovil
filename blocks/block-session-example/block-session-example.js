@@ -8,13 +8,14 @@
  * What it shows (scripts/foundations/session.js + styles/foundations/sessions.css):
  *   1. Whole block by session: the optional Session row (block-options.js) → the block is only
  *      shown to signed-in / guest / signed-out visitors. It never redirects.
- *   2. Status panel: renderForSession() paints the badge and the text of the current state
+ *   2. Status panel: renderBySessionState() paints the badge and the text of the current state
  *      ("Hola, {name}…" with the user of the session) and repaints them when it changes.
  *   3. Items by session, the generic way of ANY block: "Item | text | signed-in" (the state in
- *      the LAST cell). applySessionRows() (block-options.js) removes the rows of other states
+ *      the LAST cell). filterRowsBySessionState() (block-options.js) removes the rows of other
+ *      states
  *      before this block reads its table, and the page reloads when the session changes.
  *   4. Actions: Iniciar sesión (link to the login, as authored), Continuar como
- *      invitado (continueAsGuest) and Cerrar sesión (signOut), each one only for its state.
+ *      invitado (continueAsGuest) and Cerrar sesión (logoutUser), each one only for its state.
  *   5. Private call: with Private Endpoint and a session, post(…, REQUEST_TYPE.PRIVATE) sends
  *      the Bearer token and shows the answer of the service.
  *
@@ -29,9 +30,9 @@
  *     ├─ applyBlockOptions(block)          Styles / Classname / Session rows
  *     ├─ readExampleSettings(block)        texts, items, links, endpoint
  *     └─ renderSessionExample()
- *          ├─ buildExampleStatus()         renderForSession: badge + text, actions by session
+ *          ├─ buildExampleStatus()         renderBySessionState: badge + text, actions by session
  *          ├─ buildExampleItem() × N       the Item rows left for the current state
- *          └─ buildExamplePrivate()        renderForSession: private call when signed in
+ *          └─ buildExamplePrivate()        renderBySessionState: private call when signed in
  *
  * No resolution logic here: block-session-example.css decides each resolution. Columns come
  * from the grid (styles/foundations/grid.css):
@@ -44,8 +45,8 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readPrivateEndpoint, readTableCell } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  SESSION_STATES, continueAsGuest, parseSessionStates, renderForSession,
-  setSessionVisibility, signOut, toSitePath,
+  SESSION_STATES, continueAsGuest, parseSessionStateList, renderBySessionState,
+  logoutUser, showOnlyForSessionStates, toSafeSitePath,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
@@ -82,7 +83,7 @@ function createElementWithClass(tag, className, content) {
 }
 
 /**
- * "Item" rows left for the current state (applySessionRows already removed the others), in
+ * "Item" rows left for the current state (filterRowsBySessionState already removed the others), in
  * authored order; states = who sees it (row.dataset.session, empty = everybody).
  * @param {Element} block
  * @returns {{states: string[], text: string}[]}
@@ -91,7 +92,7 @@ function readItemRows(block) {
   return [...block.querySelectorAll(':scope > div')]
     .filter((row) => row.children[0]?.textContent.trim().toLowerCase() === ITEM_ROW)
     .map((row) => ({
-      states: parseSessionStates(row.dataset.session),
+      states: parseSessionStateList(row.dataset.session),
       text: (row.children[1]?.textContent || '').trim(),
     }))
     .filter((item) => item.text);
@@ -116,7 +117,7 @@ function readExampleSettings(block) {
       signOut: readCellText('sign out text'),
       privateTitle: readCellText('private title'),
     },
-    login: { text: loginCell.text, href: toSitePath(loginCell.href || loginCell.text) },
+    login: { text: loginCell.text, href: toSafeSitePath(loginCell.href || loginCell.text) },
     items: readItemRows(block),
     // Private Endpoint row → REQUEST_TYPE.PRIVATE (Endpoint rows of other blocks are public)
     privateEndpoint: readPrivateEndpoint(block),
@@ -160,25 +161,25 @@ function buildExampleActions(settings) {
   if (login.text && login.href) {
     const link = createElementWithClass('a', 'block-session-example-button block-session-example-button-primary', login.text);
     link.href = login.href;
-    actions.append(setSessionVisibility(link, [SESSION_STATES.SIGNED_OUT]));
+    actions.append(showOnlyForSessionStates(link, [SESSION_STATES.SIGNED_OUT]));
   }
   if (texts.guestButton) {
     const guest = createElementWithClass('button', 'block-session-example-button', texts.guestButton);
     guest.type = 'button';
     guest.addEventListener('click', continueAsGuest);
-    actions.append(setSessionVisibility(guest, [SESSION_STATES.SIGNED_OUT]));
+    actions.append(showOnlyForSessionStates(guest, [SESSION_STATES.SIGNED_OUT]));
   }
   if (texts.signOut) {
     const out = createElementWithClass('button', 'block-session-example-button', texts.signOut);
     out.type = 'button';
-    out.addEventListener('click', signOut);
-    actions.append(setSessionVisibility(out, [SESSION_STATES.SIGNED_IN, SESSION_STATES.GUEST]));
+    out.addEventListener('click', () => logoutUser());
+    actions.append(showOnlyForSessionStates(out, [SESSION_STATES.SIGNED_IN, SESSION_STATES.GUEST]));
   }
   return actions.children.length ? actions : null;
 }
 
 /**
- * Status panel: title, badge and text of the current state (renderForSession) and actions.
+ * Status panel: title, badge and text of the current state (renderBySessionState) and actions.
  * @param {Object} settings readExampleSettings() result
  * @returns {Element} div.block-session-example-status
  */
@@ -199,7 +200,7 @@ function buildExampleStatus(settings) {
     if (text) content.append(text);
     return content;
   };
-  renderForSession(current, {
+  renderBySessionState(current, {
     [SESSION_STATES.SIGNED_IN]: view(SESSION_STATES.SIGNED_IN),
     [SESSION_STATES.GUEST]: view(SESSION_STATES.GUEST),
     [SESSION_STATES.SIGNED_OUT]: view(SESSION_STATES.SIGNED_OUT),
@@ -245,7 +246,7 @@ function buildExamplePrivate(settings) {
   result.setAttribute('aria-live', 'polite');
   panel.append(result);
 
-  renderForSession(result, {
+  renderBySessionState(result, {
     [SESSION_STATES.SIGNED_IN]: () => {
       const answer = createElementWithClass('div', 'block-session-example-private-text');
       post(settings.privateEndpoint, {
@@ -290,7 +291,7 @@ function renderSessionExample(block, settings) {
   const privatePanel = buildExamplePrivate(settings);
   // the whole private panel only exists for signed-in visitors
   if (privatePanel) {
-    row.append(setSessionVisibility(fullWidth(privatePanel), [SESSION_STATES.SIGNED_IN]));
+    row.append(showOnlyForSessionStates(fullWidth(privatePanel), [SESSION_STATES.SIGNED_IN]));
   }
 
   const container = createElementWithClass('div', 'container-fluid');

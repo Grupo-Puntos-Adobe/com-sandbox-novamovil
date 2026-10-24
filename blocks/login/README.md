@@ -270,16 +270,32 @@ Quién ve el bloque (clases de `styles/foundations/sessions.css` en `login-wrapp
 
 - La regla de la página (Metadata `Session: false` + `Redirect To`) la revisa `session.js` desde
   `head.html` en todas las páginas, antes de que cargue este bloque: el bloque no necesita nada más.
-- Al iniciar sesión, `signIn()` dispara `SESSION_CHANGE_EVENT`: la página vuelve a revisar su regla
-  (y en `login` redirige) y el bloque se oculta.
+- Al iniciar sesión, `loginUser()` guarda la sesión y dispara `SESSION_CHANGE_EVENT`: la página
+  vuelve a revisar su regla (y en `login` redirige) y el bloque se oculta.
 - **"Continuar como invitado"**: `continueAsGuest()` y luego va al enlace de la fila `Guest Button`;
   sin enlace se queda (paso de compra cumplido).
 - Nada se lee ni se agrega a la URL. El `nextStep.route` del servicio no se usa.
 
 ### Servicio de inicio de sesión
 
-`POST` a la fila `Endpoint`. `meta` y `security` van fijos (`LOGIN_REQUEST_META` y
+El bloque **no hace la petición**: arma el cuerpo y llama `loginUser(endpoint, requestBody)` de
+`scripts/foundations/session.js`, que hace el `POST` (llamada pública) a la fila `Endpoint` y, con
+un 200, guarda la sesión en `sessionStorage`. Así cualquier otro bloque que necesite iniciar sesión
+llama la misma función. `meta` y `security` van fijos (`LOGIN_REQUEST_META` y
 `LOGIN_REQUEST_SECURITY` en `login.js`), como los pide el servicio:
+
+```js
+import { loginUser } from '../../scripts/foundations/session.js';
+
+try {
+  await loginUser(settings.endpoint, { meta, security, data: { emailOrPhone, password } });
+  // sesión guardada: el bloque se oculta y la página decide a dónde ir
+} catch (error) {
+  const serviceBody = error.cause; // { status: { message }, errors: [{ field, message }] } o null
+}
+```
+
+Cuerpo que se manda:
 
 ```json
 {
@@ -307,7 +323,7 @@ Con `true`, `readLoginCredentials` toma `emailOrPhone` (sin espacios al inicio y
 
 | Respuesta | Qué hace el bloque |
 |---|---|
-| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | Guarda la sesión (`signIn`) y el login se oculta. La página decide a dónde ir: en `login` (Metadata `Session: false`) va a `Redirect To`; en un paso de compra no navega |
+| **200** `{ status, data: { user, accessToken, tokenType, expiresIn, sessionId, nextStep } }` | `loginUser` guarda la sesión y el login se oculta. La página decide a dónde ir: en `login` (Metadata `Session: false`) va a `Redirect To`; en un paso de compra no navega |
 | **400** `{ status, errors: [{ field, message }] }` | `status.message` arriba y cada `errors[].message` debajo de su campo (`emailOrPhone`, `password`); al escribir en el campo se quita su mensaje |
 | **401** `{ status, errors: [{ field: "credentials", message }] }` | `status.message` + los mensajes sin campo, arriba ("El correo/teléfono o la contraseña son incorrectos. Verifica tus datos e inténtalo nuevamente.") |
 | **500** `{ status }` | `status.message` arriba ("Ocurrió un error al iniciar sesión.") |
@@ -376,13 +392,14 @@ Móvil:
   última columna
 - `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
-- `scripts/foundations/session.js` – `signIn`, `continueAsGuest`, `getPageSessionRule`,
-  `navigateTo`, `toSitePath` y `setSessionVisibility`; la regla de la página (`guardPage`, que
-  corre en todas las páginas desde `head.html`)
+- `scripts/foundations/session.js` – `loginUser` (hace la petición y guarda la sesión),
+  `continueAsGuest`, `readPageSessionRule`, `goToPage`, `toSafeSitePath` y
+  `showOnlyForSessionStates`; la regla de la página (`applyPageSessionRule`, que corre en todas
+  las páginas desde `head.html`)
 - `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión (lo carga
   `session.js`)
-- `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`
-  (`scripts/api/interceptors.js`)
+- `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`, lo usa `loginUser` (el bloque
+  no lo importa)
 - `styles/foundations/grid.css` – Columna centrada (`container-fluid > row row-center > col-24`)
 - `styles/foundations/breakpoints.css` – Resoluciones (mobile, tablet y desktop)
 - Colores en `styles/colors.css` (`--login-*`)

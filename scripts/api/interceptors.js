@@ -20,8 +20,10 @@
  * Guide: documentation/07-integracion-endpoints.md
  */
 
+// session.js loads the client on demand for loginUser(): not a cycle when the page loads
+// eslint-disable-next-line import/no-cycle
 import {
-  getAccessToken, getSessionRedirectUrl, isEditorPreview, navigateTo, signOut,
+  clearUserSession, getAuthorizationHeader, getPageRedirectPath, goToPage, isEditingToolPreview,
 } from '../foundations/session.js';
 
 /**
@@ -89,13 +91,13 @@ export const publicRequestInterceptor = {
  * Calls that need a session (goes after publicRequestInterceptor):
  *   - request: Authorization: Bearer … and, when the body has security.auth (the NovaMóvil
  *     request format), the same value there. Without session the service is not called.
- *   - error 401 (no session, expired or rejected token): signOut() and go to the session
- *     redirect page (getSessionRedirectUrl, never in the editing tool preview).
+ *   - error 401 (no session, expired or rejected token): clearUserSession() and go to the session
+ *     redirect page (getPageRedirectPath, never in the editing tool preview).
  */
 export const privateRequestInterceptor = {
   name: REQUEST_TYPE.PRIVATE,
   request(config) {
-    const token = getAccessToken();
+    const token = getAuthorizationHeader();
     if (!token) {
       throw new ApiError('Session required', { status: 401, url: config.url });
     }
@@ -111,8 +113,8 @@ export const privateRequestInterceptor = {
   },
   error(error) {
     if (error.status === 401) {
-      signOut();
-      if (!isEditorPreview()) navigateTo(getSessionRedirectUrl(), { replace: true });
+      clearUserSession();
+      if (!isEditingToolPreview()) goToPage(getPageRedirectPath(), { replace: true });
     }
     throw error;
   },

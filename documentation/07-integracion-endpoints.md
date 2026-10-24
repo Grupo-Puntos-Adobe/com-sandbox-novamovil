@@ -58,9 +58,9 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `blocks/card-*/card-*.css` | 🆕 | Esqueleto de carga y mensaje de "no hay elementos" | mismos commits |
 | `blocks/product-catalog/product-catalog.js` | 🆕 | Pide los filtros con `get` (`data.brands`, `operatingSystems`, `storages`, `priceRange`) y busca con `post` (`data` con los filtros elegidos; `pagination` + lista en `data`), cancelando la búsqueda anterior. Guía: `blocks/product-catalog/README.md` | — |
 | `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = id de la URL `/celulares/?id={id}`); sin JSON interno: si falla, aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
-| `blocks/login/login.js` | 🆕 | Inicio de sesión con `post` (pública); muestra los mensajes de error del servicio (`error.cause`) y guarda la sesión con `signIn`. Guía: `blocks/login/README.md` | — |
+| `blocks/login/login.js` | 🆕 | Inicio de sesión con `loginUser(endpoint, body)` de `session.js` (hace el `post` público y guarda la sesión); muestra los mensajes de error del servicio (`error.cause`). Guía: `blocks/login/README.md` | — |
 | `blocks/block-session-example/block-session-example.js` | 🆕 | Ejemplo de llamada **privada** (`REQUEST_TYPE.PRIVATE`, con Bearer) | — |
-| `scripts/foundations/session.js` | 🆕 | El token de la llamada privada (`getAccessToken`) y qué hacer con un 401 (`signOut`, `Redirect To`). Guía: `documentation/08-sesiones.md` | — |
+| `scripts/foundations/session.js` | 🆕 | El token de la llamada privada (`getAuthorizationHeader`) y qué hacer con un 401 (`clearUserSession`, `Redirect To`); `loginUser` / `logoutUser`. Guía: `documentation/08-sesiones.md` | — |
 | `scripts/api/README.md` | 🆕 | Referencia de `http-client.js` e `interceptors.js` | — |
 | `content-drive/index.docx` | 🆕 | Filas `Endpoint`, `Alert Duration`, `Alert Color` en cada tabla | mismos commits |
 | `styles/styles.css` | 📦 ✏️ | Agrega `--z-index-toast: 900` (la alerta queda bajo el header, `1000`) | `db5a73d` |
@@ -150,7 +150,7 @@ Hay **dos tipos de llamada**, con nombre claro en la constante `REQUEST_TYPE`:
 | Nombre | Interceptores | Para | Qué hace |
 |---|---|---|---|
 | `REQUEST_TYPE.PUBLIC` = `'public-request'` (por defecto) | `publicRequestInterceptor` | **Llamadas simples, sin sesión**: categorías, catálogo, detalle, login | Headers JSON; OK → JSON; con error (400, 401, 500…) lanza `ApiError` con el JSON del servicio en `error.cause` |
-| `REQUEST_TYPE.PRIVATE` = `'private-request'` | `publicRequestInterceptor` + `privateRequestInterceptor` | **Llamadas privadas, con sesión**: perfil, pedidos, datos de compra | `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. Sin sesión **no llama** (`ApiError` 401). Con un 401: `signOut()` y redirige a `getSessionRedirectUrl()` |
+| `REQUEST_TYPE.PRIVATE` = `'private-request'` | `publicRequestInterceptor` + `privateRequestInterceptor` | **Llamadas privadas, con sesión**: perfil, pedidos, datos de compra | `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. Sin sesión **no llama** (`ApiError` 401). Con un 401: `clearUserSession()` y redirige a `getPageRedirectPath()` |
 
 ```js
 export const REQUEST_TYPE = { PUBLIC: 'public-request', PRIVATE: 'private-request' };
@@ -171,12 +171,12 @@ export const publicRequestInterceptor = {
 
 export const privateRequestInterceptor = {
   name: REQUEST_TYPE.PRIVATE,
-  request(config) { … Authorization: getAccessToken() … },   // sin sesión → ApiError 401
-  error(error) { if (error.status === 401) { signOut(); /* y redirige */ } throw error; },
+  request(config) { … Authorization: getAuthorizationHeader() … },   // sin sesión → ApiError 401
+  error(error) { if (error.status === 401) { clearUserSession(); /* y redirige */ } throw error; },
 };
 ```
 
-El token sale de `scripts/foundations/session.js` (`getAccessToken()`), nunca del código.
+El token sale de `scripts/foundations/session.js` (`getAuthorizationHeader()`), nunca del código.
 
 Y un **registro** para agregar más sin tocar el cliente:
 
@@ -452,8 +452,9 @@ no llama sin sesión y con un 401 cierra la sesión y redirige. Ejemplo en
 `blocks/block-session-example` (fila `Private Endpoint`). Guía de sesiones:
 `documentation/08-sesiones.md`.
 
-El token lo guarda el bloque `login` con `signIn(data)` cuando el servicio de inicio de sesión
-responde 200 (ver `blocks/login/README.md`).
+El token lo guarda `loginUser(endpoint, body)` de `scripts/foundations/session.js` cuando el
+servicio de inicio de sesión responde 200; el bloque `login` solo la llama (ver
+`blocks/login/README.md`).
 
 > ⚠️ En AEM Edge Delivery todo el JavaScript es público. **Nunca** se debe escribir un token o API key
 > en el código ni en el documento; el token debe obtenerlo el usuario al iniciar sesión.
@@ -479,12 +480,12 @@ if (controller.signal.aborted) return;          // llegó tarde: ya hay otra bú
 ```
 
 Para un formulario cuyos errores trae el servicio (por ejemplo el inicio de sesión), los mensajes
-están en `error.cause` (las dos llamadas, pública y privada, lo guardan):
+están en `error.cause` (las dos llamadas, pública y privada, lo guardan). El inicio de sesión no
+llama `post` directo: usa `loginUser`, que hace la petición y guarda la sesión:
 
 ```js
 try {
-  const response = await post(settings.endpoint, body, { interceptor: REQUEST_TYPE.PUBLIC });
-  signIn(response.data);
+  await loginUser(settings.endpoint, body);   // scripts/foundations/session.js
 } catch (error) {
   const serviceBody = error.cause;   // { status: { message }, errors: [{ field, message }] } o null
 }
