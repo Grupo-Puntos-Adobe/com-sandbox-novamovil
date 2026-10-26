@@ -78,7 +78,9 @@ const ITEM_ROW = 'item';
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -144,7 +146,9 @@ function buildStateBadge(state) {
  * @returns {Element|null}
  */
 function buildStateText(text, session) {
-  if (!text) return null;
+  if (!text) {
+    return null;
+  }
   const name = session?.user?.firstName || session?.user?.email || '';
   return createElementWithClass('div', 'block-session-example-status-text', text.replace('{name}', name).trim());
 }
@@ -197,7 +201,9 @@ function buildExampleStatus(settings) {
     const content = createElementWithClass('div', 'block-session-example-status-body');
     content.append(buildStateBadge(state));
     const text = buildStateText(texts[state], session);
-    if (text) content.append(text);
+    if (text) {
+      content.append(text);
+    }
     return content;
   };
   renderBySessionState(current, {
@@ -208,7 +214,9 @@ function buildExampleStatus(settings) {
   status.append(current);
 
   const actions = buildExampleActions(settings);
-  if (actions) status.append(actions);
+  if (actions) {
+    status.append(actions);
+  }
   return status;
 }
 
@@ -237,7 +245,9 @@ function buildExampleItem(item) {
  * @returns {Element|null} div.block-session-example-private
  */
 function buildExamplePrivate(settings) {
-  if (!settings.privateEndpoint) return null;
+  if (!settings.privateEndpoint) {
+    return null;
+  }
   const panel = createElementWithClass('div', 'block-session-example-private');
   if (settings.texts.privateTitle) {
     panel.append(createElementWithClass('div', 'block-session-example-private-title', settings.texts.privateTitle));

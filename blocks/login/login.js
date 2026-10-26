@@ -109,7 +109,9 @@ let loginBlockCount = 0;
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -165,7 +167,9 @@ function readLoginSettings(block) {
  * @returns {Element|null} div.login-header
  */
 function buildLoginHeader(texts) {
-  if (!texts.title && !texts.description) return null;
+  if (!texts.title && !texts.description) {
+    return null;
+  }
   const header = createElementWithClass('div', 'login-header');
   if (texts.title) {
     const title = createElementWithClass('div', 'login-title', texts.title);
@@ -217,14 +221,18 @@ function buildLoginTabs(labels, panels) {
   });
   tablist.addEventListener('keydown', (event) => {
     const current = tabs.indexOf(document.activeElement);
-    if (current < 0) return;
+    if (current < 0) {
+      return;
+    }
     const moves = {
       ArrowRight: (current + 1) % tabs.length,
       ArrowLeft: (current - 1 + tabs.length) % tabs.length,
       Home: 0,
       End: tabs.length - 1,
     };
-    if (!(event.key in moves)) return;
+    if (!(event.key in moves)) {
+      return;
+    }
     event.preventDefault();
     selectLoginTab(tabs, panels, moves[event.key]);
     tabs[moves[event.key]].focus();
@@ -254,7 +262,9 @@ function buildLoginField({
   Object.assign(input, {
     id, name, type, autocomplete,
   });
-  if (placeholder) input.placeholder = placeholder;
+  if (placeholder) {
+    input.placeholder = placeholder;
+  }
   if (label) {
     const labelNode = createElementWithClass('label', 'login-label', label);
     labelNode.htmlFor = id;
@@ -273,7 +283,9 @@ function buildLoginField({
  * @returns {{emailOrPhone: string, password: string}}
  */
 function readLoginCredentials(form) {
-  if (!SEND_FORM_CREDENTIALS) return { ...FIXED_CREDENTIALS };
+  if (!SEND_FORM_CREDENTIALS) {
+    return { ...FIXED_CREDENTIALS };
+  }
   return {
     emailOrPhone: form.elements.emailOrPhone.value.trim(),
     password: form.elements.password.value,
@@ -340,7 +352,9 @@ function clearLoginErrors(form) {
 function setLoginBusy(form, busy) {
   form.setAttribute('aria-busy', String(busy));
   const submit = form.querySelector('.login-submit');
-  if (submit) submit.disabled = busy;
+  if (submit) {
+    submit.disabled = busy;
+  }
 }
 
 /**
@@ -381,9 +395,13 @@ function getGuestDestination(settings) {
  * @param {Object} settings readLoginSettings() result
  */
 async function submitLogin(form, settings) {
-  if (form.getAttribute('aria-busy') === 'true') return;
+  if (form.getAttribute('aria-busy') === 'true') {
+    return;
+  }
   clearLoginErrors(form);
-  if (!settings.endpoint) return;
+  if (!settings.endpoint) {
+    return;
+  }
 
   setLoginBusy(form, true);
   try {
@@ -459,19 +477,26 @@ function buildLoginForm(idPrefix, settings) {
   if (texts.button && hasGuest) {
     const divider = createElementWithClass('div', 'login-divider');
     divider.setAttribute('role', 'separator');
-    if (texts.divider) divider.append(createElementWithClass('div', 'login-divider-text', texts.divider));
+    if (texts.divider) {
+      divider.append(createElementWithClass('div', 'login-divider-text', texts.divider));
+    }
     form.append(divider);
   }
   if (hasGuest) {
     // a link when the table has one (works without JS too), else a button
     const guestAction = createElementWithClass(guest.href ? 'a' : 'button', 'login-guest', guest.text);
-    if (guest.href) guestAction.href = guest.href;
-    else guestAction.type = 'button';
+    if (guest.href) {
+      guestAction.href = guest.href;
+    } else {
+      guestAction.type = 'button';
+    }
     guestAction.addEventListener('click', (event) => {
       event.preventDefault();
       continueAsGuest();
       const destination = getGuestDestination(settings);
-      if (destination) goToPage(destination);
+      if (destination) {
+        goToPage(destination);
+      }
     });
     form.append(guestAction);
   }
@@ -482,7 +507,9 @@ function buildLoginForm(idPrefix, settings) {
   });
   // a field that changes loses its error message
   form.addEventListener('input', (event) => {
-    if (event.target.classList.contains('login-input')) clearFieldError(event.target);
+    if (event.target.classList.contains('login-input')) {
+      clearFieldError(event.target);
+    }
   });
   return form;
 }
@@ -494,7 +521,9 @@ function buildLoginForm(idPrefix, settings) {
  * @returns {Element|null} div.login-legal
  */
 function buildLegalText(cell) {
-  if (!cell?.textContent.trim()) return null;
+  if (!cell?.textContent.trim()) {
+    return null;
+  }
   const legal = createElementWithClass('div', 'login-legal');
   const appendNodes = (nodes) => nodes.forEach((node) => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -511,7 +540,9 @@ function buildLegalText(cell) {
       legal.append(link);
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       // paragraphs of the cell are joined with a space
-      if (['P', 'DIV'].includes(node.nodeName) && legal.childNodes.length) legal.append(' ');
+      if (['P', 'DIV'].includes(node.nodeName) && legal.childNodes.length) {
+        legal.append(' ');
+      }
       appendNodes([...node.childNodes]);
     }
   });
@@ -536,7 +567,9 @@ function renderLogin(block, settings) {
 
   const frame = createElementWithClass('div', 'col-24 login-frame');
   const header = buildLoginHeader(texts);
-  if (header) frame.append(header);
+  if (header) {
+    frame.append(header);
+  }
 
   if (texts.loginTab && texts.registerTab) {
     // empty for now: the register block will be placed here
@@ -552,7 +585,9 @@ function renderLogin(block, settings) {
   }
 
   const legal = buildLegalText(settings.legalCell);
-  if (legal) frame.append(legal);
+  if (legal) {
+    frame.append(legal);
+  }
 
   const row = createElementWithClass('div', 'row row-center');
   row.append(frame);

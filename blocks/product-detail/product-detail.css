@@ -530,7 +530,7 @@
   & .product-detail-spec-label {
     padding-block: 8px;
     padding-inline-start: 20px;
-    color: var(--product-detail-muted);
+    color: var(--product-detail-spec-label);
     font-size: 13px;
     font-weight: 600;
   }

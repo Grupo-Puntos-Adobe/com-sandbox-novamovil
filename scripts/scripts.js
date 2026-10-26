@@ -43,7 +43,9 @@ if (window.trustedTypes && window.trustedTypes.createPolicy) {
 async function loadFonts() {
   await loadCSS(`${window.hlx.codeBasePath}/styles/fonts.css`);
   try {
-    if (!window.location.hostname.includes('localhost')) sessionStorage.setItem('fonts-loaded', 'true');
+    if (!window.location.hostname.includes('localhost')) {
+      sessionStorage.setItem('fonts-loaded', 'true');
+    }
   } catch (e) {
     // do nothing
   }
@@ -56,7 +58,9 @@ async function loadFonts() {
 function buildWidgetAutoBlocks(main) {
   const widgetLinks = [...main.querySelectorAll('a[href*="/widgets/"]')];
   widgetLinks.forEach((link) => {
-    if (link.closest('.widget')) return;
+    if (link.closest('.widget')) {
+      return;
+    }
     const newLink = link.cloneNode(true);
     const widgetBlock = buildBlock('widget', { elems: [newLink] });
     const p = link.closest('p');
@@ -114,17 +118,23 @@ function decorateButtons(main) {
     const text = a.textContent.trim();
 
     // quick structural checks
-    if (a.querySelector('img') || p.textContent.trim() !== text) return;
+    if (a.querySelector('img') || p.textContent.trim() !== text) {
+      return;
+    }
 
     // skip URL display links
     try {
-      if (new URL(a.href).href === new URL(text, window.location).href) return;
+      if (new URL(a.href).href === new URL(text, window.location).href) {
+        return;
+      }
     } catch { /* continue */ }
 
     // require authored formatting for buttonization
     const strong = a.closest('strong');
     const em = a.closest('em');
-    if (!strong && !em) return;
+    if (!strong && !em) {
+      return;
+    }
 
     p.className = 'button-wrapper';
     a.className = 'button';
@@ -191,7 +201,9 @@ async function loadLazy(doc) {
 
   const { hash } = window.location;
   const element = hash ? doc.getElementById(hash.substring(1)) : false;
-  if (hash && element) element.scrollIntoView();
+  if (hash && element) {
+    element.scrollIntoView();
+  }
 
   loadFooter(doc.querySelector('body > footer'));
 

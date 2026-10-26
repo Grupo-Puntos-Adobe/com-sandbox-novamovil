@@ -52,7 +52,7 @@ Todos los estilos van dentro de `.footer-novamovil` y solo usan clases.
 - `footer-brand-accent` – Parte destacada del nombre ("Móvil")
 - `footer-tagline` – Frase debajo de la marca
 - `footer-column` – Cada columna de enlaces
-- `footer-column-title` – Título de la columna (el encabezado del documento)
+- `footer-column-title` – Título de la columna (el encabezado del documento, siempre como `h2` para que la página no salte niveles de encabezado)
 - `footer-links` – Lista de enlaces de la columna
 - `footer-link` – Cada enlace de la columna (`a`)
 - `footer-column-text` – Texto de la columna que no es título ni lista
@@ -74,7 +74,7 @@ footer
       │  │  │     └─ em.footer-brand-accent
       │  │  └─ p.footer-tagline
       │  └─ div.footer-column   × cada título
-      │     ├─ h3.footer-column-title
+      │     ├─ h2.footer-column-title
       │     └─ ul.footer-links
       │        └─ li > a.footer-link
       └─ div.footer-bottom

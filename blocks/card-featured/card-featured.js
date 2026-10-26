@@ -210,8 +210,12 @@ function readFeaturedSettings(block) {
  */
 function buildProductHref(item, linkTemplate) {
   const own = getSafeHref(item.path || item.url);
-  if (own) return own;
-  if (!linkTemplate) return null;
+  if (own) {
+    return own;
+  }
+  if (!linkTemplate) {
+    return null;
+  }
   const filled = linkTemplate.replace(/\{(sku|productId|id)\}/g, (placeholder, key) => encodeURIComponent(String(item[key] ?? '').toLowerCase()));
   return /\{|\/\/?$/.test(filled) ? null : getSafeHref(filled);
 }
@@ -249,7 +253,9 @@ function normalizeProducts(rawProducts, linkTemplate) {
       };
     })
     .filter((item) => {
-      if (!item.name || item.price === null || seen.has(item.id)) return false;
+      if (!item.name || item.price === null || seen.has(item.id)) {
+        return false;
+      }
       seen.add(item.id);
       return true;
     });
@@ -265,7 +271,9 @@ function normalizeProducts(rawProducts, linkTemplate) {
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -296,8 +304,12 @@ function buildProductMedia(product, imageErrorMessage) {
   } else {
     fallback();
   }
-  if (product.badge) media.append(createElementWithClass('div', 'card-featured-badge', product.badge));
-  if (product.promo) media.append(createElementWithClass('div', 'card-featured-promo', product.promo));
+  if (product.badge) {
+    media.append(createElementWithClass('div', 'card-featured-badge', product.badge));
+  }
+  if (product.promo) {
+    media.append(createElementWithClass('div', 'card-featured-promo', product.promo));
+  }
   return media;
 }
 
@@ -308,7 +320,9 @@ function buildProductMedia(product, imageErrorMessage) {
  * @returns {Element|null} null when the product has no rating
  */
 function buildProductRating(product) {
-  if (product.rating === null) return null;
+  if (product.rating === null) {
+    return null;
+  }
   const count = product.reviews === null ? '' : new Intl.NumberFormat(LOCALE).format(product.reviews);
   const rating = createElementWithClass('div', 'card-featured-rating');
   rating.setAttribute('role', 'img');
@@ -317,7 +331,9 @@ function buildProductRating(product) {
   // only the value (0-5); card-featured.css turns it into the fill
   stars.style.setProperty('--card-featured-rating', String(product.rating));
   rating.append(stars);
-  if (count) rating.append(createElementWithClass('span', 'card-featured-reviews', `(${count})`));
+  if (count) {
+    rating.append(createElementWithClass('span', 'card-featured-reviews', `(${count})`));
+  }
   return rating;
 }
 
@@ -371,7 +387,9 @@ function buildProductName(product, buttonText) {
  * @returns {Element|null} a.card-featured-button
  */
 function buildProductButton(product, buttonText) {
-  if (!product.href || !buttonText) return null;
+  if (!product.href || !buttonText) {
+    return null;
+  }
   const link = createElementWithClass('a', 'card-featured-button', buttonText);
   link.href = product.href;
   link.setAttribute('aria-label', `${buttonText}: ${`${product.brand} ${product.name}`.trim()}`);
@@ -390,13 +408,19 @@ function buildProductCard(product, settings) {
   cell.setAttribute('role', 'listitem');
   const card = createElementWithClass('div', 'card-featured-item');
   const body = createElementWithClass('div', 'card-featured-body');
-  if (product.brand) body.append(createElementWithClass('div', 'card-featured-brand', product.brand));
+  if (product.brand) {
+    body.append(createElementWithClass('div', 'card-featured-brand', product.brand));
+  }
   body.append(buildProductName(product, settings.buttonText));
   const rating = buildProductRating(product);
-  if (rating) body.append(rating);
+  if (rating) {
+    body.append(rating);
+  }
   body.append(buildProductPrices(product));
   const link = buildProductButton(product, settings.buttonText);
-  if (link) body.append(link);
+  if (link) {
+    body.append(link);
+  }
 
   card.append(buildProductMedia(product, settings.messages.imageErrorMessage), body);
   cell.append(card);
@@ -443,7 +467,9 @@ function renderProducts(block, header, products, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Productos destacados, lista")
   const heading = header?.querySelector('.card-featured-heading');
-  if (heading) list.setAttribute('aria-label', heading.textContent);
+  if (heading) {
+    list.setAttribute('aria-label', heading.textContent);
+  }
   list.append(...products.map((product) => buildProductCard(product, settings)));
   const grid = createElementWithClass('div', 'card-featured-grid container-fluid');
   grid.append(list);
@@ -483,7 +509,9 @@ async function loadProductsFromService(block, header, settings) {
 function buildViewAllLink(block) {
   const cell = readTableCell(block, 'link');
   const href = cell.text ? getSafeHref(cell.href) : null;
-  if (!href) return null;
+  if (!href) {
+    return null;
+  }
   const link = createElementWithClass('a', 'card-featured-link', cell.text);
   link.href = href;
   return link;
@@ -500,7 +528,9 @@ function buildViewAllLink(block) {
 function buildProductsHeader(block) {
   const heading = buildSectionTitle(block, 'card-featured')?.querySelector('.card-featured-heading');
   const link = buildViewAllLink(block);
-  if (!heading && !link) return null;
+  if (!heading && !link) {
+    return null;
+  }
   const header = createElementWithClass('div', 'card-featured-header');
   const row = createElementWithClass('div', `card-featured-header-row row row-middle row-gutter-16${heading ? '' : ' row-end'}`);
   if (heading) {

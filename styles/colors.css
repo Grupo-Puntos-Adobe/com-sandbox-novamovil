@@ -140,7 +140,7 @@
   --product-catalog-promo-background: var(--color-yellow-100);
   --product-catalog-promo-text: var(--color-yellow-800);
   --product-catalog-name: var(--heading-color);
-  --product-catalog-available: color-mix(in srgb, var(--color-success) 80%, var(--color-gray-900));
+  --product-catalog-available: color-mix(in srgb, var(--color-success) 60%, var(--color-gray-900)); /* 4.5:1 on white */
   --product-catalog-sold-out: var(--color-gray-500);
   --product-catalog-chip-background: var(--color-gray-100);
   --product-catalog-chip-text: var(--color-gray-500);
@@ -169,7 +169,7 @@
   --product-detail-star: var(--color-amber-500);
   --product-detail-star-empty: var(--color-gray-200);
   --product-detail-price: var(--color-primary);
-  --product-detail-positive: color-mix(in srgb, var(--color-success) 80%, var(--color-gray-900));
+  --product-detail-positive: color-mix(in srgb, var(--color-success) 60%, var(--color-gray-900)); /* 4.5:1 on gray-100 */
   --product-detail-option-selected-background: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
   --product-detail-button-background: var(--gradient-brand);
   --product-detail-button-text: var(--color-white);
@@ -177,6 +177,7 @@
   --product-detail-favorite: var(--color-error);
   --product-detail-benefits-background: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
   --product-detail-spec-stripe: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
+  --product-detail-spec-label: color-mix(in srgb, var(--color-gray-500) 80%, var(--color-gray-900)); /* 4.5:1 on stripes */
   --product-detail-skeleton: var(--color-gray-200);
   --product-detail-skeleton-shine: var(--color-gray-100);
 
@@ -189,6 +190,7 @@
   --login-accent: var(--color-primary);
   --login-link-hover: var(--color-accent);
   --login-tabs-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-gray-100));
+  --login-tab-text: color-mix(in srgb, var(--color-gray-500) 80%, var(--color-gray-900)); /* 4.5:1 on the tabs */
   --login-tab-selected-background: var(--color-white);
   --login-tab-selected-shadow: color-mix(in srgb, var(--color-navy-950) 10%, transparent);
   --login-input-text: var(--color-gray-900);

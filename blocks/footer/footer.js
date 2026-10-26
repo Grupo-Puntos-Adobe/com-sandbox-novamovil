@@ -85,8 +85,12 @@ function buildBrandLink(brandSource, prefix) {
   if (picture) {
     picture.classList.add(`${prefix}-logo`);
     const img = picture.querySelector('img');
-    if (img) img.classList.add(`${prefix}-image`);
-    if (img && !img.alt) img.alt = authoredName ? '' : BRAND_NAME;
+    if (img) {
+      img.classList.add(`${prefix}-image`);
+    }
+    if (img && !img.alt) {
+      img.alt = authoredName ? '' : BRAND_NAME;
+    }
     link.append(picture);
   } else {
     const logo = icon || document.createElement('span');
@@ -95,7 +99,9 @@ function buildBrandLink(brandSource, prefix) {
     link.append(logo);
   }
 
-  if (authoredName || !picture) link.append(buildBrandWordmark(authoredName, prefix));
+  if (authoredName || !picture) {
+    link.append(buildBrandWordmark(authoredName, prefix));
+  }
   return link;
 }
 
@@ -108,7 +114,9 @@ const hasLetterText = (element) => /\p{L}/u.test(element.textContent);
  * @returns {Element[]}
  */
 function getSectionElements(section) {
-  if (!section) return [];
+  if (!section) {
+    return [];
+  }
   const wrapper = section.querySelector('.default-content-wrapper') || section;
   return [...wrapper.children];
 }
@@ -126,9 +134,14 @@ function buildFooterBrandColumn(brandItems) {
   const brandSource = document.createElement('div');
   const [first, second, ...rest] = brandItems;
   const tagline = rest;
-  if (first) brandSource.append(first);
-  if (first && !hasLetterText(first) && second?.querySelector('a')) brandSource.append(second);
-  else if (second) tagline.unshift(second);
+  if (first) {
+    brandSource.append(first);
+  }
+  if (first && !hasLetterText(first) && second?.querySelector('a')) {
+    brandSource.append(second);
+  } else if (second) {
+    tagline.unshift(second);
+  }
 
   column.append(buildBrandLink(brandSource, 'footer-brand'));
   tagline.forEach((element) => {
@@ -140,23 +153,46 @@ function buildFooterBrandColumn(brandItems) {
 }
 
 /**
+ * Column title as an h2, whatever level the author used (### in Drive): the footer is its own
+ * landmark, so the page heading order never skips a level (h1 → h3 on a page without h2).
+ * @param {Element} heading Authored h1-h6
+ * @returns {Element} h2 with the same id and content
+ */
+function toColumnTitle(heading) {
+  if (heading.tagName === 'H2') {
+    return heading;
+  }
+  const title = document.createElement('h2');
+  if (heading.id) {
+    title.id = heading.id;
+  }
+  title.append(...heading.childNodes);
+  return title;
+}
+
+/**
  * Section 2: each heading starts a column holding the content that follows it.
  * @param {Element[]} linkItems Authored elements of the links section
  * @returns {Element[]} the .footer-column elements
  */
 function buildFooterLinkColumns(linkItems) {
   const columns = [];
-  linkItems.forEach((element) => {
-    const isHeading = /^H[1-6]$/.test(element.tagName);
+  linkItems.forEach((authored) => {
+    const isHeading = /^H[1-6]$/.test(authored.tagName);
+    const element = isHeading ? toColumnTitle(authored) : authored;
     if (isHeading || !columns.length) {
       const column = document.createElement('div');
       column.className = 'footer-column';
       columns.push(column);
     }
     // class hooks so footer.css never styles tags
-    if (isHeading) element.classList.add('footer-column-title');
-    else if (element.tagName === 'UL' || element.tagName === 'OL') element.classList.add('footer-links');
-    else element.classList.add('footer-column-text');
+    if (isHeading) {
+      element.classList.add('footer-column-title');
+    } else if (element.tagName === 'UL' || element.tagName === 'OL') {
+      element.classList.add('footer-links');
+    } else {
+      element.classList.add('footer-column-text');
+    }
     element.querySelectorAll('a').forEach((link) => link.classList.add('footer-link'));
     columns.at(-1).append(element);
   });
@@ -209,12 +245,18 @@ export default async function decorate(block) {
   grid.className = 'footer-grid';
   const brandItems = getSectionElements(brandSection);
   const linkItems = getSectionElements(linksSection);
-  if (brandSection) grid.append(buildFooterBrandColumn(brandItems));
+  if (brandSection) {
+    grid.append(buildFooterBrandColumn(brandItems));
+  }
   grid.append(...buildFooterLinkColumns(linkItems));
-  if (grid.children.length) footer.append(grid);
+  if (grid.children.length) {
+    footer.append(grid);
+  }
 
   const bottomItems = getSectionElements(bottomSection);
-  if (bottomItems.length) footer.append(buildFooterBottom(bottomItems));
+  if (bottomItems.length) {
+    footer.append(buildFooterBottom(bottomItems));
+  }
 
   block.append(footer);
 }

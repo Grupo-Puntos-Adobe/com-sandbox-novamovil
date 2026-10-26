@@ -41,7 +41,9 @@ export const DEFAULT_TIMEOUT = 8000;
 function buildUrl(url, params) {
   const absolute = new URL(url, /^https?:\/\//i.test(url) ? undefined : API_BASE_URL);
   Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) absolute.searchParams.set(key, value);
+    if (value !== undefined && value !== null) {
+      absolute.searchParams.set(key, value);
+    }
   });
   return absolute.toString();
 }
@@ -80,7 +82,9 @@ export async function request(url, options = {}) {
     } = config;
     const isJsonBody = body && typeof body === 'object' && !(body instanceof FormData)
       && !(body instanceof Blob) && !(body instanceof URLSearchParams);
-    if (isJsonBody) fetchInit.headers = { 'Content-Type': 'application/json', ...fetchInit.headers };
+    if (isJsonBody) {
+      fetchInit.headers = { 'Content-Type': 'application/json', ...fetchInit.headers };
+    }
 
     // AbortSignal.any is newer (Safari 17.4, Firefox 124): without it only the timeout applies
     const timeoutSignal = AbortSignal.timeout(timeout);

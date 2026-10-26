@@ -78,7 +78,9 @@ export const publicRequestInterceptor = {
         cause: body,
       });
     }
-    if (response.status === 204) return null;
+    if (response.status === 204) {
+      return null;
+    }
     try {
       return await response.json();
     } catch (cause) {
@@ -114,7 +116,9 @@ export const privateRequestInterceptor = {
   error(error) {
     if (error.status === 401) {
       clearUserSession();
-      if (!isEditingToolPreview()) goToPage(getPageRedirectPath(), { replace: true });
+      if (!isEditingToolPreview()) {
+        goToPage(getPageRedirectPath(), { replace: true });
+      }
     }
     throw error;
   },
@@ -142,7 +146,9 @@ export function registerInterceptor(name, chain) {
  */
 export function resolveInterceptors(interceptor = REQUEST_TYPE.PUBLIC) {
   return [].concat(interceptor).flatMap((item) => {
-    if (typeof item === 'string') return registry.get(item) || registry.get(REQUEST_TYPE.PUBLIC);
+    if (typeof item === 'string') {
+      return registry.get(item) || registry.get(REQUEST_TYPE.PUBLIC);
+    }
     return item ? [item] : [];
   });
 }

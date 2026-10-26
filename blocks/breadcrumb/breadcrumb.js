@@ -80,7 +80,9 @@ function buildBreadcrumbItem(level, isCurrent) {
   } else {
     const text = document.createElement('div');
     text.className = isCurrent ? 'breadcrumb-current' : 'breadcrumb-text';
-    if (isCurrent) text.setAttribute('aria-current', 'page');
+    if (isCurrent) {
+      text.setAttribute('aria-current', 'page');
+    }
     text.textContent = level.text;
     item.append(text);
   }

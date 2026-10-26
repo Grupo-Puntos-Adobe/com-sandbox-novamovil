@@ -78,7 +78,7 @@
     border: 0;
     border-radius: 10px;
     background: transparent;
-    color: var(--login-muted);
+    color: var(--login-tab-text);
     font-size: 13px;
     font-weight: 600;
     line-height: 1.3;
@@ -187,11 +187,11 @@
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: box-shadow 0.2s ease, translate 0.2s ease;
 
     &:hover {
       box-shadow: 0 6px 16px var(--login-button-glow);
-      transform: translateY(-1px);
+      translate: 0 -1px;
     }
 
     &:focus-visible {
@@ -204,14 +204,14 @@
       box-shadow: none;
       cursor: progress;
       opacity: 0.7;
-      transform: none;
+      translate: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
       transition: none;
 
       &:hover {
-        transform: none;
+        translate: none;
       }
     }
   }

@@ -141,8 +141,12 @@ function readPromotionsSettings(block) {
  */
 function buildPromotionHref(item, linkTemplate) {
   const own = getSafeHref(item.path || item.url);
-  if (own) return own;
-  if (!linkTemplate) return null;
+  if (own) {
+    return own;
+  }
+  if (!linkTemplate) {
+    return null;
+  }
   const filled = linkTemplate.replace(/\{id\}/g, encodeURIComponent(String(item.id ?? '').toLowerCase()));
   return /\{|\/$/.test(filled) ? null : getSafeHref(filled);
 }
@@ -167,7 +171,9 @@ function normalizePromotions(rawPromotions, linkTemplate) {
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : Number.MAX_SAFE_INTEGER,
     }))
     .filter((item) => {
-      if (!item.title || seen.has(item.id)) return false;
+      if (!item.title || seen.has(item.id)) {
+        return false;
+      }
       seen.add(item.id);
       return true;
     })
@@ -184,7 +190,9 @@ function normalizePromotions(rawPromotions, linkTemplate) {
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -199,8 +207,12 @@ function buildPromotionCard(promotion) {
   const card = createElementWithClass('div', 'card-promotions-card col-24 col-md-8');
   card.setAttribute('role', 'listitem');
   const link = createElementWithClass(promotion.href ? 'a' : 'div', 'card-promotions-item');
-  if (promotion.href) link.href = promotion.href;
-  if (promotion.color) link.style.setProperty('--card-promotions-item-color', promotion.color);
+  if (promotion.href) {
+    link.href = promotion.href;
+  }
+  if (promotion.color) {
+    link.style.setProperty('--card-promotions-item-color', promotion.color);
+  }
 
   if (promotion.image) {
     const img = createElementWithClass('img', 'card-promotions-image');
@@ -214,7 +226,9 @@ function buildPromotionCard(promotion) {
 
   const content = createElementWithClass('span', 'card-promotions-content');
   content.append(createElementWithClass('span', 'card-promotions-title', promotion.title));
-  if (promotion.sub) content.append(createElementWithClass('span', 'card-promotions-sub', promotion.sub));
+  if (promotion.sub) {
+    content.append(createElementWithClass('span', 'card-promotions-sub', promotion.sub));
+  }
   link.append(content);
 
   card.append(link);
@@ -261,7 +275,9 @@ function renderPromotions(block, header, promotions, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Promociones, lista, 3 elementos")
   const heading = header?.querySelector('.card-promotions-heading');
-  if (heading) list.setAttribute('aria-label', heading.textContent);
+  if (heading) {
+    list.setAttribute('aria-label', heading.textContent);
+  }
   list.append(...promotions.map(buildPromotionCard));
   const grid = createElementWithClass('div', 'card-promotions-grid container-fluid');
   grid.append(list);

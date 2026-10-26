@@ -159,7 +159,9 @@ const toTextList = (values) => [...new Set((Array.isArray(values) ? values : [])
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -238,8 +240,12 @@ function normalizeFilters(rawFilters) {
  */
 function buildPhoneHref(item, linkTemplate) {
   const own = getSafeHref(item.path || item.url);
-  if (own) return own;
-  if (!linkTemplate) return null;
+  if (own) {
+    return own;
+  }
+  if (!linkTemplate) {
+    return null;
+  }
   const filled = linkTemplate.replace(/\{(sku|productId|id)\}/g, (placeholder, key) => encodeURIComponent(String(item[key] ?? '').toLowerCase()));
   return /\{|\/\/?$/.test(filled) ? null : getSafeHref(filled);
 }
@@ -281,7 +287,9 @@ function normalizePhones(rawPhones, linkTemplate) {
       };
     })
     .filter((item) => {
-      if (!item.name || item.price === null || seen.has(item.id)) return false;
+      if (!item.name || item.price === null || seen.has(item.id)) {
+        return false;
+      }
       seen.add(item.id);
       return true;
     });
@@ -304,7 +312,9 @@ function buildSearchRequest(state, settings) {
     storage: [...state.selected.storage],
     sortBy: state.sortBy,
   };
-  if (settings.category) data.category = settings.category;
+  if (settings.category) {
+    data.category = settings.category;
+  }
   return { meta: SEARCH_REQUEST_META, security: SEARCH_REQUEST_SECURITY, data };
 }
 
@@ -440,7 +450,9 @@ function buildCatalogLayout(settings, idPrefix) {
  * @returns {Element|null} div.product-catalog-filter-group[role=group], null without options
  */
 function buildCheckboxGroup(label, values, selected, onChange, groupId) {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   const group = createElementWithClass('div', 'product-catalog-filter-group');
   group.setAttribute('role', 'group');
   if (label) {
@@ -457,8 +469,11 @@ function buildCheckboxGroup(label, values, selected, onChange, groupId) {
     checkbox.value = value;
     checkbox.checked = selected.has(value);
     checkbox.addEventListener('change', () => {
-      if (checkbox.checked) selected.add(value);
-      else selected.delete(value);
+      if (checkbox.checked) {
+        selected.add(value);
+      } else {
+        selected.delete(value);
+      }
       onChange();
     });
     option.append(checkbox, createElementWithClass('span', 'product-catalog-option-text', value));
@@ -541,8 +556,12 @@ function buildPhoneCard(phone, settings) {
   } else {
     showImageError();
   }
-  if (phone.badge) media.append(createElementWithClass('div', 'product-catalog-badge', phone.badge));
-  if (phone.promo) media.append(createElementWithClass('div', 'product-catalog-promo', phone.promo));
+  if (phone.badge) {
+    media.append(createElementWithClass('div', 'product-catalog-badge', phone.badge));
+  }
+  if (phone.promo) {
+    media.append(createElementWithClass('div', 'product-catalog-promo', phone.promo));
+  }
 
   const body = createElementWithClass('div', 'product-catalog-body');
   const statusText = phone.isAvailable ? texts.available : texts.soldOut;
@@ -636,7 +655,9 @@ function getVisiblePages(page, totalPages) {
  * @returns {Element|null} div.product-catalog-pagination[role=navigation]
  */
 function buildPagination(page, totalPages, onPageChange) {
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1) {
+    return null;
+  }
   const pagination = createElementWithClass('div', 'product-catalog-pagination');
   pagination.setAttribute('role', 'navigation');
   pagination.setAttribute('aria-label', LABELS.pagination);
@@ -644,9 +665,14 @@ function buildPagination(page, totalPages, onPageChange) {
     const button = createElementWithClass('button', `product-catalog-page ${className}`, text);
     button.type = 'button';
     button.setAttribute('aria-label', label);
-    if (target === page && className === 'is-number') button.setAttribute('aria-current', 'page');
-    if (target < 1 || target > totalPages) button.disabled = true;
-    else if (target !== page) button.addEventListener('click', () => onPageChange(target));
+    if (target === page && className === 'is-number') {
+      button.setAttribute('aria-current', 'page');
+    }
+    if (target < 1 || target > totalPages) {
+      button.disabled = true;
+    } else if (target !== page) {
+      button.addEventListener('click', () => onPageChange(target));
+    }
     return button;
   };
   pagination.append(buildPageButton('‹', page - 1, LABELS.previousPage, 'is-previous'));
@@ -693,7 +719,9 @@ function renderCatalogResults(catalog, phones, pageInfo) {
   }
   const list = createElementWithClass('div', 'product-catalog-list row row-gutter-16 row-gutter-y-16');
   list.setAttribute('role', 'list');
-  if (settings.texts.title) list.setAttribute('aria-label', settings.texts.title);
+  if (settings.texts.title) {
+    list.setAttribute('aria-label', settings.texts.title);
+  }
   list.append(...phones.map((phone) => buildPhoneCard(phone, settings)));
   const grid = createElementWithClass('div', 'product-catalog-grid container-fluid');
   grid.append(list);
@@ -733,9 +761,13 @@ async function searchPhones(catalog) {
       buildSearchRequest(state, settings),
       { signal: controller.signal },
     );
-    if (controller.signal.aborted) return;
+    if (controller.signal.aborted) {
+      return;
+    }
     const rawPhones = Array.isArray(response?.data) ? response.data : response?.data?.products;
-    if (!Array.isArray(rawPhones)) throw new Error('Unexpected response: data is not a list');
+    if (!Array.isArray(rawPhones)) {
+      throw new Error('Unexpected response: data is not a list');
+    }
     const phones = normalizePhones(rawPhones, settings.linkTemplate);
     const pagination = response.pagination || response.data?.pagination || {};
     const totalItems = toNumberOrNull(pagination.totalItems) ?? phones.length;
@@ -743,10 +775,15 @@ async function searchPhones(catalog) {
       ?? Math.max(1, Math.ceil(totalItems / settings.pageSize));
     renderCatalogResults(catalog, phones, { totalItems, totalPages });
   } catch (error) {
-    if (controller.signal.aborted) return; // replaced by a newer search
+    // replaced by a newer search
+    if (controller.signal.aborted) {
+      return;
+    }
     // eslint-disable-next-line no-console
     console.error('[product-catalog] Could not load phones from', settings.searchEndpoint, error);
-    if (!state.isAlertShown) showToast(settings.messages.errorResponseMessage, settings.alert);
+    if (!state.isAlertShown) {
+      showToast(settings.messages.errorResponseMessage, settings.alert);
+    }
     state.isAlertShown = false;
     renderCatalogResults(catalog, [], { totalItems: 0, totalPages: 0 });
   }
@@ -760,12 +797,17 @@ async function searchPhones(catalog) {
  */
 function toggleFiltersPanel(catalog, isOpen) {
   const { filters, toggle } = catalog;
-  if (filters.classList.contains('is-open') === isOpen) return;
+  if (filters.classList.contains('is-open') === isOpen) {
+    return;
+  }
   filters.classList.toggle('is-open', isOpen);
   toggle.setAttribute('aria-expanded', String(isOpen));
   document.body.classList.toggle('has-product-catalog-filters-open', isOpen);
-  if (isOpen) filters.querySelector('.product-catalog-filters-close')?.focus();
-  else toggle.focus();
+  if (isOpen) {
+    filters.querySelector('.product-catalog-filters-close')?.focus();
+  } else {
+    toggle.focus();
+  }
 }
 
 /**
@@ -838,7 +880,9 @@ function renderFiltersPanel(catalog) {
  */
 async function loadFiltersFromService(catalog) {
   const { settings, state } = catalog;
-  if (!settings.filtersEndpoint) return normalizeFilters(FALLBACK_FILTERS);
+  if (!settings.filtersEndpoint) {
+    return normalizeFilters(FALLBACK_FILTERS);
+  }
   try {
     const response = await get(settings.filtersEndpoint);
     if (!response?.data || typeof response.data !== 'object') {
@@ -910,7 +954,9 @@ export default function decorate(block) {
   });
   toggle.addEventListener('click', () => toggleFiltersPanel(catalog, !filters.classList.contains('is-open')));
   filters.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') toggleFiltersPanel(catalog, false);
+    if (event.key === 'Escape') {
+      toggleFiltersPanel(catalog, false);
+    }
   });
 
   startCatalog(catalog);

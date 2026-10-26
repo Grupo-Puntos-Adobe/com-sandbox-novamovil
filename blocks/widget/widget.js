@@ -69,7 +69,9 @@ export default async function decorate(widget) {
     const cssLoaded = loadCSS(widgetUrl(widgetPath, widgetName, 'css'));
     const decorationComplete = (async () => {
       const mod = await import(widgetUrl(widgetPath, widgetName, 'js'));
-      if (mod.default) await mod.default(widget);
+      if (mod.default) {
+        await mod.default(widget);
+      }
     })();
     await Promise.all([cssLoaded, decorationComplete]);
   } catch (error) {

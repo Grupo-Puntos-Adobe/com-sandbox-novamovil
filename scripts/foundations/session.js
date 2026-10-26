@@ -131,9 +131,15 @@ export function isEditingToolPreview() {
  */
 function useStorage(action, key, value) {
   try {
-    if (action === 'get') return sessionStorage.getItem(key);
-    if (action === 'set') sessionStorage.setItem(key, value);
-    if (action === 'remove') sessionStorage.removeItem(key);
+    if (action === 'get') {
+      return sessionStorage.getItem(key);
+    }
+    if (action === 'set') {
+      sessionStorage.setItem(key, value);
+    }
+    if (action === 'remove') {
+      sessionStorage.removeItem(key);
+    }
   } catch {
     // storage blocked: the session cannot be kept after this page
   }
@@ -167,7 +173,9 @@ export function getUserSession() {
   } catch {
     return null;
   }
-  if (!session?.accessToken) return null;
+  if (!session?.accessToken) {
+    return null;
+  }
   if (session.expiresAt && Date.now() >= session.expiresAt) {
     clearUserSession();
     return null;
@@ -188,8 +196,12 @@ export function hasActiveSession() {
  * @returns {string} One of SESSION_STATES
  */
 export function getSessionState() {
-  if (hasActiveSession()) return SESSION_STATES.SIGNED_IN;
-  if (useStorage('get', GUEST_STORAGE_KEY) === 'true') return SESSION_STATES.GUEST;
+  if (hasActiveSession()) {
+    return SESSION_STATES.SIGNED_IN;
+  }
+  if (useStorage('get', GUEST_STORAGE_KEY) === 'true') {
+    return SESSION_STATES.GUEST;
+  }
   return SESSION_STATES.SIGNED_OUT;
 }
 
@@ -253,7 +265,9 @@ export function continueAsGuest() {
 export function saveUserSession({
   user, accessToken, tokenType, expiresIn, sessionId,
 } = {}) {
-  if (typeof accessToken !== 'string' || !accessToken) return null;
+  if (typeof accessToken !== 'string' || !accessToken) {
+    return null;
+  }
   const seconds = Number(expiresIn);
   const session = {
     user: {
@@ -359,8 +373,11 @@ export function getPageRedirectPath({ redirectTo } = {}) {
  */
 export function goToPage(path, { replace = false } = {}) {
   navigationPending = true;
-  if (replace) window.location.replace(path);
-  else window.location.assign(path);
+  if (replace) {
+    window.location.replace(path);
+  } else {
+    window.location.assign(path);
+  }
 }
 
 /**
@@ -383,7 +400,9 @@ function hasSessionAccess(allowGuest) {
  * @returns {boolean} true = can stay
  */
 export function requireActiveSession({ allowGuest = false, redirectTo } = {}) {
-  if (isEditingToolPreview() || hasSessionAccess(allowGuest)) return true;
+  if (isEditingToolPreview() || hasSessionAccess(allowGuest)) {
+    return true;
+  }
   goToPage(getPageRedirectPath({ redirectTo }), { replace: true });
   return false;
 }
@@ -396,7 +415,9 @@ export function requireActiveSession({ allowGuest = false, redirectTo } = {}) {
  * @returns {boolean} true = can stay
  */
 export function requireNoActiveSession({ redirectTo } = {}) {
-  if (isEditingToolPreview() || getSessionState() !== SESSION_STATES.SIGNED_IN) return true;
+  if (isEditingToolPreview() || getSessionState() !== SESSION_STATES.SIGNED_IN) {
+    return true;
+  }
   goToPage(getPageRedirectPath({ redirectTo }), { replace: true });
   return false;
 }
@@ -426,8 +447,12 @@ export function applyPageSessionRule() {
     [PAGE_SESSION_RULES.SIGNED_OUT_ONLY]: requireNoActiveSession,
   };
   const check = checks[rule];
-  if (!check) return true;
-  if (!check()) return false;
+  if (!check) {
+    return true;
+  }
+  if (!check()) {
+    return false;
+  }
   document.addEventListener(SESSION_CHANGE_EVENT, () => check());
   return true;
 }
@@ -446,7 +471,9 @@ export function isPageAccessAllowed() {
 function loadSessionStyles() {
   const loaded = [...document.head.querySelectorAll('link[rel="stylesheet"]')]
     .some((link) => link.href === SESSIONS_CSS_URL);
-  if (loaded) return;
+  if (loaded) {
+    return;
+  }
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = SESSIONS_CSS_URL;
@@ -462,7 +489,9 @@ function loadSessionStyles() {
 export function initPageSession() {
   loadSessionStyles();
   pageAccessAllowed = applyPageSessionRule();
-  if (!pageAccessAllowed) document.body.style.visibility = 'hidden';
+  if (!pageAccessAllowed) {
+    document.body.style.visibility = 'hidden';
+  }
   return pageAccessAllowed;
 }
 
@@ -500,11 +529,15 @@ function isSessionStateText(text) {
  * unless a navigation already started (goToPage).
  */
 function reloadPageOnSessionChange() {
-  if (reloadOnChangeRegistered) return;
+  if (reloadOnChangeRegistered) {
+    return;
+  }
   reloadOnChangeRegistered = true;
   document.addEventListener(SESSION_CHANGE_EVENT, () => {
     setTimeout(() => {
-      if (!navigationPending) window.location.reload();
+      if (!navigationPending) {
+        window.location.reload();
+      }
     }, 0);
   });
 }
@@ -526,15 +559,21 @@ export function filterRowsBySessionState(block) {
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const cells = [...row.children];
     const lastCell = cells[cells.length - 1];
-    if (cells.length < 2 || !isSessionStateText(lastCell.textContent)) return;
+    if (cells.length < 2 || !isSessionStateText(lastCell.textContent)) {
+      return;
+    }
     hasSessionRows = true;
     state = state || getSessionState();
     const states = parseSessionStateList(lastCell.textContent);
     lastCell.remove();
     row.dataset.session = states.join(' ');
-    if (!states.includes(state)) row.remove();
+    if (!states.includes(state)) {
+      row.remove();
+    }
   });
-  if (hasSessionRows) reloadPageOnSessionChange();
+  if (hasSessionRows) {
+    reloadPageOnSessionChange();
+  }
   return hasSessionRows;
 }
 

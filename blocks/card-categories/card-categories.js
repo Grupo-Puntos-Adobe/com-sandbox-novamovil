@@ -133,7 +133,9 @@ function normalizeCategories(rawCategories) {
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : Number.MAX_SAFE_INTEGER,
     }))
     .filter((item) => {
-      if (!item.label || !item.href || seen.has(item.id)) return false;
+      if (!item.label || !item.href || seen.has(item.id)) {
+        return false;
+      }
       seen.add(item.id);
       return true;
     })
@@ -150,7 +152,9 @@ function normalizeCategories(rawCategories) {
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -164,7 +168,9 @@ function buildCategoryCard(category) {
   card.setAttribute('role', 'listitem');
   const link = createElementWithClass('a', 'card-categories-item');
   link.href = category.href;
-  if (category.color) link.style.setProperty('--card-categories-item-color', category.color);
+  if (category.color) {
+    link.style.setProperty('--card-categories-item-color', category.color);
+  }
   const icon = createElementWithClass('span', 'card-categories-icon', category.icon);
   icon.setAttribute('aria-hidden', 'true');
   link.append(icon, createElementWithClass('span', 'card-categories-label', category.label));
@@ -212,7 +218,9 @@ function renderCategories(block, header, categories, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Categorías, lista, 6 elementos")
   const heading = header?.querySelector('.card-categories-heading');
-  if (heading) list.setAttribute('aria-label', heading.textContent);
+  if (heading) {
+    list.setAttribute('aria-label', heading.textContent);
+  }
   list.append(...categories.map(buildCategoryCard));
   const grid = createElementWithClass('div', 'card-categories-grid container-fluid');
   grid.append(list);

@@ -154,7 +154,9 @@ export function getSafeHref(path) {
  */
 export function buildSectionTitle(block, prefix) {
   const title = readTableCell(block, 'title').text;
-  if (!title) return null;
+  if (!title) {
+    return null;
+  }
 
   const heading = document.createElement('div');
   heading.className = `${prefix}-heading`;
