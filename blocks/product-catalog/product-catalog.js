@@ -70,7 +70,8 @@ import { get, post } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES, { CURRENCY, LOCALE } from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, formatPrice,
+  createElementWithClass, formatPrice, getAlertOptions, getSafeHref, readRowTextOrDefault,
+  readTableCell,
 } from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
@@ -150,29 +151,14 @@ const toTextList = (values) => [...new Set((Array.isArray(values) ? values : [])
   .map(toTrimmedText).filter(Boolean))];
 
 /**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
-
-/**
  * Everything the block reads from its table, with the defaults applied.
  * @param {Element} block
  * @returns {Object} texts, endpoints, category, pageSize, linkTemplate, alert and messages
  */
 function readCatalogSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const readEndpoint = (key) => {
+  // Filters Endpoint / Search Endpoint: the link of the cell, or its text
+  const readServiceUrl = (key) => {
     const cell = readTableCell(block, key);
     return cell.href || cell.text;
   };
@@ -193,8 +179,8 @@ function readCatalogSettings(block) {
       available: readCellText('available text'),
       soldOut: readCellText('sold out text'),
     },
-    filtersEndpoint: readEndpoint('filters endpoint'),
-    searchEndpoint: readEndpoint('search endpoint'),
+    filtersEndpoint: readServiceUrl('filters endpoint'),
+    searchEndpoint: readServiceUrl('search endpoint'),
     category: readCellText('category'),
     pageSize: Number.isFinite(pageSize) && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE,
     linkTemplate: readCellText('product link'),

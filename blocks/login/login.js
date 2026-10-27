@@ -63,7 +63,9 @@
  * Guide: blocks/login/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
-import { readTableCell, getSafeHref, toSafeSitePath } from '../../scripts/foundations/block-utils.js';
+import {
+  createElementWithClass, getSafeHref, readEndpoint, readTableCell, toSafeSitePath,
+} from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
   PAGE_SESSION_RULES, SESSION_STATES, continueAsGuest, getSessionData, goToPage,
@@ -100,22 +102,6 @@ const LABELS = {
 let loginBlockCount = 0;
 
 /**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
-
-/**
  * Value cell of a row (the whole cell, to keep the links of Legal Text).
  * @param {Element} block
  * @param {string} rowName Row name, case-insensitive
@@ -139,7 +125,6 @@ function readLoginSettings(block) {
     const cell = readTableCell(block, key);
     return { text: cell.text, href: getSafeHref(cell.href) };
   };
-  const endpointCell = readTableCell(block, 'endpoint');
   return {
     texts: {
       title: readCellText('title'),
@@ -155,7 +140,7 @@ function readLoginSettings(block) {
     },
     forgotPassword: readLink('forgot password'),
     guest: readLink('guest button'),
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
     legalCell: findValueCell(block, 'legal text'),
   };

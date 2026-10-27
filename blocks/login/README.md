@@ -390,7 +390,8 @@ Móvil:
 - `login.css` – Estilos del bloque, todos dentro de `.login` (tamaños, colores y resoluciones)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y estado en la
   última columna
-- `scripts/foundations/block-utils.js` – `readTableCell`, `getSafeHref` y `toSafeSitePath`
+- `scripts/foundations/block-utils.js` – `readTableCell`, `readEndpoint` (fila `Endpoint`), `getSafeHref`,
+  `toSafeSitePath` y `createElementWithClass`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
 - `scripts/foundations/session.js` – `loginUser` (hace la petición y guarda la sesión),
   `continueAsGuest`, `getSessionData` (`page.rule` dice si es la página `login`), `goToPage` y

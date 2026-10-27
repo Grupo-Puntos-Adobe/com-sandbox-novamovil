@@ -61,7 +61,8 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
+  buildSectionTitle, createElementWithClass, getAlertOptions, getSafeHref, readEndpoint,
+  readRowTextOrDefault, readTableCell,
 } from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
@@ -115,9 +116,8 @@ const toTrimmedText = (value) => (typeof value === 'string' ? value.trim() : '')
  */
 function readPromotionsSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const endpointCell = readTableCell(block, 'endpoint');
   return {
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     linkTemplate: readCellText('promo link'),
     alert: getAlertOptions(readBlockConfig(block)),
     messages: {
@@ -178,22 +178,6 @@ function normalizePromotions(rawPromotions, linkTemplate) {
       return true;
     })
     .sort((first, second) => first.order - second.order);
-}
-
-/**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
 }
 
 /**

@@ -34,7 +34,7 @@ se escribe un token ni una API key en el código ni en Drive.
 
 | Fila en la tabla del bloque | Tipo de llamada | Cómo se lee en el bloque |
 |---|---|---|
-| `Endpoint` (y las de cada bloque: `Search Endpoint`, `Filters Endpoint`) | `REQUEST_TYPE.PUBLIC` | `readEndpoint(block)` o `readTableCell` |
+| `Endpoint` (y las de cada bloque: `Search Endpoint`, `Filters Endpoint`) | `REQUEST_TYPE.PUBLIC` | `readEndpoint(block)` (las filas con otro nombre, con `readTableCell`) |
 | `Private Endpoint` (también se acepta `PrivateEndpoint`) | `REQUEST_TYPE.PRIVATE` (con Bearer) | `readPrivateEndpoint(block)` |
 
 Los bloques que ya existen siguen con `Endpoint` y no cambian. Un servicio que necesita sesión va

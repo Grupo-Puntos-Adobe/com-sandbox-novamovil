@@ -306,8 +306,8 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por
   sesión (última columna)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PRIVATE`
-- `scripts/foundations/block-utils.js` – `readPrivateEndpoint` para la fila `Private Endpoint` y
-  `toSafeSitePath` para el enlace de `Login Link`
+- `scripts/foundations/block-utils.js` – `readPrivateEndpoint` para la fila `Private Endpoint`,
+  `toSafeSitePath` para el enlace de `Login Link` y `createElementWithClass`
 - `styles/foundations/grid.css` y `breakpoints.css` – Columnas y resoluciones
 - Colores en `styles/colors.css` (`--block-session-example-*`)
 - Documento de Drive: `content-drive/ejemplo-sesion.docx` (3 bloques: completo, `Session` `true` y

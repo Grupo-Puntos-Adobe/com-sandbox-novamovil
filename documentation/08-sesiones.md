@@ -282,7 +282,7 @@ el token. Una sesión vencida cuenta como "sin sesión".
 | Enterarse de un cambio (para repintar) | `SESSION_CHANGE_EVENT` en `document` (`detail` = `getSessionData()`) |
 | Ir a otra página | `goToPage(path, { replace })` (la recarga de las filas por sesión no la cancela) |
 | Rutas seguras | `toSafeSitePath(path)` de `block-utils.js` (solo rutas del sitio) |
-| Otros foundations | `filterRowsBySessionState(block)` y `parseSessionStateList(text)` (`block-options.js`); `getAuthorizationHeader()` y `clearUserSession()` (interceptores) |
+| Otros foundations (no para bloques) | `filterRowsBySessionState(block)` (`block-options.js`); `getAuthorizationHeader()` y `clearUserSession()` (interceptores). Un bloque cierra sesión con `logoutUser()` |
 
 El arranque de cada página (`sessions.css`, estado en `<html>` y la regla del Metadata) es
 interno: corre solo al cargar `session.js` desde `head.html`.

@@ -69,7 +69,8 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { post } from '../../scripts/api/http-client.js';
 import MESSAGES, { CURRENCY, LOCALE } from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getSafeHref, formatPrice,
+  createElementWithClass, formatPrice, getSafeHref, readEndpoint, readRowTextOrDefault,
+  readTableCell,
 } from '../../scripts/foundations/block-utils.js';
 import { setCurrentPageName } from '../../scripts/foundations/page-context.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
@@ -119,22 +120,6 @@ const toNumberOrNull = (value) => (value === null || value === '' || !Number.isF
 const formatCount = (value) => new Intl.NumberFormat(LOCALE).format(value);
 
 /**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
-
-/**
  * "Benefit N" rows (icon | text), sorted by N.
  * @param {Element} block
  * @returns {{icon: string, text: string}[]}
@@ -160,7 +145,6 @@ function readBenefitRows(block) {
  */
 function readDetailSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const endpointCell = readTableCell(block, 'endpoint');
   const catalogCell = readTableCell(block, 'catalog link');
   const months = Number.parseInt(readCellText('installments months'), 10);
   // the folder of the page: /celulares/ → /celulares
@@ -179,7 +163,7 @@ function readDetailSettings(block) {
       button: readCellText('button text'),
       specsTitle: readCellText('specs title'),
     },
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     catalogLink: getSafeHref(catalogCell.href || catalogCell.text) || pageFolder,
     installmentsMonths: Number.isFinite(months) && months > 0 ? months : null,
     benefits: readBenefitRows(block),

@@ -45,9 +45,10 @@
  *   No Session row (or empty): public page, nothing is checked. The guest is not a session.
  *   Read it with getSessionData().page. Safe paths: toSafeSitePath() of block-utils.js.
  *
- * Used by other foundations: filterRowsBySessionState(block) and parseSessionStateList(text)
- * (block-options.js: rows whose LAST cell is a state), getAuthorizationHeader() and
- * clearUserSession() (scripts/api/interceptors.js: private calls).
+ * Used by other foundations, not by blocks: filterRowsBySessionState(block) (block-options.js:
+ * rows whose LAST cell is a state; each row that stays keeps its states in row.dataset.session,
+ * e.g. "signed-in guest"), getAuthorizationHeader() and clearUserSession()
+ * (scripts/api/interceptors.js: private calls; a block logs out with logoutUser()).
  *
  * In the editing tool preview (EDITOR_PREVIEW_HOSTS) pages never redirect and sessions.css
  * shows everything, so private pages can be edited.
@@ -523,7 +524,7 @@ function initPageSession() {
  * @param {string} text
  * @returns {string[]}
  */
-export function parseSessionStateList(text) {
+function parseSessionStateList(text) {
   const valid = Object.values(SESSION_STATES);
   return [...new Set(String(text || '')
     .toLowerCase()

@@ -31,7 +31,7 @@
  * Markup is divs with ARIA roles, except the button. Guide: blocks/account-profile/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
-import { readTableCell } from '../../scripts/foundations/block-utils.js';
+import { createElementWithClass, readTableCell } from '../../scripts/foundations/block-utils.js';
 import { SESSION_CHANGE_EVENT, getSessionData, logoutUser } from '../../scripts/foundations/session.js';
 
 // table row that gives the label of each key of getSessionData().fields (painted in this order)
@@ -41,22 +41,6 @@ const FIELD_LABEL_ROWS = {
   phone: 'phone label',
   userId: 'user id label',
 };
-
-/**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
 
 /**
  * Everything the block paints, read from the table before it is replaced.

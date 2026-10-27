@@ -53,10 +53,12 @@
  * Guide: blocks/block-session-example/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
-import { readPrivateEndpoint, readTableCell, toSafeSitePath } from '../../scripts/foundations/block-utils.js';
+import {
+  createElementWithClass, readPrivateEndpoint, readTableCell, toSafeSitePath,
+} from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  SESSION_CHANGE_EVENT, SESSION_STATES, continueAsGuest, getSessionData, parseSessionStateList,
+  SESSION_CHANGE_EVENT, SESSION_STATES, continueAsGuest, getSessionData,
   logoutUser, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -93,22 +95,6 @@ const PRIVATE_REQUEST_META = {
 const ITEM_ROW = 'item';
 
 /**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
-
-/**
  * "Item" rows left for the current state (filterRowsBySessionState already removed the others), in
  * authored order; states = who sees it (row.dataset.session, empty = everybody).
  * @param {Element} block
@@ -118,7 +104,8 @@ function readItemRows(block) {
   return [...block.querySelectorAll(':scope > div')]
     .filter((row) => row.children[0]?.textContent.trim().toLowerCase() === ITEM_ROW)
     .map((row) => ({
-      states: parseSessionStateList(row.dataset.session),
+      // filterRowsBySessionState() leaves the states of the row in dataset.session
+      states: (row.dataset.session || '').split(' ').filter(Boolean),
       text: (row.children[1]?.textContent || '').trim(),
     }))
     .filter((item) => item.text);

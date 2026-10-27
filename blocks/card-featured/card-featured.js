@@ -74,7 +74,8 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle, formatPrice,
+  buildSectionTitle, createElementWithClass, formatPrice, getAlertOptions, getSafeHref,
+  readEndpoint, readRowTextOrDefault, readTableCell,
 } from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
@@ -181,9 +182,8 @@ const toNumberOrNull = (value) => (value === null || value === '' || !Number.isF
  */
 function readFeaturedSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const endpointCell = readTableCell(block, 'endpoint');
   return {
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     linkTemplate: readCellText('product link'),
     buttonText: readCellText('button text'),
     alert: getAlertOptions(readBlockConfig(block)),
@@ -259,22 +259,6 @@ function normalizeProducts(rawProducts, linkTemplate) {
       seen.add(item.id);
       return true;
     });
-}
-
-/**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
 }
 
 /**

@@ -234,7 +234,7 @@ Móvil:
 - `scripts/foundations/session.js` – `getSessionData` (datos), `logoutUser` (cerrar sesión) y
   `SESSION_CHANGE_EVENT`
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`
-- `scripts/foundations/block-utils.js` – `readTableCell`
+- `scripts/foundations/block-utils.js` – `readTableCell` y `createElementWithClass`
 - `styles/foundations/grid.css` y `breakpoints.css` – Columnas y resoluciones
 - Colores en `styles/colors.css` (`--account-profile-*`)
 - Documento de Drive: `content-drive/cuenta.docx` (página `/cuenta`, Metadata `Session: true` y

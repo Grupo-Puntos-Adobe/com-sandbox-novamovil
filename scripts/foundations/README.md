@@ -11,7 +11,7 @@ bloques o no.
 | Archivo | Qué hace | Exporta |
 |---|---|---|
 | `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` (`true` / `false`) de los bloques NovaMóvil y las filas con el estado en la última columna. Solo le pregunta a `session.js` por la sesión si el bloque trae la fila `Session` o un estado en la última columna. Guía: `documentation/06-styles-classname.md` | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
-| `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readEndpoint`, `readPrivateEndpoint`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice` |
+| `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readEndpoint`, `readPrivateEndpoint`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice`, `createElementWithClass` |
 | `messages.js` | Mensajes genéricos con valor por defecto (alerta, lista vacía, foto que falla) y el formato de números / precios | `MESSAGES` (default), `LOCALE`, `CURRENCY` |
 | `toast.js` | Alerta flotante arriba a la derecha, apilable, que se cierra sola | `showToast(message, { duration, variant })`, `TOAST_VARIANTS` |
 | `page-context.js` | Datos que un bloque obtiene al cargar y otro bloque de la misma página necesita, sin importarse entre ellos (hoy: el nombre de la página actual) | `setCurrentPageName(name)`, `getCurrentPageName()`, `CURRENT_PAGE_NAME_EVENT` |
@@ -101,13 +101,15 @@ const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.empt
 | `toSafeSitePath(path)` | Solo rutas **de este sitio** (`/cuenta?x=1`); `''` para `https://otro.com`, `//otro.com`, `javascript:`… |
 | `buildSectionTitle(block, prefix)` | Fila `Title` → `div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]` **dentro** del bloque (así `Styles` lo rodea); sin texto → `null` |
 | `formatPrice(value, currency)` | `$19,999` en `LOCALE`, sin decimales; un código de moneda inválido usa `CURRENCY` |
+| `createElementWithClass(tag, className, text)` | `document.createElement` con sus clases y, si se da, su texto (siempre como texto, nunca HTML). **Una sola vez aquí**: todos los bloques la importan en lugar de copiarla |
 
 ### Quién usa cada una
 
 | Función | Bloques |
 |---|---|
 | `readTableCell` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `account-profile` |
-| `readEndpoint` | Disponible para bloques nuevos (los actuales leen su `Endpoint` con `readTableCell`) |
+| `readEndpoint` | `card-*`, `product-detail`, `login` (su fila `Endpoint`); `product-catalog` lee `Filters Endpoint` y `Search Endpoint` |
+| `createElementWithClass` | `card-*`, `product-*`, `login`, `block-session-example`, `account-profile` |
 | `readPrivateEndpoint` | `block-session-example` (y los bloques privados que vengan) |
 | `readRowTextOrDefault` | `card-*`, `product-catalog`, `product-detail` |
 | `getAlertOptions` | `card-*`, `product-catalog` |
@@ -277,10 +279,9 @@ cancela). Rutas seguras del sitio: `toSafeSitePath(path)` de `block-utils.js`.
 
 | Función | Quién la usa | Qué hace |
 |---|---|---|
-| `filterRowsBySessionState(block)` | `block-options.js` | Filas cuya **última celda** es solo estados (`signed-in`, `signed-out`, `guest`, combinables): quedan solo para esos estados y se les quita esa celda; la página se recarga al cambiar la sesión |
-| `parseSessionStateList(text)` | `block-options.js`, bloques | `'Signed-in, guest'` → `['signed-in', 'guest']` |
+| `filterRowsBySessionState(block)` | `block-options.js` | Filas cuya **última celda** es solo estados (`signed-in`, `signed-out`, `guest`, combinables): quedan solo para esos estados y se les quita esa celda; cada fila que queda guarda sus estados en `row.dataset.session` (`"signed-in guest"`). La página se recarga al cambiar la sesión |
 | `getAuthorizationHeader()` | `scripts/api/interceptors.js` | `'Bearer …'` para la llamada privada, o `''` |
-| `clearUserSession()` | `scripts/api/interceptors.js` | Solo borra lo guardado (también la usan `logoutUser` y la sesión vencida) |
+| `clearUserSession()` | `scripts/api/interceptors.js` | Solo borra lo guardado, sin llamar a un servicio (lo necesita el 401: el token ya no sirve). **Un bloque cierra sesión con `logoutUser()`** |
 
 ### Ajustes
 
