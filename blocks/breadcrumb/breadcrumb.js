@@ -8,11 +8,12 @@
  *   | Styles / Classname / Session | …    (scripts/foundations/block-options.js)
  *   | Level 1            | [Inicio](/)    |   (a link: a level above the current page)
  *   | Level 2            | Celulares      |   (plain text: the current page)
- *   | Level 3            | {product}      |   (optional: filled at run time, see below)
+ *   | Level 3            | {dynamic-name} |   (optional: filled at run time, see below)
  * Levels are shown by their number; an empty level is left out. A level can end with a session
  * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
  * levels of the current state before this block reads them.
- * "{product}" is replaced by the name another block sets with setCurrentPageName()
+ * "{dynamic-name}" (also the older "{product}") is replaced by the name another block sets with
+ * setCurrentPageName() — fillDynamicName() of page-context.js, any block can use it
  * (scripts/foundations/page-context.js, e.g. product-detail with the product name); until
  * then that level is not painted.
  *
@@ -31,13 +32,13 @@
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { getSafeHref } from '../../scripts/foundations/block-utils.js';
-import { CURRENT_PAGE_NAME_EVENT, getCurrentPageName } from '../../scripts/foundations/page-context.js';
+import {
+  CURRENT_PAGE_NAME_EVENT, fillDynamicName, getCurrentPageName, hasDynamicName,
+} from '../../scripts/foundations/page-context.js';
 
 // accessible name of the navigation landmark (only read by screen readers)
 const LANDMARK_LABEL = 'Ruta de navegación';
 const LEVEL_ROW = /^level ?(\d+)$/;
-// level filled with the page name set at run time (setCurrentPageName)
-const PAGE_NAME_PLACEHOLDER = '{product}';
 
 /**
  * "Level N" rows sorted by N; each one with its text and, when it is a link, its href.
@@ -90,7 +91,8 @@ function buildBreadcrumbItem(level, isCurrent) {
 }
 
 /**
- * Paints the trail; the "{product}" levels take the page name, or are left out while it is ''.
+ * Paints the trail; the "{dynamic-name}" levels take the page name, or are left out while it
+ * is ''.
  * @param {Element} block
  * @param {{text: string, href: string|null}[]} levels readBreadcrumbLevels() result
  * @param {string} pageName getCurrentPageName()
@@ -99,7 +101,7 @@ function renderBreadcrumbTrail(block, levels, pageName) {
   const visibleLevels = levels
     .map((level) => ({
       ...level,
-      text: level.text.replace(PAGE_NAME_PLACEHOLDER, pageName).trim(),
+      text: fillDynamicName(level.text, pageName),
     }))
     .filter((level) => level.text);
   if (!visibleLevels.length) {
@@ -131,7 +133,7 @@ export default function decorate(block) {
   applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const levels = readBreadcrumbLevels(block);
   renderBreadcrumbTrail(block, levels, getCurrentPageName());
-  if (levels.some((level) => level.text.includes(PAGE_NAME_PLACEHOLDER))) {
+  if (levels.some((level) => hasDynamicName(level.text))) {
     document.addEventListener(CURRENT_PAGE_NAME_EVENT, (event) => {
       renderBreadcrumbTrail(block, levels, event.detail.name);
     });

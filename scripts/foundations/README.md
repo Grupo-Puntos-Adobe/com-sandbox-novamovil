@@ -174,18 +174,34 @@ showToast('No pudimos cargar las categorías', getAlertOptions(readBlockConfig(b
 
 **Para qué es:** que un bloque le pase un dato a otro bloque **de la misma página** sin importarse
 entre ellos. Hoy: el detalle del celular pone el nombre del producto cuando llega del servicio y el
-breadcrumb lo muestra en su nivel `{product}`.
+breadcrumb lo muestra en su nivel `{dynamic-name}`.
+
+**Texto dinámico en Drive, para cualquier bloque:** el autor escribe la marca `{dynamic-name}` donde
+va el nombre (`Detalle de {dynamic-name}`). **Sin la marca se ve el texto que escribió**: solo lo
+que necesita ser dinámico la lleva. `{product}` (el nombre anterior) se sigue aceptando.
 
 | Exporta | Recibe | Qué hace | Para qué sirve |
 |---|---|---|---|
 | `setCurrentPageName(name)` | El nombre (`'Apple iPhone 15 Pro'`) | Lo guarda y lanza `CURRENT_PAGE_NAME_EVENT` | El bloque que **conoce** el nombre |
 | `getCurrentPageName()` | — | El nombre guardado, o `''` | El bloque que lo **necesita** y carga después |
 | `CURRENT_PAGE_NAME_EVENT` | — | Evento en `document`; `detail = { name }` | El bloque que lo necesita y carga **antes** de que llegue |
+| `DYNAMIC_NAME_PLACEHOLDER` | — | `'{dynamic-name}'` | La marca que escribe el autor |
+| `hasDynamicName(text)` | Un texto de la tabla | `true` si trae `{dynamic-name}` (o `{product}`) | Saber si hay que esperar el nombre |
+| `fillDynamicName(text, name)` | El texto y, opcional, el nombre (por defecto `getCurrentPageName()`) | El texto con la marca cambiada por el nombre. Sin marca → el texto tal cual; con marca y sin nombre todavía → `''` | Pintar el texto dinámico en **cualquier** bloque |
 
 ```js
-// breadcrumb: lo lee ahora y también cuando llegue
-render(getCurrentPageName());
-document.addEventListener(CURRENT_PAGE_NAME_EVENT, (event) => render(event.detail.name));
+import {
+  CURRENT_PAGE_NAME_EVENT, fillDynamicName, hasDynamicName,
+} from '../../scripts/foundations/page-context.js';
+
+// cualquier bloque: 'Detalle de {dynamic-name}' → 'Detalle de Apple iPhone 15 Pro'
+const authored = readTableCell(block, 'title').text;
+title.textContent = fillDynamicName(authored);
+if (hasDynamicName(authored)) {
+  document.addEventListener(CURRENT_PAGE_NAME_EVENT, () => {
+    title.textContent = fillDynamicName(authored);
+  });
+}
 ```
 
 ---
