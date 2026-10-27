@@ -21,6 +21,8 @@
  *
  * The store starts empty on every page (each navigation loads the page again).
  * Something that is not declared in STORE is rejected with an error and nothing is stored.
+ * Debug: uncomment the showStoreInConsole() call at the end of this file to see the whole store in
+ * the console on every change (keep it commented in the repo).
  * Guide: scripts/foundations/README.md (store.js).
  */
 
@@ -266,6 +268,50 @@ function initStore() {
 }
 
 initStore();
+
+// --- debug: showStoreInConsole (start) — safe to delete this whole block ---------------------
+/* eslint-disable no-console */
+/**
+ * Debug only: shows the WHOLE store in the console now and on every change, as one table with
+ * every variable declared in STORE; what changed is marked (✏️) with its old value. Private
+ * variables (session.token) are masked. Turn it on by uncommenting the call below.
+ */
+// eslint-disable-next-line no-unused-vars
+function showStoreInConsole() {
+  const readRows = (all) => Object.entries(STORE).flatMap(([slice, variables]) => Object
+    .keys(variables)
+    .map((variable) => {
+      const path = `${slice}.${variable}`;
+      const value = all[slice][variable];
+      return [path, PRIVATE_VARIABLES.includes(path) && value ? '••• (privado)' : value];
+    }));
+  let previous = null;
+  subscribe((all) => {
+    const rows = readRows(all);
+    const before = previous && Object.fromEntries(previous);
+    const changed = before
+      ? rows.filter(([path, value]) => JSON.stringify(value) !== JSON.stringify(before[path]))
+        .map(([path]) => path)
+      : [];
+    const time = new Date().toLocaleTimeString();
+    const table = Object.fromEntries(rows.map(([path, value]) => {
+      if (!before) {
+        return [path, { valor: value }];
+      }
+      const isChanged = changed.includes(path);
+      return [path, { valor: value, cambió: isChanged ? '✏️' : '', antes: isChanged ? before[path] : '' }];
+    }));
+    console.group(before ? `store · cambió ${changed.join(', ')} (${time})` : `store · inicio (${time})`);
+    console.table(table);
+    console.groupEnd();
+    previous = rows;
+  });
+}
+/* eslint-enable no-console */
+
+// uncomment to see the store in the console; comment it again before pushing
+// showStoreInConsole();
+// --- debug: showStoreInConsole (end) ---------------------------------------------------------
 
 export const store = {
   get, set, reset, subscribe,

@@ -330,6 +330,28 @@ store.subscribe('session.isSession', (isSession) => { button.hidden = !isSession
 Lo usan `block-options.js` (fila `Session` y última columna) y la llamada privada. **Nunca** se
 imprime el store completo ni `session` en la consola.
 
+### 8. Ver el store en la consola (solo para depurar)
+
+Al final de `store.js` está `showStoreInConsole()`, con su llamada **comentada**:
+
+```js
+// uncomment to see the store in the console; comment it again before pushing
+// showStoreInConsole();
+```
+
+| Para | Qué hacer |
+|---|---|
+| Verlo | Descomentar `showStoreInConsole();`: en **todas** las páginas la consola muestra el store |
+| Dejar de verlo | Volver a comentar la línea (así se sube al repo) |
+| Quitarlo del todo | Borrar lo que está entre `debug: showStoreInConsole (start)` y `(end)`: nada más lo usa |
+
+Qué muestra: al abrir la página (`store · inicio`) y en **cada** cambio (`store · cambió
+breadcrumb.name (hora)`), una tabla con **todas** las variables de `STORE`, también las vacías. Lo
+que cambió lleva ✏️ y su valor anterior (`antes`). Un apartado nuevo de `STORE` aparece solo. Las
+variables privadas salen como `••• (privado)`: el token nunca se imprime.
+
+No la subas descomentada: la consola de la página publicada mostraría los datos del usuario.
+
 ---
 
 ## 6. `session.js`
