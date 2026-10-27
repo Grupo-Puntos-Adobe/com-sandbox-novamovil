@@ -19,7 +19,7 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 | Que una **fila** de la tabla (un valor) dependa de la sesión | Tabla del bloque | El estado en la **última columna**: `Title` \| `Hola, cliente` \| `signed-in` |
 | Que una fila la vean dos estados | Tabla del bloque | Última columna: `signed-out, guest` |
 | Mostrar u ocultar **una parte** de un bloque | Código del bloque | `showOnlyForSessionStates(elemento, 'signed-in')` |
-| Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque | `renderBySessionState(elemento, { 'signed-in': … })` |
+| Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque | `getSessionData()` (y `SESSION_CHANGE_EVENT` para repintar) |
 | Llamar un **servicio privado** con el token | Tabla del bloque + código | Fila `Private Endpoint` (`Endpoint` es para los públicos) y `post(readPrivateEndpoint(block), body, { interceptor: REQUEST_TYPE.PRIVATE })` |
 | Que el **login** mande a "Mi cuenta" al tener sesión | Metadata de `login` | `Session` \| `false` + `Redirect To` \| `/cuenta` |
 | Que el login **no** redirija (paso de compra) | Metadata del paso | Sin la fila `Session` |
@@ -182,7 +182,7 @@ Cualquier bloque que use `applyBlockOptions` acepta la fila **`Session`**:
 
 ```js
 import {
-  SESSION_STATES, getSessionData, renderBySessionState, showOnlyForSessionStates,
+  SESSION_CHANGE_EVENT, getSessionData, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 
 // todo lo de la sesión con un solo llamado
@@ -191,13 +191,15 @@ const { state, isSignedIn, isGuest, user, fields } = getSessionData();
 // se oculta / aparece sola al cambiar la sesión (clases de sessions.css)
 showOnlyForSessionStates(couponCard, 'signed-in, guest');
 
-// contenido que depende del usuario: cada vista recibe getSessionData() y se vuelve a pintar
-// al cambiar la sesión
-renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: ({ user }) => `Hola, ${user.firstName}`,
-  [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
-  // sin vista de guest usa la de signed-out
-});
+// contenido que depende del usuario: se pinta al cargar y otra vez con el aviso de cambio
+// (event.detail es lo mismo que getSessionData())
+const paint = ({ isSignedIn, isGuest, user }) => {
+  greeting.textContent = isSignedIn || isGuest
+    ? `Hola, ${user.firstName}`                      // con sesión, o "Invitado"
+    : 'Inicia sesión para ver tus cupones';
+};
+paint(getSessionData());                                                     // al cargar
+document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail)); // al cambiar
 ```
 
 O sin JS, directo con clases:
@@ -277,8 +279,7 @@ el token. Una sesión vencida cuenta como "sin sesión".
 | Cerrar sesión | `logoutUser()`: por ahora solo borra `sessionStorage` (es `async`, lista para un servicio) |
 | Modo invitado | `continueAsGuest()`: guarda el usuario `guest` ("Invitado"), sin token |
 | Mostrar u ocultar | `showOnlyForSessionStates(el, 'signed-in, guest')` |
-| Pintar según el estado | `renderBySessionState(target, views)`: cada vista recibe `getSessionData()` |
-| Enterarse de un cambio | `SESSION_CHANGE_EVENT` en `document` (`detail` = `getSessionData()`) |
+| Enterarse de un cambio (para repintar) | `SESSION_CHANGE_EVENT` en `document` (`detail` = `getSessionData()`) |
 | Ir a otra página | `goToPage(path, { replace })` (la recarga de las filas por sesión no la cancela) |
 | Rutas seguras | `toSafeSitePath(path)` de `block-utils.js` (solo rutas del sitio) |
 | Otros foundations | `filterRowsBySessionState(block)` y `parseSessionStateList(text)` (`block-options.js`); `getAuthorizationHeader()` y `clearUserSession()` (interceptores) |

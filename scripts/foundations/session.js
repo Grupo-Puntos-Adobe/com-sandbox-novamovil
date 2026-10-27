@@ -32,11 +32,11 @@
  *   goToPage(path, { replace })             goes to a page (a session reload does not cancel it)
  *
  *   showOnlyForSessionStates(element, 'signed-in, guest')   shown only to those states
- *   renderBySessionState(target, { 'signed-in': (data) => …, guest: …, 'signed-out': … })
- *                                           paints the view of the current state with
- *                                           getSessionData() and repaints it when it changes
  *   SESSION_CHANGE_EVENT                    on document after any change, detail =
- *                                           getSessionData()
+ *                                           getSessionData(). To repaint a part:
+ *     const paint = ({ state, user, fields }) => { … };
+ *     paint(getSessionData());
+ *     document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
  *
  * Pages (Metadata in Drive), checked on every page as soon as head.html loads this file:
  *   | Session     | true  |   only WITH a session: without one → Redirect To
@@ -609,27 +609,6 @@ export function showOnlyForSessionStates(element, states) {
     element.classList.add('session-only', ...list.map((state) => `session-only-${state}`));
   }
   return element;
-}
-
-/**
- * Paints in target the view of the current state and repaints it when the session changes.
- * A view is a function (getSessionData() result) → Element | string | null. Missing guest
- * view → the signed-out one; missing view → target stays empty.
- * @param {Element} target
- * @param {{'signed-in'?: Function, guest?: Function, 'signed-out'?: Function}} views
- * @returns {Function} Stops listening to the session
- */
-export function renderBySessionState(target, views) {
-  const render = () => {
-    const data = getSessionData();
-    const view = views[data.state]
-      || (data.isGuest ? views[SESSION_STATES.SIGNED_OUT] : null);
-    const content = view ? view(data) : null;
-    target.replaceChildren(...(content === null || content === undefined ? [] : [content]));
-  };
-  render();
-  document.addEventListener(SESSION_CHANGE_EVENT, render);
-  return () => document.removeEventListener(SESSION_CHANGE_EVENT, render);
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ cambian. Sirve para copiar la forma de hacerlo en un bloque nuevo.
 
 Lo de sesiones **no** está en este bloque: viene de `scripts/foundations/block-options.js` (filas
 `Session` y estados en la última columna, igual en cualquier bloque NovaMóvil) y de
-`scripts/foundations/session.js` (estado, `renderBySessionState`, `showOnlyForSessionStates`). Este bloque
+`scripts/foundations/session.js` (`getSessionData`, `SESSION_CHANGE_EVENT`, `showOnlyForSessionStates`). Este bloque
 solo lo pone en práctica.
 
 ### Características
@@ -93,7 +93,7 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24 > div.block-session-example-title[role=heading]
          ├─ div.col-24 > div.block-session-example-status
          │  ├─ div.block-session-example-status-title
-         │  ├─ div.block-session-example-status-current[aria-live]   (renderBySessionState)
+         │  ├─ div.block-session-example-status-current[aria-live]   (getSessionData)
          │  │  └─ div.-status-body > div.-badge.-badge-{estado} + div.-status-text
          │  └─ div.block-session-example-actions
          │     ├─ a.-button.-button-primary.session-only.session-only-signed-out
@@ -102,7 +102,7 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24.session-only.session-only-signed-in.session-only-guest
          │  └─ div.block-session-example-user
          │     ├─ div.block-session-example-user-title[role=heading][aria-level=3]
-         │     └─ div.block-session-example-user-data[aria-live]          (renderBySessionState)
+         │     └─ div.block-session-example-user-data[aria-live]          (getSessionData)
          │        └─ div.-user-table.container-fluid[role=table]
          │           └─ div.-user-field.row[role=row] × cada dato
          │              ├─ div.-user-label.col-10.col-md-6.col-lg-4[role=rowheader]
@@ -259,7 +259,7 @@ Móvil:
 
 ```js
 import {
-  SESSION_STATES, getSessionData, renderBySessionState, showOnlyForSessionStates,
+  SESSION_CHANGE_EVENT, getSessionData, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -280,12 +280,14 @@ fields.forEach(({ key, value }) => list.append(`${LABELS[key] || key}: ${value}`
 // 3) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
 showOnlyForSessionStates(couponCard, 'signed-in');
 
-// 4) que se vuelva a pintar solo al cambiar la sesión: cada vista recibe getSessionData()
-renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: ({ user }) => `Hola, ${user.firstName}`,
-  [SESSION_STATES.GUEST]: ({ user }) => `Hola, ${user.firstName}`, // "Invitado"
-  [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
-});
+// 4) que se vuelva a pintar al cambiar la sesión: el aviso trae lo mismo que getSessionData()
+const paint = ({ isSignedIn, isGuest, user }) => {
+  greeting.textContent = isSignedIn || isGuest
+    ? `Hola, ${user.firstName}`                      // con sesión, o "Invitado"
+    : 'Inicia sesión para ver tus cupones';
+};
+paint(getSessionData());                                                     // al cargar
+document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail)); // al cambiar
 
 // 5) una llamada privada: la URL va en la fila Private Endpoint (Endpoint es para los públicos)
 const privateEndpoint = readPrivateEndpoint(block);
@@ -297,8 +299,8 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 - `block-session-example.js` – Lee la tabla y arma el estado, las tarjetas y los botones
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
 - `scripts/foundations/session.js` – `getSessionData` (estado y `fields` del usuario),
-  `renderBySessionState` (cada vista recibe `getSessionData()`), `showOnlyForSessionStates`,
-  `continueAsGuest`, `logoutUser`
+  `SESSION_CHANGE_EVENT` (para repintar), `showOnlyForSessionStates`, `continueAsGuest`,
+  `logoutUser`
 - `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
   `session.js`)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por

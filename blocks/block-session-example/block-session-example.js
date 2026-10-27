@@ -8,8 +8,11 @@
  * What it shows (scripts/foundations/session.js + styles/foundations/sessions.css):
  *   1. Whole block by session: the optional Session row (block-options.js) → the block is only
  *      shown to signed-in / guest / signed-out visitors. It never redirects.
- *   2. Status panel: renderBySessionState() paints the badge and the text of the current state
- *      ("Hola, {name}…" with data.user.firstName) and repaints them when it changes.
+ *   2. Status panel: paints the badge and the text of the current state with getSessionData()
+ *      ("Hola, {name}…" with user.firstName) and repaints them on SESSION_CHANGE_EVENT.
+ *      Every part that changes with the session does the same, in one line each:
+ *        paint(getSessionData());
+ *        document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
  *   3. Items by session, the generic way of ANY block: "Item | text | signed-in" (the state in
  *      the LAST cell). filterRowsBySessionState() (block-options.js) removes the rows of other
  *      states
@@ -34,10 +37,11 @@
  *     ├─ applyBlockOptions(block)          Styles / Classname / Session rows
  *     ├─ readExampleSettings(block)        texts, items, links, endpoint
  *     └─ renderSessionExample()
- *          ├─ buildExampleStatus()         renderBySessionState: badge + text, actions by session
- *          ├─ buildExampleUser()           renderBySessionState: data.fields (signed in / guest)
+ *          ├─ buildExampleStatus()         getSessionData(): badge + text, actions by session
+ *          ├─ buildExampleUser()           getSessionData().fields (signed in / guest)
  *          ├─ buildExampleItem() × N       the Item rows left for the current state
- *          └─ buildExamplePrivate()        renderBySessionState: private call when signed in
+ *          └─ buildExamplePrivate()        getSessionData().isSignedIn: private call
+ *     each part repaints itself on SESSION_CHANGE_EVENT (event.detail = getSessionData())
  *
  * No resolution logic here: block-session-example.css decides each resolution. Columns come
  * from the grid (styles/foundations/grid.css):
@@ -52,7 +56,7 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readPrivateEndpoint, readTableCell, toSafeSitePath } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  SESSION_STATES, continueAsGuest, parseSessionStateList, renderBySessionState,
+  SESSION_CHANGE_EVENT, SESSION_STATES, continueAsGuest, getSessionData, parseSessionStateList,
   logoutUser, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -204,7 +208,16 @@ function buildExampleActions(settings) {
 }
 
 /**
- * Status panel: title, badge and text of the current state (renderBySessionState) and actions.
+ * Paints a part of the block with the session now and again every time it changes.
+ * @param {Function} paint Receives getSessionData() (or event.detail, the same data)
+ */
+function paintWithSession(paint) {
+  paint(getSessionData());
+  document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
+}
+
+/**
+ * Status panel: title, badge and text of the current state (getSessionData()) and actions.
  * @param {Object} settings readExampleSettings() result
  * @returns {Element} div.block-session-example-status
  */
@@ -218,19 +231,14 @@ function buildExampleStatus(settings) {
   // repainted on every session change; read by screen readers when it changes
   const current = createElementWithClass('div', 'block-session-example-status-current');
   current.setAttribute('aria-live', 'polite');
-  const view = (data) => {
+  paintWithSession((data) => {
     const content = createElementWithClass('div', 'block-session-example-status-body');
     content.append(buildStateBadge(data.state));
     const text = buildStateText(texts[data.state], data);
     if (text) {
       content.append(text);
     }
-    return content;
-  };
-  renderBySessionState(current, {
-    [SESSION_STATES.SIGNED_IN]: view,
-    [SESSION_STATES.GUEST]: view,
-    [SESSION_STATES.SIGNED_OUT]: view,
+    current.replaceChildren(content);
   });
   status.append(current);
 
@@ -295,9 +303,9 @@ function buildExampleUser(settings) {
   const data = createElementWithClass('div', 'block-session-example-user-data');
   data.setAttribute('aria-live', 'polite');
   card.append(title, data);
-  renderBySessionState(data, {
-    [SESSION_STATES.SIGNED_IN]: buildUserTable,
-    [SESSION_STATES.GUEST]: buildUserTable,
+  // signed in or guest: their data; without a session: nothing
+  paintWithSession((sessionData) => {
+    data.replaceChildren(...(sessionData.user ? [buildUserTable(sessionData)] : []));
   });
   return card;
 }
@@ -338,23 +346,26 @@ function buildExamplePrivate(settings) {
   result.setAttribute('aria-live', 'polite');
   panel.append(result);
 
-  renderBySessionState(result, {
-    [SESSION_STATES.SIGNED_IN]: () => {
-      const answer = createElementWithClass('div', 'block-session-example-private-text');
-      post(settings.privateEndpoint, {
-        meta: PRIVATE_REQUEST_META,
-        // the private interceptor puts the Bearer token in security.auth.value
-        security: { auth: { type: 'Bearer', value: '' } },
-        data: {},
-      }, { interceptor: REQUEST_TYPE.PRIVATE })
-        .then((response) => {
-          answer.textContent = response?.status?.message || JSON.stringify(response?.data ?? {});
-        })
-        .catch((error) => {
-          answer.textContent = error?.cause?.status?.message || MESSAGES.errorResponseMessage;
-        });
-      return answer;
-    },
+  // only with a real session (the call needs the token)
+  paintWithSession(({ isSignedIn }) => {
+    if (!isSignedIn) {
+      result.replaceChildren();
+      return;
+    }
+    const answer = createElementWithClass('div', 'block-session-example-private-text');
+    post(settings.privateEndpoint, {
+      meta: PRIVATE_REQUEST_META,
+      // the private interceptor puts the Bearer token in security.auth.value
+      security: { auth: { type: 'Bearer', value: '' } },
+      data: {},
+    }, { interceptor: REQUEST_TYPE.PRIVATE })
+      .then((response) => {
+        answer.textContent = response?.status?.message || JSON.stringify(response?.data ?? {});
+      })
+      .catch((error) => {
+        answer.textContent = error?.cause?.status?.message || MESSAGES.errorResponseMessage;
+      });
+    result.replaceChildren(answer);
   });
   return panel;
 }

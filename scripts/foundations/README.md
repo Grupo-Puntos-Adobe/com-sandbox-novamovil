@@ -151,7 +151,7 @@ nombre del celular del detalle para el nivel `{product}` del breadcrumb).
    import { readTableCell, formatPrice } from '../../scripts/foundations/block-utils.js';
    import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
    import { showToast } from '../../scripts/foundations/toast.js';
-   import { getSessionData, loginUser, renderBySessionState } from '../../scripts/foundations/session.js';
+   import { getSessionData, loginUser, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
    ```
 
 3. Ajusta lo propio del sitio:
@@ -221,15 +221,19 @@ fields.forEach(({ key, value }) => paint(LABELS[key] || key, value));
 | Función | Qué hace |
 |---|---|
 | `showOnlyForSessionStates(element, states)` | El elemento solo se ve para esos estados (`'signed-in, guest'` o `['signed-in']`); lo hacen las clases de `sessions.css`, al instante |
-| `renderBySessionState(target, views)` | Pinta la vista del estado actual y la vuelve a pintar al cambiar. **Cada vista recibe `getSessionData()`**: `{ 'signed-in': ({ user }) => …, guest: …, 'signed-out': () => … }`; sin vista de `guest` usa la de `signed-out`. Devuelve una función para dejar de escuchar |
-| `SESSION_CHANGE_EVENT` | Evento en `document` después de cualquier cambio; `detail` = `getSessionData()` |
+| `SESSION_CHANGE_EVENT` | Evento en `document` después de cualquier cambio (iniciar o cerrar sesión, invitado, vencimiento); `detail` = `getSessionData()` |
+
+Para que una parte se vuelva a pintar cuando cambia la sesión, una sola forma: pintar con
+`getSessionData()` y otra vez con el aviso (su `detail` es lo mismo):
 
 ```js
-renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: ({ user }) => `Hola, ${user.firstName}`,
-  [SESSION_STATES.GUEST]: ({ user }) => `Hola, ${user.firstName}`, // "Invitado"
-  [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
-});
+const paint = ({ isSignedIn, isGuest, user }) => {
+  greeting.textContent = isSignedIn || isGuest
+    ? `Hola, ${user.firstName}`                      // con sesión, o "Invitado"
+    : 'Inicia sesión para ver tus cupones';
+};
+paint(getSessionData());                                                     // al cargar
+document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail)); // al cambiar
 ```
 
 - Una sesión vencida cuenta como "sin sesión": se borra sola.
