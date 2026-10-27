@@ -17,7 +17,7 @@ bloques o no.
 | [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
 | [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
 | [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
-| [`page-context.js`](#5-page-contextjs) | Pasar un dato **entre bloques de la misma página** sin que se importen (hoy: el nombre de la página) | `product-detail` (lo pone) y `breadcrumb` (lo lee) | nada |
+| [`page-context.js`](#5-page-contextjs) | Pasar **cualquier valor** entre bloques de la misma página sin que se importen, por apartados (hoy: el nombre del breadcrumb) | `product-detail` (lo pone) y `breadcrumb` (lo lee) | nada |
 | [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, leer los datos, reglas de las páginas y mostrar u ocultar | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `styles/foundations/sessions.css` |
 
 ```js
@@ -26,7 +26,7 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, readEndpoint, createElementWithClass } from '../../scripts/foundations/block-utils.js';
 import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
 import { showToast } from '../../scripts/foundations/toast.js';
-import { setCurrentPageName, getCurrentPageName } from '../../scripts/foundations/page-context.js';
+import { PAGE_CONTEXT, setPageContext, onPageContext } from '../../scripts/foundations/page-context.js';
 import { getSessionData, loginUser, logoutUser } from '../../scripts/foundations/session.js';
 ```
 
@@ -172,37 +172,67 @@ showToast('No pudimos cargar las categorías', getAlertOptions(readBlockConfig(b
 
 ## 5. `page-context.js`
 
-**Para qué es:** que un bloque le pase un dato a otro bloque **de la misma página** sin importarse
-entre ellos. Hoy: el detalle del celular pone el nombre del producto cuando llega del servicio y el
-breadcrumb lo muestra en su nivel `{dynamic-name}`.
+**Para qué es:** que un bloque le pase **cualquier valor** a otro bloque **de la misma página** sin
+importarse entre ellos (un nombre, un precio, un plan…). Cada valor tiene su **apartado**, una llave
+en `PAGE_CONTEXT`, y en Drive se escribe esa llave entre llaves: `{breadcrumb-name}`.
 
-**Texto dinámico en Drive, para cualquier bloque:** el autor escribe la marca `{dynamic-name}` donde
-va el nombre (`Detalle de {dynamic-name}`). **Sin la marca se ve el texto que escribió**: solo lo
-que necesita ser dinámico la lleva. `{product}` (el nombre anterior) se sigue aceptando.
+Hoy hay un apartado: **Breadcrumb**, con `BREADCRUMB_NAME`. El detalle del celular pone el nombre del
+producto cuando llega del servicio, y el breadcrumb lo muestra en su nivel `{breadcrumb-name}`.
+
+```js
+export const PAGE_CONTEXT = {
+  // Breadcrumb: un valor por cada nivel dinámico
+  BREADCRUMB_NAME: 'breadcrumb-name', // en Drive {breadcrumb-name}: la página actual
+};
+```
 
 | Exporta | Recibe | Qué hace | Para qué sirve |
 |---|---|---|---|
-| `setCurrentPageName(name)` | El nombre (`'Apple iPhone 15 Pro'`) | Lo guarda y lanza `CURRENT_PAGE_NAME_EVENT` | El bloque que **conoce** el nombre |
-| `getCurrentPageName()` | — | El nombre guardado, o `''` | El bloque que lo **necesita** y carga después |
-| `CURRENT_PAGE_NAME_EVENT` | — | Evento en `document`; `detail = { name }` | El bloque que lo necesita y carga **antes** de que llegue |
-| `DYNAMIC_NAME_PLACEHOLDER` | — | `'{dynamic-name}'` | La marca que escribe el autor |
-| `hasDynamicName(text)` | Un texto de la tabla | `true` si trae `{dynamic-name}` (o `{product}`) | Saber si hay que esperar el nombre |
-| `fillDynamicName(text, name)` | El texto y, opcional, el nombre (por defecto `getCurrentPageName()`) | El texto con la marca cambiada por el nombre. Sin marca → el texto tal cual; con marca y sin nombre todavía → `''` | Pintar el texto dinámico en **cualquier** bloque |
+| `PAGE_CONTEXT` | — | Los apartados: una llave por cada valor que se puede pasar | Saber qué se puede transmitir; la marca de Drive es `{llave}` |
+| `setPageContext(key, value)` | La llave y el valor (`'Apple iPhone 15 Pro'`) | Lo guarda y lanza `PAGE_CONTEXT_EVENT` | El bloque que **conoce** el valor |
+| `getPageContext(key)` | La llave | El valor guardado, o `''` | Leer el valor en cualquier momento |
+| `onPageContext(key, callback)` | La llave y una función | Llama a `callback(value)` **ahora si ya hay valor y cada vez que cambie**. Devuelve una función para dejar de escuchar | El bloque que lo **necesita**: no importa si carga antes o después del que lo pone |
+| `fillPageContext(text)` | Un texto de la tabla | Cambia **todas** las marcas por sus valores: `'Detalle de {breadcrumb-name}'` → `'Detalle de Apple iPhone 15 Pro'`. Sin marcas → el texto tal cual; con una marca sin valor todavía → `''` | Pintar texto dinámico en **cualquier** bloque |
+| `hasPageContext(text)` | Un texto de la tabla | `true` si trae alguna marca de `PAGE_CONTEXT` | Saber si hay que esperar un valor |
+| `PAGE_CONTEXT_EVENT` | — | Evento en `document`; `detail = { key, value }` | Lo usa `onPageContext` por dentro; un bloque con varias marcas puede escucharlo directo |
+
+**Sin marca se ve el texto que escribió el autor:** solo lo que necesita ser dinámico la lleva.
 
 ```js
 import {
-  CURRENT_PAGE_NAME_EVENT, fillDynamicName, hasDynamicName,
+  PAGE_CONTEXT, fillPageContext, onPageContext, setPageContext,
 } from '../../scripts/foundations/page-context.js';
 
-// cualquier bloque: 'Detalle de {dynamic-name}' → 'Detalle de Apple iPhone 15 Pro'
+// el bloque que conoce el valor (product-detail)
+setPageContext(PAGE_CONTEXT.BREADCRUMB_NAME, product.name);
+
+// cualquier bloque que lo muestra: 'Detalle de {breadcrumb-name}' → 'Detalle de Apple iPhone 15 Pro'
 const authored = readTableCell(block, 'title').text;
-title.textContent = fillDynamicName(authored);
-if (hasDynamicName(authored)) {
-  document.addEventListener(CURRENT_PAGE_NAME_EVENT, () => {
-    title.textContent = fillDynamicName(authored);
-  });
-}
+onPageContext(PAGE_CONTEXT.BREADCRUMB_NAME, () => {
+  title.textContent = fillPageContext(authored);
+});
 ```
+
+### Agregar un valor nuevo (otro nivel dinámico u otro apartado)
+
+1. **Una línea en `PAGE_CONTEXT`**, con el apartado primero y luego qué es:
+   `BREADCRUMB_BRAND: 'breadcrumb-brand'` o `PLAN_PRICE: 'plan-price'`.
+2. **El bloque que conoce el valor** lo pone: `setPageContext(PAGE_CONTEXT.BREADCRUMB_BRAND, product.brand)`.
+3. **En Drive** se escribe la marca: `{breadcrumb-brand}`.
+
+Las funciones no cambian. Por ejemplo, un breadcrumb con dos niveles dinámicos:
+
+```
+| Breadcrumb |                         |
+| Level 1    | [Inicio](/)             |
+| Level 2    | [Celulares](/celulares) |
+| Level 3    | {breadcrumb-brand}      |   ← "Apple"
+| Level 4    | {breadcrumb-name}       |   ← "iPhone 15 Pro"
+```
+
+Cada nivel espera **su** valor: mientras no llega no se pinta, y los demás sí. En un mismo texto se
+pueden mezclar varias marcas (`{breadcrumb-brand} {breadcrumb-name}`). El enlace de un nivel sigue
+siendo el que escribe el autor.
 
 ---
 

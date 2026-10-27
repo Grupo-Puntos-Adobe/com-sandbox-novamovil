@@ -28,10 +28,11 @@ Solo sale en las páginas que agregan la tabla **Breadcrumb** en Drive. Cada niv
 - Niveles numerados (`Level 1`, `Level 2`…) en cualquier orden: se muestran por número
 - Los niveles con enlace llevan a su página; el último es la página actual, sin enlace
 - Separador `›` entre niveles (lo pinta el CSS)
-- Texto dinámico con la marca `{dynamic-name}`: se cambia por el nombre que pone otro bloque al
-  cargar (por ejemplo product-detail con el nombre del celular) y se puede combinar con texto
-  (`Detalle de {dynamic-name}`); mientras no llega, ese nivel no se pinta. **Sin la marca se ve el
-  texto que escribió el autor.** `{product}` (el nombre anterior) se sigue aceptando
+- Niveles dinámicos con marcas del contexto de la página: `{breadcrumb-name}` se cambia por el
+  nombre que pone otro bloque al cargar (por ejemplo product-detail con el nombre del celular). Se
+  puede combinar con texto (`Detalle de {breadcrumb-name}`) y **varios niveles pueden ser
+  dinámicos**, cada uno con su marca; un nivel no se pinta hasta que llegan sus valores. **Sin
+  marca se ve el texto que escribió el autor**
 - Si una fila de nivel está vacía no se pinta; sin niveles, el bloque no pinta nada
 - Solo acepta enlaces del mismo sitio o `http(s)`
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
@@ -96,11 +97,11 @@ las filas son opcionales y pueden ir en cualquier orden.
     - **Descripción:** Cada nivel de la ruta, ordenado por número. El último es la página actual y,
       aunque tenga enlace, se muestra como texto
     - **Por defecto:** ninguno. Un nivel vacío no se pinta
-    - **Texto dinámico:** la marca `{dynamic-name}` se cambia por el nombre de la página que pone
-      otro bloque con `setCurrentPageName` (`fillDynamicName` de
-      `scripts/foundations/page-context.js`). Puede ir sola (`{dynamic-name}`) o con texto
-      (`Detalle de {dynamic-name}`); sin la marca, el nivel muestra su texto tal cual. También se
-      acepta `{product}`
+    - **Nivel dinámico:** una marca del contexto de la página (`{breadcrumb-name}`) se cambia por
+      el valor que pone otro bloque con `setPageContext` (`fillPageContext` de
+      `scripts/foundations/page-context.js`). Puede ir sola o con texto
+      (`Detalle de {breadcrumb-name}`); sin marca, el nivel muestra su texto tal cual. Para otro
+      nivel dinámico se agrega una llave en `PAGE_CONTEXT` (por ejemplo `{breadcrumb-brand}`)
     - **Nivel por sesión (opcional):** una tercera columna con `signed-in`, `signed-out` o `guest`
       (combinables con coma). Ese nivel solo existe para ese estado; sin la columna lo ven todos.
       Varios niveles con el mismo número y distinto estado se alternan:
@@ -132,8 +133,9 @@ La tabla en Drive permite al autor configurar:
 | El último nivel con enlace | Texto oscuro en negrita, sin enlace (es la página actual) |
 | Una fila de nivel vacía | No se pinta |
 | Sin filas de nivel | El bloque queda vacío |
-| Nivel `{dynamic-name}` (o `{product}`) | No se pinta hasta que otro bloque pone el nombre; luego sale como página actual ("Inicio › Celulares › Apple iPhone 15 Pro") |
-| Nivel `Detalle de {dynamic-name}` | "Detalle de Apple iPhone 15 Pro" cuando llega el nombre |
+| Nivel `{breadcrumb-name}` | No se pinta hasta que otro bloque pone el nombre; luego sale como página actual ("Inicio › Celulares › Apple iPhone 15 Pro") |
+| Nivel `Detalle de {breadcrumb-name}` | "Detalle de Apple iPhone 15 Pro" cuando llega el nombre |
+| Dos niveles dinámicos (`{breadcrumb-brand}` y `{breadcrumb-name}`) | Cada uno aparece cuando llega su valor: "Inicio › Celulares › Apple › iPhone 15 Pro" |
 | Nivel sin marca (`Mi cuenta`) | El texto tal cual |
 | Niveles con estado en la última columna | Solo se pintan los del estado de quien visita ("Inicio › Visitante" sin sesión, "Inicio › Mi cuenta" con sesión); al cambiar la sesión la página se recarga |
 | Fila `Session` = `true` / `false` | La ruta completa se oculta sin sesión / con sesión, al instante |
@@ -141,7 +143,7 @@ La tabla en Drive permite al autor configurar:
 ### Cómo probarlo
 
 1. Una página con `Level 1 | Inicio` y `Level 2 | Celulares`: se ve "Inicio › Celulares".
-2. En el detalle (`Level 3 | {dynamic-name}`): al cargar el celular sale "Inicio › Celulares › Apple
+2. En el detalle (`Level 3 | {breadcrumb-name}`): al cargar el celular sale "Inicio › Celulares › Apple
    iPhone 15 Pro".
 3. Con `Level 2 | Visitante | signed-out` y `Level 2 | Mi cuenta | signed-in`: sin sesión
    "Inicio › Visitante"; al iniciar sesión (la página se recarga) "Inicio › Mi cuenta".
@@ -168,8 +170,8 @@ Móvil:
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y niveles por
   sesión (última columna)
 - `scripts/foundations/block-utils.js` – `getSafeHref` para validar los enlaces
-- `scripts/foundations/page-context.js` – Nombre de la página y `hasDynamicName` /
-  `fillDynamicName` para la marca `{dynamic-name}`
+- `scripts/foundations/page-context.js` – Valores de la página (`PAGE_CONTEXT`), `fillPageContext`
+  y `hasPageContext` para las marcas como `{breadcrumb-name}`
 - Colores en `styles/colors.css` (`--breadcrumb-*`)
 - Se usa en: la página Celulares (junto con `blocks/product-catalog/`) y la de detalle (junto con
   `blocks/product-detail/`)

@@ -1,70 +1,111 @@
 /*
  * Page context: values a block learns at run time (for example from a service) that other
- * blocks of the same page need, without importing each other.
+ * blocks of the same page need, without importing each other. Any value, not only names.
  *
- * Today: the name of the current page, set by product-detail when the product arrives and
- * used by breadcrumb for its "{dynamic-name}" level.
- *   setCurrentPageName('Apple iPhone 15 Pro')   stores it and fires CURRENT_PAGE_NAME_EVENT
- *   getCurrentPageName()                        the stored name ('' until it is set)
- * A block that loads after the name was set reads it with getCurrentPageName(); one that
- * loads before listens to CURRENT_PAGE_NAME_EVENT on document.
+ * Each value has its own key in PAGE_CONTEXT, grouped by section ("apartado"). The mark an
+ * author writes in Drive is the key between braces: {breadcrumb-name}. To transmit something
+ * new, add ONE key to PAGE_CONTEXT; the functions do not change.
  *
- * Dynamic text in Drive, for ANY block: the author writes {dynamic-name} where the name goes
- * ("Detalle de {dynamic-name}"); without the mark the text is shown as authored. {product}
- * (the first name of the mark) is still accepted.
- *   hasDynamicName(text)           true when the text has the mark
- *   fillDynamicName(text, name)    the mark replaced by the name ('' while there is no name)
+ *   setPageContext(key, value)      the block that KNOWS the value stores it (and tells the page)
+ *   getPageContext(key)             the stored value, or ''
+ *   onPageContext(key, callback)    callback(value) now (if there is one) and on every change, so
+ *                                   it does not matter which block loaded first
+ *   fillPageContext(text)           the marks replaced by their values:
+ *                                   'Detalle de {breadcrumb-name}' → 'Detalle de Apple iPhone 15'
+ *                                   (a text without marks comes back as authored; a mark without
+ *                                   its value yet → '')
+ *   hasPageContext(text)            true when the text has a mark of PAGE_CONTEXT
+ *   PAGE_CONTEXT_EVENT              on document, detail = { key, value }
+ *
+ * Today: product-detail sets BREADCRUMB_NAME when the product arrives; breadcrumb shows it in
+ * its "{breadcrumb-name}" level.
  */
 
-export const CURRENT_PAGE_NAME_EVENT = 'page-context:current-page-name';
-// mark of an authored text that takes the page name; {product} is its older name
-export const DYNAMIC_NAME_PLACEHOLDER = '{dynamic-name}';
-const DYNAMIC_NAME_MARKS = [DYNAMIC_NAME_PLACEHOLDER, '{product}'];
+// the values that can be transmitted, by section; the Drive mark is {value of the key}
+export const PAGE_CONTEXT = {
+  // Breadcrumb: one value per dynamic level
+  BREADCRUMB_NAME: 'breadcrumb-name', // {breadcrumb-name}: the current page (e.g. the product)
+  // BREADCRUMB_BRAND: 'breadcrumb-brand', // {breadcrumb-brand}: e.g. "Apple" (when needed)
+};
 
-let currentPageName = '';
+export const PAGE_CONTEXT_EVENT = 'page-context:change';
+
+const values = new Map();
+const KNOWN_KEYS = () => Object.values(PAGE_CONTEXT);
+const toMark = (key) => `{${key}}`;
 
 /**
- * Stores the name of the current page and tells the blocks that wait for it.
- * @param {string} name e.g. 'Apple iPhone 15 Pro'
+ * Stores the value of a key and tells the blocks that wait for it.
+ * @param {string} key One of PAGE_CONTEXT
+ * @param {*} value e.g. 'Apple iPhone 15 Pro'
  */
-export function setCurrentPageName(name) {
-  currentPageName = String(name || '').trim();
-  const detail = { name: currentPageName };
-  document.dispatchEvent(new CustomEvent(CURRENT_PAGE_NAME_EVENT, { detail }));
+export function setPageContext(key, value) {
+  const stored = typeof value === 'string' ? value.trim() : value;
+  values.set(key, stored);
+  document.dispatchEvent(new CustomEvent(PAGE_CONTEXT_EVENT, { detail: { key, value: stored } }));
 }
 
 /**
- * The name of the current page, or '' while no block has set it.
- * @returns {string}
+ * The value stored for a key, or '' while no block has set it.
+ * @param {string} key One of PAGE_CONTEXT
+ * @returns {*}
  */
-export function getCurrentPageName() {
-  return currentPageName;
+export function getPageContext(key) {
+  return values.has(key) ? values.get(key) : '';
 }
 
 /**
- * True when an authored text has the dynamic name mark ({dynamic-name} or {product}).
+ * Calls callback(value) now when the key already has a value, and every time it changes.
+ * @param {string} key One of PAGE_CONTEXT
+ * @param {Function} callback Receives the value
+ * @returns {Function} Stops listening
+ */
+export function onPageContext(key, callback) {
+  const listener = (event) => {
+    if (event.detail.key === key) {
+      callback(event.detail.value);
+    }
+  };
+  if (values.has(key)) {
+    callback(values.get(key));
+  }
+  document.addEventListener(PAGE_CONTEXT_EVENT, listener);
+  return () => document.removeEventListener(PAGE_CONTEXT_EVENT, listener);
+}
+
+/**
+ * The keys of PAGE_CONTEXT whose mark is in the text.
+ * @param {string} text Authored text
+ * @returns {string[]}
+ */
+function readContextKeys(text) {
+  const value = String(text || '');
+  return KNOWN_KEYS().filter((key) => value.includes(toMark(key)));
+}
+
+/**
+ * True when an authored text has a mark of PAGE_CONTEXT ({breadcrumb-name}…).
  * @param {string} text
  * @returns {boolean}
  */
-export function hasDynamicName(text) {
-  return DYNAMIC_NAME_MARKS.some((mark) => String(text || '').includes(mark));
+export function hasPageContext(text) {
+  return readContextKeys(text).length > 0;
 }
 
 /**
- * The authored text with the mark replaced by the page name: 'Detalle de {dynamic-name}' →
- * 'Detalle de Apple iPhone 15 Pro'. A text without the mark comes back as authored; with the
- * mark and no name yet → '' (do not paint it until CURRENT_PAGE_NAME_EVENT).
+ * The authored text with every mark replaced by its value: 'Detalle de {breadcrumb-name}' →
+ * 'Detalle de Apple iPhone 15 Pro'. Without marks it comes back as authored; when a mark has
+ * no value yet → '' (do not paint it until onPageContext tells it arrived).
  * @param {string} text Authored text
- * @param {string} [name=getCurrentPageName()] The name to put
  * @returns {string}
  */
-export function fillDynamicName(text, name = getCurrentPageName()) {
-  const value = String(text || '');
-  if (!hasDynamicName(value)) {
-    return value.trim();
-  }
-  if (!name) {
+export function fillPageContext(text) {
+  const keys = readContextKeys(text);
+  const missing = keys.some((key) => getPageContext(key) === '' || getPageContext(key) == null);
+  if (missing) {
     return '';
   }
-  return DYNAMIC_NAME_MARKS.reduce((result, mark) => result.split(mark).join(name), value).trim();
+  return keys
+    .reduce((result, key) => result.split(toMark(key)).join(String(getPageContext(key))), String(text || ''))
+    .trim();
 }

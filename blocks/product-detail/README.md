@@ -41,7 +41,7 @@ va en una columna; desde tablet, la galería a la izquierda y la información a 
   corazón de favoritos que se marca y desmarca
 - Caja de beneficios (envío, compra segura, devoluciones) desde las filas `Benefit N`
 - Tabla **Características principales** (`specs` del servicio)
-- El breadcrumb termina con el nombre del celular (`{dynamic-name}`) y la pestaña del navegador también
+- El breadcrumb termina con el nombre del celular (`{breadcrumb-name}`) y la pestaña del navegador también
 - Esqueleto de carga; sin id regresa a la lista de celulares (`/celulares`); si el id no existe, es
   inválido o el servicio falla, solo el aviso de lista vacía ("Este celular no existe"), sin alerta
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
@@ -137,7 +137,7 @@ div.product-detail
 ### Estructura de la tabla en Drive
 
 El autor escribe una tabla **Product Detail** en el documento `index` de la carpeta `celulares` de Drive (debajo
-del **Breadcrumb** con `Level 3` = `{dynamic-name}`). Todas las filas son opcionales.
+del **Breadcrumb** con `Level 3` = `{breadcrumb-name}`). Todas las filas son opcionales.
 
 1. **`Styles`** / **`Classname`** – Estilos en línea y clases extra del bloque (ver
    `documentation/06-styles-classname.md`)
@@ -308,7 +308,7 @@ Móvil:
 - `scripts/api/http-client.js` – `post` al servicio de detalle (llamada pública; ver
   `scripts/api/README.md`)
 - `blocks/empty-list-message/` – Aviso "no disponible"
-- `blocks/breadcrumb/` – Ruta con el nivel `{dynamic-name}`
+- `blocks/breadcrumb/` – Ruta con el nivel `{breadcrumb-name}`
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-detail-*`)
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
