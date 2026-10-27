@@ -198,7 +198,7 @@ y los interceptores importan este mismo módulo: el arranque no se repite.
 | Estado | Cuándo |
 |---|---|
 | `signed-in` | Hay sesión vigente (el login respondió 200 y no venció `expiresIn`) |
-| `guest` | Eligió "Continuar como invitado" (no tiene token) |
+| `guest` | Eligió "Continuar como invitado": se guarda una sesión de invitado con la misma forma que una real (`user` = `GUEST_USER`, `sessionId` propio), **sin token** |
 | `signed-out` | Ninguno de los dos |
 
 ### Parte 1 · Datos de la sesión
@@ -209,7 +209,10 @@ y los interceptores importan este mismo módulo: el arranque no se repite.
 | `logoutUser()` | **Cierra sesión**: por ahora solo borra la sesión y el modo invitado de `sessionStorage`. Es `async` para que después pueda llamar un servicio sin cambiar a quien la usa |
 | `clearUserSession()` | Solo borra lo guardado (la usan `logoutUser`, la sesión vencida y el 401 de la llamada privada) |
 | `saveUserSession(data)` | Guarda la sesión de un login 200 (`user`, `accessToken`, `tokenType`, `expiresIn`, `sessionId`) y quita el modo invitado. Devuelve la sesión o `null` sin `accessToken` |
-| `continueAsGuest()` | Activa el modo invitado |
+| `continueAsGuest()` | Activa el modo invitado: guarda `{ user: GUEST_USER, sessionId: 'guest-…', startedAt }` en `sessionStorage` |
+| `getGuestSession()` | La sesión del invitado `{ user, sessionId, startedAt }` o `null` |
+| `getCurrentSession()` | La sesión real, si no la del invitado, si no `null` (es la que reciben las vistas de `renderBySessionState`) |
+| `getCurrentUser()` | Los datos de quien visita, con sesión o invitado: `{ userId, email, phone, firstName, lastName, verified, isGuest }` o `null`. Nunca el token |
 | `getUserSession()` | `{ user, accessToken, tokenType, expiresAt, sessionId }` o `null` (si venció, la borra) |
 | `hasActiveSession()` | `true` mientras hay sesión |
 | `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
@@ -227,8 +230,9 @@ Cualquier bloque (con o sin `block-options`) puede preguntar si hay una sesión 
 |---|---|---|
 | ¿Hay sesión activa? | `hasActiveSession()` | `true` / `false` (el invitado da `false`) |
 | ¿Quién visita, contando al invitado? | `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
-| Los datos del usuario | `getUserSession()` | `{ user, accessToken, … }` o `null` |
-| Cuándo cambia | `SESSION_CHANGE_EVENT` | Evento en `document` (`detail = { state, session }`) |
+| Los datos del usuario con sesión | `getUserSession()` | `{ user, accessToken, … }` o `null` |
+| Los datos de quien visita (con sesión **o invitado**) | `getCurrentUser()` | `{ firstName, email, …, isGuest }` o `null` |
+| Cuándo cambia | `SESSION_CHANGE_EVENT` | Evento en `document` (`detail = { state, session, user }`) |
 
 ```js
 import { hasActiveSession, getUserSession, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
@@ -304,6 +308,7 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 |---|---|---|
 | `SESSION_STORAGE_KEY` / `GUEST_STORAGE_KEY` | `novamovil-session` / `novamovil-guest` | Llaves en `sessionStorage` |
 | `DEFAULT_REDIRECT_PATH` | `/` | A dónde va una página sin `Redirect To` |
+| `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', …, isGuest: true }` | El usuario que se guarda al continuar como invitado |
 | `EDITOR_PREVIEW_HOSTS` | `preview-aemcoder.adobe.io` | Dónde no se redirige y se ve todo |
 | `SESSION_CHANGE_EVENT` | `session:change` | Nombre del evento |
 

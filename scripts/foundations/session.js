@@ -27,13 +27,19 @@
  *                                     for a logout service)
  *   clearUserSession()                only removes the stored session and guest mode
  *   saveUserSession(loginData)        stores a login answer (used by loginUser)
- *   continueAsGuest()                 guest mode
+ *   continueAsGuest()                 guest mode: stores a guest session with the same shape
+ *                                     as a real one (user = GUEST_USER, its own sessionId)
  *   getUserSession()                  { user, accessToken, tokenType, expiresAt, sessionId }
  *                                     or null
  *   hasActiveSession()                true while there is a session (a guest is not one)
+ *   getGuestSession()                 { user, sessionId, startedAt } of the guest, or null
+ *   getCurrentSession()               the real session, else the guest one, else null
+ *   getCurrentUser()                  user data of whoever visits (signed in or guest), or
+ *                                     null; never the token
  *   getSessionState()                 'signed-in' | 'guest' | 'signed-out'
  *   getAuthorizationHeader()          'Bearer …' for the Authorization header, or ''
- *   SESSION_CHANGE_EVENT              on document after any change, detail = { state, session }
+ *   SESSION_CHANGE_EVENT              on document after any change,
+ *                                     detail = { state, session, user }
  *   The state is also a class on <html> (session-state-*), used by sessions.css.
  *
  * Part 2 · Pages and redirects (page Metadata in Drive)
@@ -97,6 +103,16 @@ export const PAGE_SESSION_RULES = {
 // where a page sends the visitor it does not accept, when its Metadata has no "Redirect To"
 // row (or it is empty): the home page
 export const DEFAULT_REDIRECT_PATH = '/';
+// user stored by continueAsGuest(): same shape as the user of a real session, marked as guest
+export const GUEST_USER = Object.freeze({
+  userId: 'guest',
+  email: '',
+  phone: '',
+  firstName: 'Invitado',
+  lastName: '',
+  verified: false,
+  isGuest: true,
+});
 // editing tool preview: no redirects, everything visible
 const EDITOR_PREVIEW_HOSTS = /^preview-aemcoder\.adobe\.io$/;
 // class on <html> for each state (sessions.css); editor = show everything
@@ -192,6 +208,46 @@ export function hasActiveSession() {
 }
 
 /**
+ * The guest session stored by continueAsGuest(): { user (GUEST_USER), sessionId, startedAt },
+ * or null when the visitor is not a guest. No token: it only lets the guest screens through.
+ * @returns {{user: Object, sessionId: string, startedAt: number}|null}
+ */
+export function getGuestSession() {
+  const stored = useStorage('get', GUEST_STORAGE_KEY);
+  if (!stored) {
+    return null;
+  }
+  try {
+    const guest = JSON.parse(stored);
+    if (guest?.user?.isGuest) {
+      return guest;
+    }
+  } catch {
+    // not JSON: an older guest flag, still a guest
+  }
+  return { user: { ...GUEST_USER }, sessionId: '', startedAt: 0 };
+}
+
+/**
+ * The session of whoever is visiting: the real session, else the guest session, else null.
+ * Both have a `user` with the same fields (the guest one is GUEST_USER, user.isGuest = true).
+ * @returns {Object|null}
+ */
+export function getCurrentSession() {
+  return getUserSession() || getGuestSession();
+}
+
+/**
+ * The user data of whoever is visiting (signed in or guest): { userId, email, phone,
+ * firstName, lastName, verified, isGuest }, or null without a session. Never the token.
+ * @returns {Object|null}
+ */
+export function getCurrentUser() {
+  const user = getCurrentSession()?.user;
+  return user ? { ...user } : null;
+}
+
+/**
  * Who is visiting: 'signed-in', 'guest' or 'signed-out'.
  * @returns {string} One of SESSION_STATES
  */
@@ -199,7 +255,7 @@ export function getSessionState() {
   if (hasActiveSession()) {
     return SESSION_STATES.SIGNED_IN;
   }
-  if (useStorage('get', GUEST_STORAGE_KEY) === 'true') {
+  if (getGuestSession()) {
     return SESSION_STATES.GUEST;
   }
   return SESSION_STATES.SIGNED_OUT;
@@ -238,15 +294,21 @@ function updateSessionStateClass() {
  */
 function notifySessionChange() {
   updateSessionStateClass();
-  const detail = { state: getSessionState(), session: getUserSession() };
+  const detail = { state: getSessionState(), session: getUserSession(), user: getCurrentUser() };
   document.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail }));
 }
 
 /**
- * Guest mode ("Continuar como invitado"): no token, only lets the guest screens through.
+ * Guest mode ("Continuar como invitado"): stores a guest session with the same shape as a real
+ * one (user = GUEST_USER, its own sessionId) and tells the page. No token.
  */
 export function continueAsGuest() {
-  useStorage('set', GUEST_STORAGE_KEY, 'true');
+  const guestSession = {
+    user: { ...GUEST_USER },
+    sessionId: `guest-${window.crypto?.randomUUID?.() || Date.now()}`,
+    startedAt: Date.now(),
+  };
+  useStorage('set', GUEST_STORAGE_KEY, JSON.stringify(guestSession));
   notifySessionChange();
 }
 
@@ -277,6 +339,7 @@ export function saveUserSession({
       firstName: user?.firstName ?? '',
       lastName: user?.lastName ?? '',
       verified: user?.verified === true,
+      isGuest: false,
     },
     accessToken,
     tokenType: typeof tokenType === 'string' && tokenType ? tokenType : 'Bearer',
@@ -607,7 +670,7 @@ export function renderBySessionState(target, views) {
     const state = getSessionState();
     const view = views[state]
       || (state === SESSION_STATES.GUEST ? views[SESSION_STATES.SIGNED_OUT] : null);
-    const content = view ? view(getUserSession()) : null;
+    const content = view ? view(getCurrentSession()) : null;
     target.replaceChildren(...(content === null || content === undefined ? [] : [content]));
   };
   render();

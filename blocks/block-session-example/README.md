@@ -40,6 +40,10 @@ solo lo pone en práctica.
   se quitan antes de pintar y la página se recarga al cambiar la sesión
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
+- **Tus datos:** con la fila `User Title`, una tarjeta con los datos del usuario de la sesión
+  (`getCurrentSession()`): tipo, nombre, correo, teléfono, ID, verificado e ID de sesión. Se ve con
+  sesión **y como invitado** (el invitado guarda un perfil con la misma forma: usuario `guest`,
+  nombre "Invitado"); sin sesión no se ve. Nunca muestra el token
 - **Llamada privada:** con `Private Endpoint` y sesión, llama con el token (Bearer) y muestra la
   respuesta
 - El estado, la etiqueta y los botones cambian al instante; las filas por sesión, al recargar (sola)
@@ -69,6 +73,12 @@ sesión **no** está en su CSS: lo hacen las clases `session-only-*` de
 - `block-session-example-item` – Tarjeta de cada `Item`
 - `block-session-example-item-tag` – Quién la ve ("Lo ve: Con sesión")
 - `block-session-example-item-text` – Texto de la tarjeta
+- `block-session-example-user` – Tarjeta "Tus datos" (`-user-title` con `role="heading"`,
+  `aria-level="3"`; `-user-data` con `aria-live="polite"`)
+- `block-session-example-user-table` + `container-fluid` (`role="table"`) >
+  `block-session-example-user-field` + `row row-gutter-16` (`role="row"`) >
+  `block-session-example-user-label` + `col-10 col-md-6 col-lg-4` (`role="rowheader"`) /
+  `block-session-example-user-value` + `col-14 col-md-18 col-lg-20` (`role="cell"`)
 - `block-session-example-private` – Llamada privada (`-private-title`, `-private-text`)
 - `session-only session-only-*` – Clases de `sessions.css`: las pone el JS en los botones y la
   llamada privada, y `block-options.js` en el wrapper cuando la tabla tiene la fila `Session`
@@ -88,6 +98,14 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          │     ├─ a.-button.-button-primary.session-only.session-only-signed-out
          │     ├─ button.-button.session-only.session-only-signed-out
          │     └─ button.-button.session-only.session-only-signed-in.session-only-guest
+         ├─ div.col-24.session-only.session-only-signed-in.session-only-guest
+         │  └─ div.block-session-example-user
+         │     ├─ div.block-session-example-user-title[role=heading][aria-level=3]
+         │     └─ div.block-session-example-user-data[aria-live]          (renderBySessionState)
+         │        └─ div.-user-table.container-fluid[role=table]
+         │           └─ div.-user-field.row[role=row] × cada dato
+         │              ├─ div.-user-label.col-10.col-md-6.col-lg-4[role=rowheader]
+         │              └─ div.-user-value.col-14.col-md-18.col-lg-20[role=cell]
          ├─ div.col-24.col-md-12.col-lg-8 > div.block-session-example-item × N   (filas que quedan)
          │  ├─ div.block-session-example-item-tag
          │  └─ div.block-session-example-item-text
@@ -145,7 +163,15 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
     - **Tipo:** Texto
     - **Descripción:** Botón de invitado (solo sin sesión) y de cerrar sesión (con sesión o invitado)
 
-8. **`Private Title`** / **`Private Endpoint`**
+8. **`User Title`**
+    - **Tipo:** Texto
+    - **Descripción:** Título de la tarjeta "Tus datos". Con la fila, el bloque pinta los datos del
+      usuario de la sesión: con sesión, los del login; como invitado, los del perfil de invitado
+      (`GUEST_USER`: ID `guest`, nombre "Invitado"). Los datos vacíos (un invitado no tiene correo
+      ni teléfono) no se pintan
+    - **Por defecto:** sin la fila, no se pinta la tarjeta
+
+9. **`Private Title`** / **`Private Endpoint`**
     - **Tipo:** Texto / URL (también se acepta `PrivateEndpoint`). Es la regla del proyecto: un
       servicio que necesita sesión va en `Private Endpoint`; `Endpoint` es para los públicos
     - **Descripción:** Llamada privada: con sesión hace `post(Private Endpoint)` con
@@ -160,7 +186,7 @@ tablas **Block Session Example**:
 
 | # | Fila `Session` | Qué demuestra |
 |---|---|---|
-| 1 | vacía | El bloque completo: estado, tarjetas por estado, botones y llamada privada. Se ve siempre |
+| 1 | vacía | El bloque completo: estado, tus datos, tarjetas por estado, botones y llamada privada. Se ve siempre |
 | 2 | `true` | "Solo con sesión": el bloque entero se oculta sin sesión (y como invitado) |
 | 3 | `false` | "Solo sin sesión": el bloque entero se oculta al iniciar sesión; el invitado lo sigue viendo |
 
@@ -172,7 +198,7 @@ La regla de la **página** (Metadata `Session` / `Redirect To`) no se usa aquí:
 La tabla en Drive permite al autor configurar:
 
 - **Quién ve** el bloque completo (`Session`) y cada tarjeta (`Item`)
-- Los **textos** de cada estado y los **botones**
+- Los **textos** de cada estado, los **botones** y el título de **tus datos** (`User Title`)
 - La **llamada privada** (`Private Endpoint`)
 
 ![Vista Tabla en Drive](/documentation/readme/block-session-example/drive-table.png)
@@ -182,8 +208,9 @@ La tabla en Drive permite al autor configurar:
 | Caso | Qué se ve |
 |---|---|
 | Sin sesión | Etiqueta "Sin sesión", tarjetas `signed-out` y para todos, botones "Iniciar sesión" y "Continuar como invitado" |
-| Clic en "Continuar como invitado" | La página se recarga: etiqueta "Invitado", tarjetas `guest` y `signed-in, guest`, botón "Cerrar sesión" |
-| Con sesión | "Hola, Cliente…", tarjetas `signed-in` y `signed-in, guest`, botón "Cerrar sesión" y llamada privada |
+| Clic en "Continuar como invitado" | La página se recarga: etiqueta "Invitado", "Tus datos" del invitado (Tipo Invitado, Nombre Invitado, ID `guest`, Verificado No, ID de sesión `guest-…`), tarjetas `guest` y `signed-in, guest`, botón "Cerrar sesión" |
+| Con sesión | "Hola, Cliente…", "Tus datos" (Tipo Con sesión, Cliente Nova, correo, teléfono, `USR-10001`, Verificado Sí, `SES-LOGIN-001`), tarjetas `signed-in` y `signed-in, guest`, botón "Cerrar sesión" y llamada privada |
+| Sin sesión y fila `User Title` | "Tus datos" no se ve |
 | Clic en "Cerrar sesión" | La página se recarga y vuelve a "Sin sesión" |
 | Fila `Session` = `true` | El bloque entero solo se ve con sesión (la página no redirige) |
 | Fila `Session` = `false` | El bloque entero se oculta al iniciar sesión (el invitado lo sigue viendo) |
@@ -199,10 +226,12 @@ Página `/ejemplo-sesion`:
 
 1. **Sin sesión:** se ven "Ejemplo de sesión" y "Solo sin sesión"; tarjetas "Inicia sesión para ver
    tus cupones" y "Envío gratis…". "Solo con sesión" está oculto.
-2. **"Continuar como invitado":** la página se recarga; etiqueta "Invitado" y tarjetas `guest` y
-   `signed-in, guest`. "Solo sin sesión" se sigue viendo (el invitado cuenta como sin sesión).
-3. **Iniciar sesión** en `/login` y volver a `/ejemplo-sesion`: "Hola, Cliente…", tarjetas
-   `signed-in` y `signed-in, guest`, "Solo con sesión" visible y "Solo sin sesión" oculto.
+2. **"Continuar como invitado":** la página se recarga; etiqueta "Invitado", "Tus datos" con el
+   perfil de invitado y tarjetas `guest` y `signed-in, guest`. "Solo sin sesión" se sigue viendo
+   (el invitado cuenta como sin sesión).
+3. **Iniciar sesión** en `/login` y volver a `/ejemplo-sesion`: "Hola, Cliente…", "Tus datos" con
+   el usuario del login, tarjetas `signed-in` y `signed-in, guest`, "Solo con sesión" visible y
+   "Solo sin sesión" oculto.
 4. **"Cerrar sesión":** vuelve al paso 1.
 5. **Llamada privada:** poner en `Private Endpoint` la URL de un servicio y, con sesión, revisar en
    la red del navegador el header `Authorization: Bearer …` (sin sesión no se llama).
@@ -229,7 +258,7 @@ Móvil:
 
 ```js
 import {
-  SESSION_STATES, renderBySessionState, showOnlyForSessionStates,
+  SESSION_STATES, getCurrentUser, renderBySessionState, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -241,11 +270,16 @@ import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 // 1) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
 showOnlyForSessionStates(couponCard, 'signed-in');
 
-// 2) datos del usuario que se vuelven a pintar al cambiar la sesión
+// 2) datos del usuario que se vuelven a pintar al cambiar la sesión (con sesión o invitado,
+//    session.user tiene los mismos campos; el del invitado trae isGuest: true)
 renderBySessionState(greeting, {
   [SESSION_STATES.SIGNED_IN]: (session) => `Hola, ${session.user.firstName}`,
+  [SESSION_STATES.GUEST]: (session) => `Hola, ${session.user.firstName}`, // "Invitado"
   [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
 });
+
+// o, sin pintar: los datos de quien visita (null sin sesión)
+const user = getCurrentUser();
 
 // 3) una llamada privada: la URL va en la fila Private Endpoint (Endpoint es para los públicos)
 const privateEndpoint = readPrivateEndpoint(block);
@@ -256,8 +290,8 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 
 - `block-session-example.js` – Lee la tabla y arma el estado, las tarjetas y los botones
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
-- `scripts/foundations/session.js` – Estado, `renderBySessionState`, `showOnlyForSessionStates`,
-  `continueAsGuest`, `logoutUser`
+- `scripts/foundations/session.js` – Estado, `renderBySessionState` (pasa `getCurrentSession()`:
+  la sesión o la del invitado), `showOnlyForSessionStates`, `continueAsGuest`, `logoutUser`
 - `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
   `session.js`)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por

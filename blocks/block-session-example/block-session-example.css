@@ -16,6 +16,7 @@
  *   - The only variables are colours (styles/colors.css, --block-session-example-*).
  *
  * Sections: 1 layout · 2 status panel · 3 badges by state · 4 actions · 5 items · 6 private
+ *           · 7 user data
  */
 
 .block-session-example {
@@ -214,6 +215,49 @@
   & .block-session-example-private-text {
     color: var(--block-session-example-muted);
     font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ========================================================================
+     7. User data (signed in or guest; hidden without a session)
+     ======================================================================== */
+
+  & .block-session-example-user {
+    padding: 20px;
+    border: 1px solid var(--block-session-example-border);
+    border-radius: 16px;
+    background: var(--block-session-example-surface);
+
+    @container style(--tablet-desktop: on) {
+      padding: 24px;
+    }
+  }
+
+  & .block-session-example-user-title {
+    margin-block-end: 12px;
+    color: var(--block-session-example-title);
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  & .block-session-example-user-field {
+    padding-block: 10px;
+    border-block-end: 1px solid var(--block-session-example-border);
+
+    &:last-child {
+      border-block-end: 0;
+    }
+  }
+
+  & .block-session-example-user-label {
+    color: var(--block-session-example-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  & .block-session-example-user-value {
+    color: var(--block-session-example-text);
+    font-size: 14px;
     overflow-wrap: anywhere;
   }
 }

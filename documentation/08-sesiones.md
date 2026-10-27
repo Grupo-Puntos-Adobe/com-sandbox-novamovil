@@ -31,7 +31,7 @@ Ejemplo de todo junto: `blocks/block-session-example/` y la página `content-dri
 | Estado | Cuándo | Clase en `<html>` |
 |---|---|---|
 | `signed-in` | Hay sesión vigente (login 200 y no venció `expiresIn`) | `session-state-signed-in` |
-| `guest` | Eligió "Continuar como invitado" (sin token) | `session-state-guest` |
+| `guest` | Eligió "Continuar como invitado": se guarda un perfil de invitado con la misma forma que una sesión real (usuario `guest`, nombre "Invitado"), sin token | `session-state-guest` |
 | `signed-out` | Ninguno (o la sesión venció) | `session-state-signed-out` |
 
 En el panel de edición la clase es `session-state-editor`: se ve todo y no hay redirecciones, para
@@ -250,7 +250,8 @@ Guía de la API: `documentation/07-integracion-endpoints.md`.
 | 1 | `loginUser(endpoint, requestBody)` | Inicia sesión: hace el `POST` y guarda la sesión en `sessionStorage` (lanza `ApiError` si falla) |
 | 1 | `logoutUser()` | Cierra sesión: por ahora solo borra `sessionStorage` (es `async`, lista para un servicio) |
 | 1 | `clearUserSession()` / `saveUserSession(data)` | Solo borrar / solo guardar lo de la sesión |
-| 1 | `continueAsGuest()` | Modo invitado |
+| 1 | `continueAsGuest()` | Modo invitado: guarda la sesión del invitado (`GUEST_USER`, sin token) |
+| 1 | `getGuestSession()` / `getCurrentSession()` / `getCurrentUser()` | Sesión del invitado; la sesión de quien visita (real o invitado); sus datos de usuario |
 | 1 | `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
 | 1 | `getUserSession()` / `hasActiveSession()` / `getAuthorizationHeader()` | Usuario, ¿hay sesión?, `'Bearer …'` |
 | 0 | `initPageSession()` | Arranque en cada página: `sessions.css`, estado y `applyPageSessionRule()` (corre sola al cargar `session.js`) |
