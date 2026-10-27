@@ -5,7 +5,7 @@
  * "Hero Novamovil" table. It is the first section, so it is loaded eagerly (LCP).
  *
  * Authoring: one row per element, every row optional and in any order:
- *   | Styles / Classname | …                          (scripts/foundations/block-options.js)
+ *   | Styles / Classname / Session | …                (scripts/foundations/block-options.js)
  *   | Tag                | Lanzamiento exclusivo 2026 |
  *   | Title              | El futuro de la *conectividad* está aquí |   (italic = highlight)
  *   | Description        | Los mejores smartphones…   |
@@ -14,10 +14,13 @@
  *   | Stat 1             | 4.9M+ | Usuarios activos   |   (value | label)
  *   | Image              | picture                    |
  * The page always shows them in the design order, whatever the order of the rows.
+ * Any row can end with a session state in its last cell (| Title | Hola | signed-in |; a Stat
+ * needs a 4th cell): block-options.js keeps only the rows of the current state first.
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)   scripts/foundations/block-options.js → Styles / Classname rows
+ *     ├─ applyBlockOptions(block)   scripts/foundations/block-options.js → Styles / Classname /
+ *     │                             Session rows and rows with a session state in the last cell
  *     ├─ readHeroRows(block)            { 'tag': [cells], 'button 1': [cells], … }
  *     ├─ buildHeroText()                tag, description · buildHeroTitle() (role=heading, level 1)
  *     ├─ buildHeroButtons()             numbered "Button N" rows → a.hero-button
@@ -45,7 +48,9 @@ function readHeroRows(block) {
   [...block.children].forEach((row) => {
     const [keyCell, ...cells] = row.children;
     const key = keyCell?.textContent.trim().toLowerCase().replace(/\s+/g, ' ');
-    if (key) rows[key] = cells;
+    if (key) {
+      rows[key] = cells;
+    }
   });
   return rows;
 }
@@ -73,7 +78,9 @@ function getNumberedRows(rows, name) {
  * @returns {Element|null} null when the cell is empty
  */
 function buildHeroText(cell, className) {
-  if (!cell || !cell.textContent.trim()) return null;
+  if (!cell || !cell.textContent.trim()) {
+    return null;
+  }
   const div = document.createElement('div');
   div.className = className;
   const paragraphs = [...cell.children].filter((element) => element.tagName === 'P');
@@ -97,7 +104,9 @@ function buildHeroText(cell, className) {
  */
 function buildHeroTitle(cell) {
   const title = buildHeroText(cell, 'hero-title');
-  if (!title) return null;
+  if (!title) {
+    return null;
+  }
   title.setAttribute('role', 'heading');
   title.setAttribute('aria-level', '1');
   title.querySelectorAll('em, i').forEach((em) => {
@@ -117,14 +126,18 @@ function buildHeroTitle(cell) {
  */
 function buildHeroButtons(buttonRows) {
   const links = buttonRows.map(([cell]) => cell?.querySelector('a')).filter(Boolean);
-  if (!links.length) return null;
+  if (!links.length) {
+    return null;
+  }
   const actions = document.createElement('div');
   actions.className = 'hero-actions';
   links.forEach((authored, index) => {
     const link = document.createElement('a');
     link.className = `hero-button ${index === 0 ? 'hero-button-primary' : 'hero-button-secondary'}`;
     link.href = authored.getAttribute('href');
-    if (authored.title) link.title = authored.title;
+    if (authored.title) {
+      link.title = authored.title;
+    }
     link.textContent = authored.textContent.trim();
     actions.append(link);
   });
@@ -138,7 +151,9 @@ function buildHeroButtons(buttonRows) {
  */
 function buildHeroStats(statRows) {
   const items = statRows.filter(([value]) => value?.textContent.trim());
-  if (!items.length) return null;
+  if (!items.length) {
+    return null;
+  }
   const stats = document.createElement('div');
   stats.className = 'hero-stats';
   stats.setAttribute('role', 'list');
@@ -168,7 +183,9 @@ function buildHeroStats(statRows) {
  */
 function buildHeroMedia(imageCells) {
   const picture = imageCells?.map((cell) => cell.querySelector('picture')).find(Boolean);
-  if (!picture) return null;
+  if (!picture) {
+    return null;
+  }
   picture.classList.add('hero-picture');
   const img = picture.querySelector('img');
   if (img) {
@@ -189,7 +206,7 @@ function buildHeroMedia(imageCells) {
  * @param {Element} block The hero-novamovil block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the rows
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const rows = readHeroRows(block);
 
   const content = document.createElement('div');
@@ -206,8 +223,11 @@ export default function decorate(block) {
   inner.className = 'hero-inner';
   inner.append(content);
   const media = buildHeroMedia(rows.image);
-  if (media) inner.append(media);
-  else block.classList.add('no-media');
+  if (media) {
+    inner.append(media);
+  } else {
+    block.classList.add('no-media');
+  }
 
   block.replaceChildren(inner);
 }

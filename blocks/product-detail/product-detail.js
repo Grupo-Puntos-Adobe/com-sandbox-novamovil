@@ -13,6 +13,8 @@
  * intereses"), Installments Months, In Stock Text, Sold Out Text, Button Text, Benefit N
  * (icon | text), Specs Title, Empty List Title, Empty List Description, Empty List Icon,
  * Image Error Message.
+ * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
+ * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
  * Defaults only for messages and configuration:
  *   - Content (labels, texts, button, benefits, Specs Title) has no default: without text in
  *     the table that part is not painted.
@@ -33,7 +35,7 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)          Styles / Classname rows
+ *     ├─ applyBlockOptions(block)          Styles / Classname / Session rows + session rows
  *     ├─ readDetailSettings(block)         texts, endpoint, messages, benefits
  *     ├─ readIdFromUrl()                   none → location.replace(catalogLink)
  *     ├─ buildDetailSkeleton()
@@ -126,7 +128,9 @@ const formatCount = (value) => new Intl.NumberFormat(LOCALE).format(value);
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -208,11 +212,15 @@ function readIdFromUrl() {
  * @returns {Object|null} null when there is no product (no name or no price)
  */
 function normalizeProduct(rawProduct) {
-  if (!rawProduct || typeof rawProduct !== 'object') return null;
+  if (!rawProduct || typeof rawProduct !== 'object') {
+    return null;
+  }
   const brand = toTrimmedText(rawProduct.brand);
   const name = toTrimmedText(rawProduct.model) || toTrimmedText(rawProduct.name);
   const price = toNumberOrNull(rawProduct.salePrice) ?? toNumberOrNull(rawProduct.price);
-  if (!name || price === null) return null;
+  if (!name || price === null) {
+    return null;
+  }
   const oldPrice = toNumberOrNull(rawProduct.oldPrice);
   const stock = toNumberOrNull(rawProduct.stock);
   const rawImages = Array.isArray(rawProduct.images) && rawProduct.images.length
@@ -274,8 +282,11 @@ function buildProductGallery(product, imageErrorMessage) {
     img.addEventListener('error', showImageError, { once: true });
     media.replaceChildren(img);
   };
-  if (product.images.length) showImage(product.images[0]);
-  else showImageError();
+  if (product.images.length) {
+    showImage(product.images[0]);
+  } else {
+    showImageError();
+  }
   gallery.append(media);
 
   if (product.images.length > 1) {
@@ -285,7 +296,9 @@ function buildProductGallery(product, imageErrorMessage) {
       const thumbnail = createElementWithClass('button', 'product-detail-thumbnail');
       thumbnail.type = 'button';
       thumbnail.setAttribute('aria-label', LABELS.image(index + 1, product.images.length));
-      if (index === 0) thumbnail.setAttribute('aria-current', 'true');
+      if (index === 0) {
+        thumbnail.setAttribute('aria-current', 'true');
+      }
       const img = createElementWithClass('img', 'product-detail-thumbnail-image');
       img.src = src;
       img.alt = '';
@@ -317,11 +330,17 @@ function buildProductSummary(product, settings) {
   const parts = [];
   if (product.badge || product.promo) {
     const tags = createElementWithClass('div', 'product-detail-tags');
-    if (product.badge) tags.append(createElementWithClass('div', 'product-detail-badge', product.badge));
-    if (product.promo) tags.append(createElementWithClass('div', 'product-detail-promo', product.promo));
+    if (product.badge) {
+      tags.append(createElementWithClass('div', 'product-detail-badge', product.badge));
+    }
+    if (product.promo) {
+      tags.append(createElementWithClass('div', 'product-detail-promo', product.promo));
+    }
     parts.push(tags);
   }
-  if (product.brand) parts.push(createElementWithClass('div', 'product-detail-brand', product.brand));
+  if (product.brand) {
+    parts.push(createElementWithClass('div', 'product-detail-brand', product.brand));
+  }
   const title = createElementWithClass('div', 'product-detail-title', product.name);
   title.setAttribute('role', 'heading');
   title.setAttribute('aria-level', '1');
@@ -413,7 +432,9 @@ function buildPurchaseOptions(product, settings) {
     const field = createElementWithClass('div', 'product-detail-field');
     const label = createElementWithClass('div', 'product-detail-field-label');
     const selectedName = createElementWithClass('span', 'product-detail-field-value', product.colors[0].name);
-    if (texts.colorLabel) label.append(`${texts.colorLabel} `, selectedName);
+    if (texts.colorLabel) {
+      label.append(`${texts.colorLabel} `, selectedName);
+    }
     const swatches = product.colors.map((color, index) => {
       const swatch = createElementWithClass('button', 'product-detail-swatch');
       swatch.setAttribute('aria-label', color.name || LABELS.color(index + 1));
@@ -424,7 +445,9 @@ function buildPurchaseOptions(product, settings) {
     const group = buildOptionButtons('product-detail-colors', swatches, (index) => {
       selectedName.textContent = product.colors[index].name;
     });
-    if (texts.colorLabel) group.setAttribute('aria-label', texts.colorLabel);
+    if (texts.colorLabel) {
+      group.setAttribute('aria-label', texts.colorLabel);
+    }
     field.append(...[texts.colorLabel ? label : null, group].filter(Boolean));
     parts.push(field);
   }
@@ -447,7 +470,9 @@ function buildPurchaseOptions(product, settings) {
   }
 
   const quantity = createElementWithClass('div', 'product-detail-quantity');
-  if (texts.quantityLabel) quantity.append(createElementWithClass('div', 'product-detail-field-label', texts.quantityLabel));
+  if (texts.quantityLabel) {
+    quantity.append(createElementWithClass('div', 'product-detail-field-label', texts.quantityLabel));
+  }
   const stepper = createElementWithClass('div', 'product-detail-stepper');
   const decrease = createElementWithClass('button', 'product-detail-step', '−');
   const value = createElementWithClass('div', 'product-detail-quantity-value', '1');
@@ -501,7 +526,9 @@ function buildPurchaseOptions(product, settings) {
  * @returns {Element|null}
  */
 function buildBenefits(benefits) {
-  if (!benefits.length) return null;
+  if (!benefits.length) {
+    return null;
+  }
   const list = createElementWithClass('div', 'product-detail-benefits');
   list.setAttribute('role', 'list');
   benefits.forEach(({ icon, text }) => {
@@ -525,7 +552,9 @@ function buildBenefits(benefits) {
  * @returns {Element|null}
  */
 function buildSpecs(specs, specsTitle) {
-  if (!specs.length) return null;
+  if (!specs.length) {
+    return null;
+  }
   const section = createElementWithClass('div', 'product-detail-specs');
   if (specsTitle) {
     const title = createElementWithClass('div', 'product-detail-specs-title', specsTitle);
@@ -535,7 +564,9 @@ function buildSpecs(specs, specsTitle) {
   }
   const table = createElementWithClass('div', 'product-detail-specs-table container-fluid');
   table.setAttribute('role', 'table');
-  if (specsTitle) table.setAttribute('aria-label', specsTitle);
+  if (specsTitle) {
+    table.setAttribute('aria-label', specsTitle);
+  }
   specs.forEach(({ label, value }) => {
     const row = createElementWithClass('div', 'product-detail-spec row row-gutter-16');
     row.setAttribute('role', 'row');
@@ -636,8 +667,11 @@ async function loadProductFromService(block, id, settings) {
       data: { productId: id },
     });
     const product = normalizeProduct(response?.data);
-    if (product) renderProductDetail(block, product, settings);
-    else renderNotAvailable(block, settings);
+    if (product) {
+      renderProductDetail(block, product, settings);
+    } else {
+      renderNotAvailable(block, settings);
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[product-detail] Could not load product', id, 'from', settings.endpoint, error);
@@ -651,7 +685,7 @@ async function loadProductFromService(block, id, settings) {
  * @param {Element} block The product-detail block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readDetailSettings(block);
   let id = readIdFromUrl();
   if (!id && EDITOR_PREVIEW_HOSTS.test(window.location.hostname)) {

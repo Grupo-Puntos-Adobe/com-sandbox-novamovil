@@ -46,7 +46,9 @@ export default async function decorate(block) {
   const link = block.querySelector('a');
   const path = link ? link.getAttribute('href') : block.textContent.trim();
   const fragment = await loadFragment(path);
-  if (!fragment) return;
+  if (!fragment) {
+    return;
+  }
 
   const wrapper = block.closest('.fragment-wrapper');
   const section = wrapper.closest('.section');

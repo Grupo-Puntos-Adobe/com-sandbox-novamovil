@@ -26,7 +26,9 @@ function hasConsent() {
  * Loads consented scripts once consent is available.
  */
 function loadConsented() {
-  if (consentedLoaded) return;
+  if (consentedLoaded) {
+    return;
+  }
   consentedLoaded = true;
   import('./consented.js');
 }

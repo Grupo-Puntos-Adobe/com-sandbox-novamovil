@@ -233,12 +233,12 @@
         height: 2px;
         border-radius: 2px;
         background: var(--header-accent);
-        transform: scaleX(0);
-        transition: transform 0.2s ease;
+        scale: 0 1;
+        transition: scale 0.2s ease;
       }
 
       &.has-link:hover::after {
-        transform: scaleX(1);
+        scale: 1;
       }
     }
   }
@@ -474,7 +474,7 @@
     &::after {
       content: '';
       position: absolute;
-      left: 0;
+      inset-inline-start: 0;
       box-sizing: border-box;
       display: block;
       width: 20px;

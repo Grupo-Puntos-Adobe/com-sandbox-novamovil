@@ -5,21 +5,27 @@
  *
  * Called by: loadCategoriesFromService(), loadProductsFromService() and
  * loadPromotionsFromService() of the card-* blocks (get(endpoint)), and product-catalog
- * (get(Filters Endpoint) + post(Search Endpoint, body, { signal })) and product-detail
- * (post(Endpoint, body)). No library: native fetch + AbortSignal.
+ * (get(Filters Endpoint) + post(Search Endpoint, body, { signal })), product-detail
+ * (post(Endpoint, body)) and login (post(Endpoint, body)). Calls that need a session use
+ * { interceptor: REQUEST_TYPE.PRIVATE } (Bearer token, see interceptors.js).
+ * No library: native fetch + AbortSignal.
  *
  * Flow:
  *   get(url) / post(url, body) → request(url, options)
- *     ├─ resolveInterceptors(interceptor)   interceptors.js ('public' by default)
+ *     ├─ resolveInterceptors(interceptor)   interceptors.js (REQUEST_TYPE.PUBLIC by default)
  *     ├─ interceptor.request(config)        each one, in order
  *     ├─ buildUrl(url, params)              relative path → API_BASE_URL
  *     ├─ fetch(…) with AbortSignal.timeout  network/timeout error → ApiError
- *     ├─ interceptor.response(response)     'public' → checks status, returns JSON
+ *     ├─ interceptor.response(response)     public-request → checks status, returns JSON
  *     └─ on any error: interceptor.error(e) may recover; otherwise the ApiError is thrown
  *
  * Guide: documentation/07-integracion-endpoints.md
  */
-import { ApiError, resolveInterceptors } from './interceptors.js';
+// session.js loads this client on demand for loginUser(): not a cycle when the page loads
+// eslint-disable-next-line import/no-cycle
+import { ApiError, REQUEST_TYPE, resolveInterceptors } from './interceptors.js';
+
+export { REQUEST_TYPE };
 
 // used when a component passes a relative path ("/api/v1/...") instead of a full URL
 export const API_BASE_URL = 'https://cca7ebd1-f76f-47d0-a949-b4b8618f05e5.mock.pstmn.io';
@@ -35,7 +41,9 @@ export const DEFAULT_TIMEOUT = 8000;
 function buildUrl(url, params) {
   const absolute = new URL(url, /^https?:\/\//i.test(url) ? undefined : API_BASE_URL);
   Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) absolute.searchParams.set(key, value);
+    if (value !== undefined && value !== null) {
+      absolute.searchParams.set(key, value);
+    }
   });
   return absolute.toString();
 }
@@ -49,13 +57,14 @@ function buildUrl(url, params) {
  * @param {*} [options.body] Objects are sent as JSON
  * @param {Object} [options.params] Query string parameters
  * @param {number} [options.timeout=DEFAULT_TIMEOUT] Milliseconds before aborting
- * @param {string|Object|Array} [options.interceptor='public'] Registered name, object or list
+ * @param {string|Object|Array} [options.interceptor=REQUEST_TYPE.PUBLIC] REQUEST_TYPE name,
+ *   interceptor object or list
  * @param {AbortSignal} [options.signal] Extra signal to cancel the request
  * @returns {Promise<*>} Whatever the response interceptors return (JSON by default)
  */
 export async function request(url, options = {}) {
   const {
-    interceptor = 'public', timeout = DEFAULT_TIMEOUT, params, signal, ...init
+    interceptor = REQUEST_TYPE.PUBLIC, timeout = DEFAULT_TIMEOUT, params, signal, ...init
   } = options;
   const chain = resolveInterceptors(interceptor);
 
@@ -73,7 +82,9 @@ export async function request(url, options = {}) {
     } = config;
     const isJsonBody = body && typeof body === 'object' && !(body instanceof FormData)
       && !(body instanceof Blob) && !(body instanceof URLSearchParams);
-    if (isJsonBody) fetchInit.headers = { 'Content-Type': 'application/json', ...fetchInit.headers };
+    if (isJsonBody) {
+      fetchInit.headers = { 'Content-Type': 'application/json', ...fetchInit.headers };
+    }
 
     // AbortSignal.any is newer (Safari 17.4, Firefox 124): without it only the timeout applies
     const timeoutSignal = AbortSignal.timeout(timeout);

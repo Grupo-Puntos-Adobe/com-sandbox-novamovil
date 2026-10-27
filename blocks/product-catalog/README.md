@@ -50,6 +50,8 @@ a la izquierda; en móvil se abren en un panel con el botón **Filtros**.
 - Móvil: la barra con **Filtros** y **Ordenar por** se queda fija debajo del header mientras se
   recorre la lista, así se pueden abrir los filtros o cambiar el orden desde cualquier parte
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: título principal con `role="heading"` y `aria-level="1"`, contador con `role="status"`,
   grupos de filtros con nombre, deslizador con el precio en `aria-valuetext`, paginador con
@@ -203,6 +205,19 @@ opcionales y pueden ir en cualquier orden.
     - **Descripción:** Estilos en línea y clases extra del bloque
     - **Por defecto:** ninguno (ver `documentation/06-styles-classname.md`)
 
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: un título distinto para quien inició sesión, sin tocar el código del catálogo:
+>
+> | Product Catalog | | |
+> |---|---|---|
+> | Title | Celulares | signed-out |
+> | Title | Celulares para ti | signed-in |
+
 2. **`Title`**
     - **Tipo:** Texto
     - **Descripción:** Título principal de la página ("Celulares"); también da nombre a la lista
@@ -243,7 +258,9 @@ opcionales y pueden ir en cualquier orden.
 
 9. **`Search Endpoint`**
     - **Tipo:** URL (texto o enlace)
-    - **Descripción:** Servicio POST de la búsqueda de celulares
+    - **Descripción:** Servicio POST de la búsqueda de celulares. `Filters Endpoint` y `Search
+      Endpoint` son servicios **públicos** (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en
+      una fila `Private …Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** sin fila, los 4 celulares básicos del JSON interno (`FALLBACK_PHONES`), tal
       cual, como en las tarjetas de la home (los filtros y el orden no cambian esa lista); si ese
       JSON está vacío, el aviso de lista vacía directo
@@ -260,8 +277,9 @@ opcionales y pueden ir en cualquier orden.
     - **Por defecto:** `30`
 
 12. **`Product Link`**
-    - **Tipo:** Texto (plantilla con `{sku}`, `{productId}` o `{id}`)
-    - **Descripción:** Enlace de cada tarjeta cuando el celular no trae `path`
+    - **Tipo:** Texto (plantilla con `{id}`, `{productId}` o `{sku}`)
+    - **Descripción:** Enlace de cada tarjeta cuando el celular no trae `path`. En el sitio es
+      `/celulares/?id={id}`: la página de detalle (`blocks/product-detail/`) lee el `?id=`
     - **Por defecto:** ninguno. Sin él (y sin `path`), la tarjeta se muestra sin enlace
 
 13. **`Button Text`**
@@ -402,6 +420,8 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Cargando | Caja de filtros y 4 tarjetas grises |
 | Marcar o desmarcar una casilla, cambiar el orden o soltar el deslizador | Nueva búsqueda desde la página 1 |
 | Cambiar de página | Nueva búsqueda de esa página; la barra superior vuelve a quedar a la vista |
@@ -419,6 +439,19 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 | Ventana más baja que la caja de filtros | La caja mide lo que cabe y sus filtros se desplazan por dentro |
 | Móvil: bajar por la lista | La barra con **Filtros** y **Ordenar por** se queda fija debajo del header hasta el final del catálogo; al subir vuelve a su lugar |
 | Móvil: abrir **Filtros** | Panel a pantalla completa; se cierra con **Ver resultados**, × o `Escape` |
+
+### Cómo probarlo
+
+1. **Sin `Search Endpoint` ni `Filters Endpoint`:** los 4 celulares básicos y los filtros completos
+   del JSON interno.
+2. **Con los dos servicios:** filtros del servicio; cada cambio de filtro, orden o página manda una
+   búsqueda nueva (la anterior se cancela) y el contador y el paginador se actualizan.
+3. **Tarjeta:** el enlace es `/celulares/?id={id}` y abre el detalle de ese celular.
+4. **Servicio con error:** una sola alerta y el aviso de lista vacía (📱).
+5. **Móvil:** la barra de **Filtros** y **Ordenar por** se queda fija al bajar; **Filtros** abre el
+   panel.
+6. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+   sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
 
 ### Vista previa
 
@@ -448,13 +481,16 @@ Móvil con el panel de filtros abierto:
   tarjetas y paginador
 - `product-catalog.css` – Estilos del bloque (tamaños, colores, panel móvil y resoluciones; las
   columnas vienen del grid)
-- `scripts/foundations/` – `block-options.js`, `block-utils.js` (incluye `formatPrice`),
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
+  fila), `block-utils.js` (incluye `formatPrice`),
   `messages.js` y `toast.js`
-- `scripts/api/http-client.js` – `get` (filtros) y `post` (búsqueda, con cancelación)
+- `scripts/api/http-client.js` – `get` (filtros) y `post` (búsqueda, con cancelación). Las dos son
+  llamadas públicas (`REQUEST_TYPE.PUBLIC`, sin sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-catalog-*`); `--nav-height` y `--z-index-panel` en
   `styles/styles.css` para el panel móvil
 - Se usa en: la página Celulares, después de `blocks/breadcrumb/`
 
-Integración de servicios: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicios), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).

@@ -140,7 +140,7 @@
   --product-catalog-promo-background: var(--color-yellow-100);
   --product-catalog-promo-text: var(--color-yellow-800);
   --product-catalog-name: var(--heading-color);
-  --product-catalog-available: color-mix(in srgb, var(--color-success) 80%, var(--color-gray-900));
+  --product-catalog-available: color-mix(in srgb, var(--color-success) 60%, var(--color-gray-900)); /* 4.5:1 on white */
   --product-catalog-sold-out: var(--color-gray-500);
   --product-catalog-chip-background: var(--color-gray-100);
   --product-catalog-chip-text: var(--color-gray-500);
@@ -169,7 +169,7 @@
   --product-detail-star: var(--color-amber-500);
   --product-detail-star-empty: var(--color-gray-200);
   --product-detail-price: var(--color-primary);
-  --product-detail-positive: color-mix(in srgb, var(--color-success) 80%, var(--color-gray-900));
+  --product-detail-positive: color-mix(in srgb, var(--color-success) 60%, var(--color-gray-900)); /* 4.5:1 on gray-100 */
   --product-detail-option-selected-background: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
   --product-detail-button-background: var(--gradient-brand);
   --product-detail-button-text: var(--color-white);
@@ -177,8 +177,59 @@
   --product-detail-favorite: var(--color-error);
   --product-detail-benefits-background: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
   --product-detail-spec-stripe: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
+  --product-detail-spec-label: color-mix(in srgb, var(--color-gray-500) 80%, var(--color-gray-900)); /* 4.5:1 on stripes */
   --product-detail-skeleton: var(--color-gray-200);
   --product-detail-skeleton-shine: var(--color-gray-100);
+
+  /* login (tabs, form card, buttons, legal text) */
+  --login-title: var(--heading-color);
+  --login-label: var(--color-gray-900);
+  --login-muted: var(--color-gray-500);
+  --login-surface: var(--color-white);
+  --login-border: var(--border-color);
+  --login-accent: var(--color-primary);
+  --login-link-hover: var(--color-accent);
+  --login-tabs-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-gray-100));
+  --login-tab-text: color-mix(in srgb, var(--color-gray-500) 80%, var(--color-gray-900)); /* 4.5:1 on the tabs */
+  --login-tab-selected-background: var(--color-white);
+  --login-tab-selected-shadow: color-mix(in srgb, var(--color-navy-950) 10%, transparent);
+  --login-input-text: var(--color-gray-900);
+  --login-input-placeholder: var(--color-gray-400);
+  --login-input-focus-ring: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  --login-button-background: var(--gradient-brand);
+  --login-button-text: var(--color-white);
+  --login-button-glow: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --login-guest-background: color-mix(in srgb, var(--color-primary) 3%, var(--color-gray-100));
+  --login-guest-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-gray-100));
+  --login-guest-text: var(--color-gray-900);
+  --login-divider: var(--color-gray-200);
+  --login-divider-text: var(--color-gray-400);
+  --login-error: color-mix(in srgb, var(--color-error) 80%, var(--color-gray-900)); /* 4.5:1 on white */
+  --login-error-background: color-mix(in srgb, var(--color-error) 8%, var(--color-white));
+  --login-error-border: color-mix(in srgb, var(--color-error) 30%, var(--color-white));
+  --login-success: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --login-success-background: color-mix(in srgb, var(--color-success) 10%, var(--color-white));
+  --login-success-border: color-mix(in srgb, var(--color-success) 35%, var(--color-white));
+
+  /* block-session-example (example of everything that can be built with sessions) */
+  --block-session-example-title: var(--heading-color);
+  --block-session-example-text: var(--text-color);
+  --block-session-example-muted: var(--color-gray-500);
+  --block-session-example-surface: var(--color-white);
+  --block-session-example-border: var(--border-color);
+  --block-session-example-accent: var(--color-primary);
+  --block-session-example-button-background: var(--gradient-brand);
+  --block-session-example-button-text: var(--color-white);
+  --block-session-example-button-secondary-background: color-mix(in srgb, var(--color-primary) 3%, var(--color-gray-100));
+  --block-session-example-button-secondary-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-gray-100));
+  --block-session-example-button-secondary-text: var(--color-gray-900);
+  --block-session-example-tag-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+  --block-session-example-signed-in-background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
+  --block-session-example-signed-in-text: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --block-session-example-guest-background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+  --block-session-example-guest-text: var(--color-primary);
+  --block-session-example-signed-out-background: var(--color-gray-100);
+  --block-session-example-signed-out-text: var(--color-gray-700);
 
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);

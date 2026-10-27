@@ -7,6 +7,8 @@
  * Authored rows (all optional): Styles, Classname, Title, Endpoint, Alert Duration,
  * Alert Color, Error Response Message, Empty List Title, Empty List Description,
  * Empty List Icon.
+ * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
+ * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
  * Defaults only for messages and the alert:
  *   - Title has no default: without text in the table the section has no title.
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
@@ -18,7 +20,8 @@
  *
  * Flow:
  *   decorate(block)
- *     ├─ applyBlockOptions(block)        Styles / Classname rows (foundations/block-options.js)
+ *     ├─ applyBlockOptions(block)        Styles / Classname / Session rows + session rows
+ *     │                                  (last cell; foundations/block-options.js)
  *     ├─ readCategoriesSettings(block)             endpoint, alert, messages
  *     │    └─ readTableCell / readRowTextOrDefault / getAlertOptions (foundations/block-utils.js)
  *     ├─ buildSectionTitle(block, prefix) div[role=heading] from Title (foundations/block-utils.js)
@@ -130,7 +133,9 @@ function normalizeCategories(rawCategories) {
       order: Number.isFinite(Number(item.order)) ? Number(item.order) : Number.MAX_SAFE_INTEGER,
     }))
     .filter((item) => {
-      if (!item.label || !item.href || seen.has(item.id)) return false;
+      if (!item.label || !item.href || seen.has(item.id)) {
+        return false;
+      }
       seen.add(item.id);
       return true;
     })
@@ -147,7 +152,9 @@ function normalizeCategories(rawCategories) {
 function createElementWithClass(tag, className, content) {
   const node = document.createElement(tag);
   node.className = className;
-  if (content !== undefined) node.textContent = content;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
   return node;
 }
 
@@ -161,7 +168,9 @@ function buildCategoryCard(category) {
   card.setAttribute('role', 'listitem');
   const link = createElementWithClass('a', 'card-categories-item');
   link.href = category.href;
-  if (category.color) link.style.setProperty('--card-categories-item-color', category.color);
+  if (category.color) {
+    link.style.setProperty('--card-categories-item-color', category.color);
+  }
   const icon = createElementWithClass('span', 'card-categories-icon', category.icon);
   icon.setAttribute('aria-hidden', 'true');
   link.append(icon, createElementWithClass('span', 'card-categories-label', category.label));
@@ -209,7 +218,9 @@ function renderCategories(block, header, categories, settings) {
   list.setAttribute('role', 'list');
   // screen readers name the list with the visible title ("Categorías, lista, 6 elementos")
   const heading = header?.querySelector('.card-categories-heading');
-  if (heading) list.setAttribute('aria-label', heading.textContent);
+  if (heading) {
+    list.setAttribute('aria-label', heading.textContent);
+  }
   list.append(...categories.map(buildCategoryCard));
   const grid = createElementWithClass('div', 'card-categories-grid container-fluid');
   grid.append(list);
@@ -246,7 +257,7 @@ async function loadCategoriesFromService(block, header, settings) {
  * @param {Element} block The card-categories block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the config
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readCategoriesSettings(block);
   const header = buildSectionTitle(block, 'card-categories');
 

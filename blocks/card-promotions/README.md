@@ -36,6 +36,8 @@ y 3 en tablet y desktop.
 - Alerta flotante configurable (duración y color) cuando el servicio falla
 - Aviso de lista vacía configurable (título, descripción e icono)
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: lista con nombre para lectores de pantalla, título con `role="heading"`, foto decorativa
   (el título y el texto describen la promoción), foco visible y sin animación si el usuario pide
@@ -104,6 +106,20 @@ opcionales y pueden ir en cualquier orden.
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
 
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: otro título y otro aviso de lista vacía para quien inició sesión, sin tocar el código:
+>
+> | Card Promotions | | |
+> |---|---|---|
+> | Title | Promociones | signed-out |
+> | Title | Tus promociones | signed-in |
+> | Empty List Title | Inicia sesión para ver tus promociones | signed-out |
+
 3. **`Title`**
     - **Tipo:** Texto
     - **Descripción:** Título de la sección; también da nombre a la lista para lectores de pantalla
@@ -111,7 +127,9 @@ opcionales y pueden ir en cualquier orden.
 
 4. **`Endpoint`**
     - **Tipo:** URL (texto o enlace)
-    - **Descripción:** Servicio de donde llegan las promociones
+    - **Descripción:** Servicio de donde llegan las promociones.
+      Es un servicio **público** (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en la fila
+      `Private Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** sin fila, se usan las 3 promociones del JSON interno del bloque
       (`FALLBACK_PROMOTIONS`)
 
@@ -209,6 +227,8 @@ Cada promoción que llega del servicio (o del JSON interno) dentro de
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sin `Endpoint` y el JSON interno tiene promociones | Las tarjetas del JSON interno |
 | Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
 | El servicio está respondiendo | Esqueleto de carga (3 tarjetas grises) |
@@ -216,6 +236,18 @@ Cada promoción que llega del servicio (o del JSON interno) dentro de
 | El servicio falla, no responde o la respuesta no trae la lista | Alerta (`Error Response Message`) + aviso de lista vacía |
 | La foto de una promoción falta o no carga | La tarjeta queda con el degradado y los textos |
 | Sin `Promo Link` y la promoción sin `path` | La tarjeta se muestra sin enlace y no sube al pasar el mouse |
+
+### Cómo probarlo
+
+1. **Sin `Endpoint`:** se ven las 3 promociones del JSON interno, cada una con su foto y el degradado
+   de su color.
+2. **Con `Endpoint`:** mientras responde, el esqueleto de carga; luego las promociones del servicio,
+   con su enlace (`path` o `Promo Link` = `/promociones/{id}`).
+3. **Servicio con error** (por ejemplo una URL que no existe): alerta arriba a la derecha y aviso de
+   lista vacía (🏷️).
+4. **Por sesión:** con el ejemplo de la tabla, el título cambia al iniciar sesión (la página se
+   recarga) y sin sesión el aviso de lista vacía dice "Inicia sesión para ver tus promociones"; con
+   `Session | true`, el bloque completo solo se ve con sesión.
 
 ### Vista previa
 
@@ -236,10 +268,13 @@ Móvil:
 - `card-promotions.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-promotions.css` – Estilos del bloque (tamaños, colores, degradado y estados; las columnas
   vienen del grid)
-- `scripts/foundations/` – `block-options.js`, `block-utils.js`, `messages.js` y `toast.js`
-- `scripts/api/http-client.js` – Llamada al servicio
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
+  fila), `block-utils.js`, `messages.js` y `toast.js`
+- `scripts/api/http-client.js` – `get(Endpoint)`, llamada pública (`REQUEST_TYPE.PUBLIC`, sin
+  sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-promotions-*`)
 
-Integración del servicio: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).

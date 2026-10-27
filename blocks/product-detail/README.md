@@ -42,9 +42,11 @@ va en una columna; desde tablet, la galería a la izquierda y la información a 
 - Caja de beneficios (envío, compra segura, devoluciones) desde las filas `Benefit N`
 - Tabla **Características principales** (`specs` del servicio)
 - El breadcrumb termina con el nombre del celular (`{product}`) y la pestaña del navegador también
-- Esqueleto de carga; sin sku regresa a la lista de celulares (`/celulares`); si el sku no existe, es
+- Esqueleto de carga; sin id regresa a la lista de celulares (`/celulares`); si el id no existe, es
   inválido o el servicio falla, solo el aviso de lista vacía ("Este celular no existe"), sin alerta
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: título con `role="heading"` y `aria-level="1"`, opciones con `aria-pressed`, miniatura
   elegida con `aria-current`, calificación con etiqueta completa, foco visible
@@ -139,10 +141,29 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 
 1. **`Styles`** / **`Classname`** – Estilos en línea y clases extra del bloque (ver
    `documentation/06-styles-classname.md`)
-2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
-   sale el aviso "no disponible" (no hay JSON interno)
 
-3. **`Catalog Link`** – A dónde regresa la página sin sku y el enlace del aviso. Por defecto, la
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: un beneficio extra solo para quien inició sesión (la fila `Benefit N` ya tiene 2 valores,
+> el estado va en una 4.ª columna):
+>
+> | Product Detail | | | |
+> |---|---|---|---|
+> | Benefit 1 | 🚚 | Envío gratis en compras mayores a $999 | |
+> | Benefit 4 | 🎁 | Envío gratis en todas tus compras | signed-in |
+>
+> La página de detalle (`celulares/index`) es **pública**: su Metadata no lleva `Session`.
+
+2. **`Endpoint`** – URL (texto o enlace) del servicio POST de detalle. Sin fila no se pinta producto:
+   sale el aviso "no disponible" (no hay JSON interno). Es un servicio **público**
+   (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en `Private Endpoint` (ver
+   `scripts/api/README.md`)
+
+3. **`Catalog Link`** – A dónde regresa la página sin id y el enlace del aviso. Por defecto, la
    carpeta de la página (`/celulares`)
 4. **`Back Text`** – Texto del enlace al catálogo en el aviso ("Ver todos los celulares"). Sin fila no
    se pinta el enlace
@@ -181,14 +202,15 @@ La tabla en Drive permite al autor configurar:
 
 ### Propiedades del JSON
 
-**Lo que se manda** (`POST Endpoint`): `meta` y `security` son fijos (`DETAIL_REQUEST_META` y
-`DETAIL_REQUEST_SECURITY`); solo cambia `data.productId`, que es el sku de la URL en minúsculas.
+**Lo que se manda** (`POST Endpoint`, llamada pública `REQUEST_TYPE.PUBLIC`: no necesita sesión):
+`meta` y `security` son fijos (`DETAIL_REQUEST_META` y `DETAIL_REQUEST_SECURITY`); solo cambia
+`data.productId`, que es el id de la URL (`?id=`) en minúsculas.
 
 ```json
 {
   "meta": { "requestId": "REQ-DET-001", "correlationId": "CORR-001", "timestamp": "2026-09-17T16:00:00Z", "channel": "WEB", "platform": "DESKTOP" },
   "security": { "auth": { "type": "Bearer", "value": "Bearer {{bearer_token}}" }, "nonce": "NONCE-REQ-DET-001", "signature": "{{hmac_signature}}" },
-  "data": { "productId": "iph-15-128-blk" }
+  "data": { "productId": "prod-001" }
 }
 ```
 
@@ -231,10 +253,12 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sitio publicado sin `?id=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
-| Panel de vista previa de la herramienta de edición (`preview-aemcoder.adobe.io`) sin `?id=` | Pone `?id=prod-001` en la URL y muestra ese detalle (solo ahí; en el sitio sin sku regresa a la lista) |
+| Panel de vista previa de la herramienta de edición (`preview-aemcoder.adobe.io`) sin `?id=` | Pone `?id=prod-001` en la URL y muestra ese detalle (solo ahí; en el sitio sin id regresa a la lista) |
 | `?id=` con formato inválido (no solo letras, números y guiones) | Aviso "Este celular no existe", sin llamar al servicio |
 | El servicio responde que no existe (404 o sin celular) | Aviso "Este celular no existe", sin alerta |
 | El servicio falla | Aviso "Este celular no existe", sin alerta (el error queda en la consola) |
@@ -246,6 +270,18 @@ La tabla en Drive permite al autor configurar:
 | − / + | Cantidad entre 1 y el stock (máximo 10) |
 | **Agregar al carrito** | Por ahora no hace nada (se conectará con la pantalla del carrito) |
 | Corazón | Se marca y desmarca (sin guardar todavía) |
+
+### Cómo probarlo
+
+1. **`/celulares/?id=prod-001`:** esqueleto de carga y luego el detalle completo; el breadcrumb y la
+   pestaña muestran "Apple iPhone 15 Pro".
+2. **`/celulares/` sin `?id=`:** regresa a `/celulares` (en el panel de edición pone
+   `?id=prod-001`).
+3. **`/celulares/?id=NO_VALIDO!`:** aviso "Este celular no existe", sin llamar al servicio.
+4. **Desde una tarjeta** del catálogo o de destacados: abre el detalle de ese celular.
+5. **Opciones:** elegir color, capacidad y cantidad (de 1 al stock, máximo 10) y marcar favorito.
+6. **Por sesión:** con el ejemplo de `Benefit 4` (`signed-in`), ese beneficio solo aparece con
+   sesión (la página se recarga al iniciar sesión).
 
 ### Vista previa
 
@@ -263,12 +299,14 @@ Móvil:
 
 ### Archivos y dependencias
 
-- `product-detail.js` – Lee la tabla y el sku de la URL, llama al servicio y construye la página
+- `product-detail.js` – Lee la tabla y el id de la URL, llama al servicio y construye la página
 - `product-detail.css` – Estilos del bloque (tamaños, colores y resoluciones; las columnas vienen del
   grid)
-- `scripts/foundations/` – `block-options.js`, `block-utils.js` (incluye `formatPrice`),
-  `messages.js`, `toast.js` y `page-context.js` (nombre del celular para el breadcrumb)
-- `scripts/api/http-client.js` – `post` al servicio de detalle
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
+  fila), `block-utils.js` (incluye `formatPrice`), `messages.js` y `page-context.js` (nombre del
+  celular para el breadcrumb)
+- `scripts/api/http-client.js` – `post` al servicio de detalle (llamada pública; ver
+  `scripts/api/README.md`)
 - `blocks/empty-list-message/` – Aviso "no disponible"
 - `blocks/breadcrumb/` – Ruta con el nivel `{product}`
 - `styles/foundations/grid.css` – Columnas y espacios
@@ -276,4 +314,5 @@ Móvil:
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =
   `/celulares/?id={id}`)
 
-Integración de servicios: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).

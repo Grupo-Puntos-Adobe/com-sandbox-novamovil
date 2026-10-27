@@ -153,6 +153,18 @@ El documento en Drive permite al autor configurar:
 | Seguir un enlace del menú móvil | El menú se cierra |
 | El documento no trae logo | Se pinta el logo por defecto |
 | El documento no trae los enlaces de cuenta o carrito | Llevan a `/cuenta` y `/carrito` |
+| Clic en **Mi cuenta** sin sesión | Va a `/cuenta`; esa página decide con su Metadata (`Session: true` → `Redirect To: /login`) |
+
+### Cómo probarlo
+
+1. **Desktop:** marca, menú y herramientas (lupa, cuenta, carrito con contador) en una barra.
+2. **Móvil o tablet:** marca, lupa, cuenta, carrito y hamburguesa; la hamburguesa abre el menú
+   debajo y `Escape` lo cierra.
+3. **Lupa:** se despliega el buscador; con el campo vacío no se envía.
+4. **Mi cuenta** sin sesión: va a `/cuenta`, y esa página decide con su Metadata (hoy `cuenta` solo
+   tiene texto: se ve; con un bloque del proyecto redirigiría a `/login`).
+5. **Documento `nav` sin logo o sin enlaces de herramientas:** logo por defecto, `/cuenta` y
+   `/carrito`.
 
 ### Vista previa
 
@@ -176,6 +188,18 @@ Móvil con el menú abierto:
 
 ![Vista Componente móvil con menú](/documentation/readme/header/component-mobile-menu.png)
 
+### Sesión
+
+El header **no cambia con la sesión** por ahora: siempre muestra los mismos iconos.
+
+- **No usa `block-options.js`**, así que no tiene fila `Session` ni filas por sesión: el documento
+  `nav` son secciones y listas, no una tabla.
+- El icono de **Mi cuenta** lleva a `/cuenta`. Quien decide si se puede entrar es esa página, con su
+  Metadata (`Session: true` + `Redirect To: /login`; ver `documentation/08-sesiones.md`). La regla
+  corre cuando la página tiene al menos un bloque del proyecto.
+- Pendiente para otra entrega: mostrar "Hola, {nombre}" y "Cerrar sesión" con sesión, usando
+  `renderBySessionState` de `scripts/foundations/session.js`.
+
 ### Archivos y dependencias
 
 - `header.js` – Carga el documento `nav`, construye la barra y maneja el menú y el buscador
@@ -188,3 +212,4 @@ Móvil con el menú abierto:
   (`--nav-height`)
 - La marca se construye igual que en `blocks/footer/footer.js`: si cambias la marca, cámbiala en los
   dos bloques
+- Guía de sesiones (página `cuenta` y su Metadata): `documentation/08-sesiones.md`

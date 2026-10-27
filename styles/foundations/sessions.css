@@ -1,0 +1,34 @@
+/*
+ * Sessions (foundations): show or hide anything depending on who is visiting.
+ * Portable: copy it with scripts/foundations/session.js and block-options.js, which loads it
+ * (loadCSS) before the first block is decorated: nothing to add to head.html.
+ * Only visibility here (no colours, no sizes). How to use it: styles/foundations/README.md
+ *
+ * session.js puts ONE state class on <html> before the page is painted, and changes it when
+ * somebody signs in, continues as a guest or signs out:
+ *   session-state-signed-in    there is a session
+ *   session-state-guest        "Continuar como invitado"
+ *   session-state-signed-out   neither (also an expired session)
+ *   session-state-editor       editing tool preview: everything is shown, to edit it
+ *
+ * Mark an element with session-only + who can see it (combine them for "or"):
+ *   <div class="session-only session-only-signed-in">                 only with session
+ *   <div class="session-only session-only-signed-out">                only without session
+ *   <div class="session-only session-only-guest">                     only guests
+ *   <div class="session-only session-only-signed-in session-only-guest">  session or guest
+ * From JS: showOnlyForSessionStates(element, 'signed-in, guest'). In Drive: the Session row of a
+ * block (true → session-only-signed-in; false → session-only-signed-out + session-only-guest).
+ *
+ * It only hides what does not match (display: none); what matches keeps its own display.
+ */
+
+/* while the state is not known yet, session content stays hidden (no flash) */
+:root:not([class*='session-state-']) .session-only {
+  display: none !important;
+}
+
+.session-state-signed-in .session-only:not(.session-only-signed-in),
+.session-state-guest .session-only:not(.session-only-guest),
+.session-state-signed-out .session-only:not(.session-only-signed-out) {
+  display: none !important;
+}

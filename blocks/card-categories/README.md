@@ -34,6 +34,8 @@ bloque. Se acomoda solo a cada resolución con el grid del proyecto: 1 tarjeta p
 - Alerta flotante configurable (duración y color) cuando el servicio falla
 - Aviso de lista vacía configurable (título, descripción e icono)
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
+- **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
+  completo y el estado en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: lista con nombre para lectores de pantalla, título con `role="heading"`, foco visible y
   sin animación si el usuario pide menos movimiento
@@ -96,6 +98,19 @@ opcionales y pueden ir en cualquier orden.
     - **Descripción:** Clases extra sobre el bloque
     - **Por defecto:** ninguna
 
+> **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
+> **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
+> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> estado. Ver `documentation/08-sesiones.md`.
+>
+> Ejemplo: otro título para quien inició sesión, sin tocar el código:
+>
+> | Card Categories | | |
+> |---|---|---|
+> | Title | Categorías | signed-out |
+> | Title | Tus categorías | signed-in |
+
 3. **`Title`**
     - **Tipo:** Texto
     - **Descripción:** Título de la sección; también da nombre a la lista para lectores de pantalla
@@ -103,7 +118,9 @@ opcionales y pueden ir en cualquier orden.
 
 4. **`Endpoint`**
     - **Tipo:** URL (texto o enlace)
-    - **Descripción:** Servicio de donde llegan las categorías
+    - **Descripción:** Servicio de donde llegan las categorías.
+      Es un servicio **público** (`REQUEST_TYPE.PUBLIC`); uno que necesite sesión iría en la fila
+      `Private Endpoint` (ver `scripts/api/README.md`)
     - **Por defecto:** sin fila, se usan las 6 categorías del JSON interno del bloque
       (`FALLBACK_CATEGORIES`)
 
@@ -186,11 +203,23 @@ Cada categoría que llega del servicio (o del JSON interno) dentro de
 
 | Caso | Qué se ve |
 |---|---|
+| Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
+| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sin `Endpoint` y el JSON interno tiene categorías | Las tarjetas del JSON interno |
 | Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
 | El servicio está respondiendo | Esqueleto de carga (6 tarjetas grises) |
 | El servicio responde la lista vacía (o sin categorías activas) | Aviso de lista vacía, sin alerta |
 | El servicio falla, no responde o la respuesta no trae la lista | Alerta (`Error Response Message`) + aviso de lista vacía |
+
+### Cómo probarlo
+
+1. **Sin `Endpoint`:** se ven las 6 categorías del JSON interno.
+2. **Con `Endpoint`:** mientras responde, el esqueleto de carga; luego las categorías del servicio,
+   cada una con su enlace (`path`) y su color de hover (`color`).
+3. **Servicio con error** (por ejemplo una URL que no existe): alerta arriba a la derecha y aviso de
+   lista vacía (🗂️).
+4. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+   sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
 
 ### Vista previa
 
@@ -210,10 +239,12 @@ Móvil:
 
 - `card-categories.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-categories.css` – Estilos del bloque (tamaños, colores y estados; las columnas vienen del grid)
-- `scripts/foundations/` – `block-options.js`, `block-utils.js`, `messages.js` y `toast.js`
-- `scripts/api/http-client.js` – Llamada al servicio
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por fila), `block-utils.js`, `messages.js` y `toast.js`
+- `scripts/api/http-client.js` – `get(Endpoint)`, llamada pública (`REQUEST_TYPE.PUBLIC`, sin
+  sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido
 - `styles/foundations/grid.css` – Columnas y espacio entre tarjetas
 - Colores en `styles/colors.css` (`--card-categories-*`)
 
-Integración del servicio: `documentation/07-integracion-endpoints.md`.
+Guías: `documentation/07-integracion-endpoints.md` (servicio), `documentation/06-styles-classname.md`
+(`block-options`) y `documentation/08-sesiones.md` (sesiones).

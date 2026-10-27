@@ -206,10 +206,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, translate 0.15s ease;
 
     &:hover {
-      transform: translateY(-1px);
+      translate: 0 -1px;
     }
 
     &:focus-visible {

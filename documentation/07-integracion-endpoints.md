@@ -1,9 +1,12 @@
-# 02 · Integración de peticiones a endpoints (cliente HTTP, interceptores y alertas)
+# 07 · Integración de peticiones a endpoints (cliente HTTP, interceptores y alertas)
 
 Esta guía explica, paso a paso, cómo los componentes `card-categories`, `card-featured` y
 `card-promotions` obtienen sus datos de un servicio: **qué se instaló**, **qué archivos se crearon
 o modificaron desde el inicio**, **si se tocó el template de AEM Edge Delivery** y **cómo funciona
 todo por dentro**.
+
+Referencia rápida de los dos archivos (funciones, opciones, `ApiError`, tipos de llamada):
+`scripts/api/README.md`.
 
 ---
 
@@ -43,7 +46,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | Archivo | Origen | Qué hace en la integración | Commit |
 |---|---|---|---|
 | `scripts/api/http-client.js` | 🆕 | **Único punto que llama a `fetch`**: arma la URL, aplica interceptores, timeout, convierte errores | `1bccaff` |
-| `scripts/api/interceptors.js` | 🆕 | `ApiError`, `publicInterceptor`, registro de interceptores y plantilla de `auth` | `1bccaff` |
+| `scripts/api/interceptors.js` | 🆕 | `ApiError`, `REQUEST_TYPE`, `publicRequestInterceptor`, `privateRequestInterceptor` y registro de interceptores | `1bccaff` |
 | `scripts/foundations/toast.js` | 🆕 | Alerta flotante arriba a la derecha cuando falla un servicio | `1bccaff` |
 | `styles/foundations/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
 | `blocks/empty-list-message/` | 🆕 | Aviso "no hay elementos" compartido por las tres tarjetas: `buildEmptyListMessage({ icon, title, description })` + su CSS. Solo pinta lo que le manda la tarjeta | — |
@@ -54,7 +57,11 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
 | `blocks/card-*/card-*.css` | 🆕 | Esqueleto de carga y mensaje de "no hay elementos" | mismos commits |
 | `blocks/product-catalog/product-catalog.js` | 🆕 | Pide los filtros con `get` (`data.brands`, `operatingSystems`, `storages`, `priceRange`) y busca con `post` (`data` con los filtros elegidos; `pagination` + lista en `data`), cancelando la búsqueda anterior. Guía: `blocks/product-catalog/README.md` | — |
-| `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = id de la URL `/celulares/?id={id}`); sin JSON interno: si falla, alerta + aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
+| `blocks/product-detail/product-detail.js` | 🆕 | Pide el detalle con `post` (`data.productId` = id de la URL `/celulares/?id={id}`); sin JSON interno: si falla, aviso "no disponible". Guía: `blocks/product-detail/README.md` | — |
+| `blocks/login/login.js` | 🆕 | Inicio de sesión con `loginUser(endpoint, body)` de `session.js` (hace el `post` público y guarda la sesión); muestra los mensajes de error del servicio (`error.cause`). Guía: `blocks/login/README.md` | — |
+| `blocks/block-session-example/block-session-example.js` | 🆕 | Ejemplo de llamada **privada** (`REQUEST_TYPE.PRIVATE`, con Bearer) | — |
+| `scripts/foundations/session.js` | 🆕 | El token de la llamada privada (`getAuthorizationHeader`) y qué hacer con un 401 (`clearUserSession`, `Redirect To`); `loginUser` / `logoutUser`. Guía: `documentation/08-sesiones.md` | — |
+| `scripts/api/README.md` | 🆕 | Referencia de `http-client.js` e `interceptors.js` | — |
 | `content-drive/index.docx` | 🆕 | Filas `Endpoint`, `Alert Duration`, `Alert Color` en cada tabla | mismos commits |
 | `styles/styles.css` | 📦 ✏️ | Agrega `--z-index-toast: 900` (la alerta queda bajo el header, `1000`) | `db5a73d` |
 | `head.html` | 📦 ✏️ | Ya cargaba `styles/colors.css` desde el header; **no se cambió para esto** | `5fa25e7` (header) |
@@ -138,39 +145,49 @@ Un interceptor es un objeto con hasta tres funciones **opcionales**:
 | `response(response, config)` | Al recibir la respuesta | Validar el estado y convertir a JSON |
 | `error(error, config)` | Si algo falla | Registrar, recuperar (devolver un valor) o relanzar |
 
-El único activo hoy es **`publicInterceptor`** (servicios públicos, sin credenciales):
+Hay **dos tipos de llamada**, con nombre claro en la constante `REQUEST_TYPE`:
+
+| Nombre | Interceptores | Para | Qué hace |
+|---|---|---|---|
+| `REQUEST_TYPE.PUBLIC` = `'public-request'` (por defecto) | `publicRequestInterceptor` | **Llamadas simples, sin sesión**: categorías, catálogo, detalle, login | Headers JSON; OK → JSON; con error (400, 401, 500…) lanza `ApiError` con el JSON del servicio en `error.cause` |
+| `REQUEST_TYPE.PRIVATE` = `'private-request'` | `publicRequestInterceptor` + `privateRequestInterceptor` | **Llamadas privadas, con sesión**: perfil, pedidos, datos de compra | `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. Sin sesión **no llama** (`ApiError` 401). Con un 401: `clearUserSession()` y redirige a `getPageRedirectPath()` |
 
 ```js
-export const publicInterceptor = {
-  name: 'public',
+export const REQUEST_TYPE = { PUBLIC: 'public-request', PRIVATE: 'private-request' };
+
+export const publicRequestInterceptor = {
+  name: REQUEST_TYPE.PUBLIC,
   request(config) {
     return { ...config, headers: { Accept: 'application/json', ...config.headers } };
   },
   async response(response, config) {
-    if (!response.ok) {                       // 4xx / 5xx → error
-      throw new ApiError(`HTTP ${response.status} ${response.statusText}`.trim(),
-        { status: response.status, url: config.url });
+    if (!response.ok) {                       // 4xx / 5xx → error con el JSON del servicio
+      throw new ApiError(`HTTP ${response.status}`, { status: response.status, url: config.url, cause: body });
     }
     if (response.status === 204) return null; // sin contenido
-    try {
-      return await response.json();           // OK → JSON
-    } catch (cause) {
-      throw new ApiError('Invalid JSON response', { status: response.status, url: config.url, cause });
-    }
+    return response.json();                   // OK → JSON (o ApiError si no es JSON)
   },
 };
+
+export const privateRequestInterceptor = {
+  name: REQUEST_TYPE.PRIVATE,
+  request(config) { … Authorization: getAuthorizationHeader() … },   // sin sesión → ApiError 401
+  error(error) { if (error.status === 401) { clearUserSession(); /* y redirige */ } throw error; },
+};
 ```
+
+El token sale de `scripts/foundations/session.js` (`getAuthorizationHeader()`), nunca del código.
 
 Y un **registro** para agregar más sin tocar el cliente:
 
 ```js
-const registry = new Map([['public', [publicInterceptor]]]);
+const registry = new Map([
+  [REQUEST_TYPE.PUBLIC, [publicRequestInterceptor]],
+  [REQUEST_TYPE.PRIVATE, [publicRequestInterceptor, privateRequestInterceptor]],
+]);
 export function registerInterceptor(name, chain) { registry.set(name, [].concat(chain)); }
-export function resolveInterceptors(interceptor = 'public') { … } // nombre, objeto o lista
+export function resolveInterceptors(interceptor = REQUEST_TYPE.PUBLIC) { … } // nombre, objeto o lista
 ```
-
-En el mismo archivo hay una **plantilla comentada** de `authInterceptor` (con
-`Authorization: Bearer …`) para cuando algún servicio requiera token (ver sección 7).
 
 ### Paso 4 · Crear el cliente HTTP (`scripts/api/http-client.js`)
 
@@ -187,7 +204,7 @@ export const post = (url, body, options = {}) => request(url, { ...options, meth
 
 Qué hace `request`, en orden:
 
-1. **Resuelve la cadena de interceptores** (`'public'` por defecto).
+1. **Resuelve la cadena de interceptores** (`REQUEST_TYPE.PUBLIC` por defecto).
 2. **Corre los `request()`** de cada interceptor, uno tras otro, sobre la configuración.
 3. **Arma la URL**: si empieza con `http` se usa tal cual; si es relativa (`/api/v1/...`) se completa
    con `API_BASE_URL`. Los `params` se agregan como query string con la API nativa `URL`.
@@ -196,7 +213,7 @@ Qué hace `request`, en orden:
 5. **Timeout**: `AbortSignal.timeout(8000)` cancela la petición a los 8 s. Si además se pasa un
    `signal` propio, se combinan con `AbortSignal.any` (cuando el navegador lo soporta).
 6. **`fetch`**: si falla la red o vence el tiempo → `ApiError('Network error' | 'Timeout after 8000ms')`.
-7. **Corre los `response()`**: el `publicInterceptor` valida el estado y devuelve el JSON.
+7. **Corre los `response()`**: el `publicRequestInterceptor` valida el estado y devuelve el JSON.
 8. **Si algo falló**, corre los `error()`; si ninguno recupera, el error llega al bloque.
 
 Opciones disponibles:
@@ -208,7 +225,7 @@ Opciones disponibles:
 | `body` | — | `{ sku: 'IPH-15' }` (se envía como JSON) |
 | `params` | — | `{ page: 2, limit: 8 }` → `?page=2&limit=8` |
 | `timeout` | `8000` ms | `15000` |
-| `interceptor` | `'public'` | `'auth'`, un objeto o una lista |
+| `interceptor` | `REQUEST_TYPE.PUBLIC` | `REQUEST_TYPE.PRIVATE`, un objeto o una lista |
 | `signal` | — | `AbortController().signal` para cancelar |
 
 ### Paso 5 · Crear la alerta flotante (`scripts/foundations/toast.js` + `styles/foundations/toast.css`)
@@ -389,9 +406,14 @@ o se descartan.
 | El servidor responde 404, 500… | `HTTP 404 Not Found` | `404`, `500`… |
 | Responde algo que no es JSON | `Invalid JSON response` | el HTTP recibido |
 | JSON sin la lista esperada | `Unexpected response: data.categories is not a list` | — |
+| Llamada privada sin sesión (no se llama al servicio) | `Session required` | `401` |
 
-En **todos** los casos el usuario ve lo mismo: alerta + mensaje de "no hay elementos". El detalle
-técnico queda en la consola del navegador (`[card-categories] Could not load …`).
+Con un error HTTP, `error.cause` trae el JSON de error del servicio (`{ status, errors }`) o `null`.
+En una llamada **privada**, un 401 además cierra la sesión y manda a `Redirect To` de la página.
+
+En las tarjetas (`card-*`) el usuario ve lo mismo en todos los casos: alerta + mensaje de "no hay
+elementos". El detalle técnico queda en la consola del navegador (`[card-categories] Could not load
+…`). El login, en cambio, muestra los mensajes que manda el servicio.
 
 ## 7. Cómo extenderlo
 
@@ -404,11 +426,35 @@ import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-
 // … mismo patrón del paso 7: endpoint del documento, fallback, esqueleto, try/catch
 ```
 
-### Servicio que requiere token
+### Servicio que requiere token (llamada privada)
 
-1. En `scripts/api/interceptors.js`, descomentar y adaptar `authInterceptor`.
-2. Registrarlo: `registerInterceptor('auth', [publicInterceptor, authInterceptor]);`
-3. En el bloque: `get(endpoint, { interceptor: 'auth' })`.
+En la tabla del bloque, la URL de un servicio privado va en la fila **`Private Endpoint`** (también
+se acepta `PrivateEndpoint`); `Endpoint` queda para los públicos, así los bloques actuales no
+cambian:
+
+| Fila | Llamada |
+|---|---|
+| `Endpoint` | `REQUEST_TYPE.PUBLIC` |
+| `Private Endpoint` | `REQUEST_TYPE.PRIVATE` (con Bearer) |
+
+```js
+import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
+const endpoint = readPrivateEndpoint(block);
+```
+
+```js
+import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
+const response = await post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE });
+```
+
+Ya está registrado: manda `Authorization: Bearer …` (y `security.auth.value` si el cuerpo lo trae),
+no llama sin sesión y con un 401 cierra la sesión y redirige. Ejemplo en
+`blocks/block-session-example` (fila `Private Endpoint`). Guía de sesiones:
+`documentation/08-sesiones.md`.
+
+El token lo guarda `loginUser(endpoint, body)` de `scripts/foundations/session.js` cuando el
+servicio de inicio de sesión responde 200; el bloque `login` solo la llama (ver
+`blocks/login/README.md`).
 
 > ⚠️ En AEM Edge Delivery todo el JavaScript es público. **Nunca** se debe escribir un token o API key
 > en el código ni en el documento; el token debe obtenerlo el usuario al iniciar sesión.
@@ -433,6 +479,18 @@ const response = await post(settings.searchEndpoint, buildSearchRequest(state, s
 if (controller.signal.aborted) return;          // llegó tarde: ya hay otra búsqueda
 ```
 
+Para un formulario cuyos errores trae el servicio (por ejemplo el inicio de sesión), los mensajes
+están en `error.cause` (las dos llamadas, pública y privada, lo guardan). El inicio de sesión no
+llama `post` directo: usa `loginUser`, que hace la petición y guarda la sesión:
+
+```js
+try {
+  await loginUser(settings.endpoint, body);   // scripts/foundations/session.js
+} catch (error) {
+  const serviceBody = error.cause;   // { status: { message }, errors: [{ field, message }] } o null
+}
+```
+
 > Un `POST` con JSON hace que el navegador mande antes una consulta `OPTIONS` (CORS). El mock de
 > Postman la contesta (`access-control-allow-headers: content-type,accept`); un servicio nuevo
 > también debe contestarla, o la llamada falla en el navegador aunque funcione con curl.
@@ -442,11 +500,12 @@ if (controller.signal.aborted) return;          // llegó tarde: ya hay otra bú
 | Archivo del template | ¿Se modificó para esta integración? | Detalle |
 |---|---|---|
 | `scripts/aem.js` | ❌ No | Se **usan** `readBlockConfig` y `loadCSS` |
-| `scripts/scripts.js` | ❌ No | — |
-| `head.html` | ❌ No (para esto) | Ya cargaba `styles/colors.css` desde la rama del header |
+| `scripts/scripts.js` | ❌ No | Tampoco para las sesiones: arrancan desde `session.js`, que carga `head.html` |
+| `head.html` | ✏️ Sí, para las sesiones | Una línea que carga `scripts/foundations/session.js` (no es parte de la integración de endpoints) |
 | `styles/styles.css` | ✅ Sí, 1 variable | `--z-index-toast: 900` |
 | `package.json` | ❌ No | No se instaló ninguna dependencia |
 | `fstab.yaml` / configuración | ❌ No | El endpoint vive en el documento, no en configuración |
 
-Todo lo demás es **nuevo** y vive en `scripts/api/`, `scripts/foundations/toast.js`, `scripts/foundations/block-utils.js`,
-`styles/foundations/toast.css`, `styles/colors.css` y los bloques `card-*`.
+Todo lo demás es **nuevo** y vive en `scripts/api/` (con su `README.md`), `scripts/foundations/`
+(`toast.js`, `block-utils.js`, `session.js`), `styles/foundations/toast.css`, `styles/colors.css` y
+los bloques que consumen servicios.

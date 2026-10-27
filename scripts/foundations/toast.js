@@ -46,12 +46,16 @@ function restack() {
  * @param {HTMLElement} toast
  */
 function removeToast(toast) {
-  if (!toast.isConnected || toast.classList.contains('is-leaving')) return;
+  if (!toast.isConnected || toast.classList.contains('is-leaving')) {
+    return;
+  }
   clearTimeout(toast.timer);
   toast.classList.add('is-leaving');
   toast.classList.remove('is-visible');
   const done = () => {
-    if (supportsPopover && toast.matches(':popover-open')) toast.hidePopover();
+    if (supportsPopover && toast.matches(':popover-open')) {
+      toast.hidePopover();
+    }
     toast.remove();
     toasts.splice(toasts.indexOf(toast), 1);
     restack();
@@ -83,7 +87,9 @@ export async function showToast(message, { duration = DEFAULT_DURATION, variant 
   }
   const urgent = variant === 'error' || variant === 'warning';
   toast.setAttribute('role', urgent ? 'alert' : 'status');
-  if (supportsPopover) toast.popover = 'manual';
+  if (supportsPopover) {
+    toast.popover = 'manual';
+  }
 
   const text = document.createElement('p');
   text.className = 'toast-novamovil-message';
@@ -98,14 +104,18 @@ export async function showToast(message, { duration = DEFAULT_DURATION, variant 
 
   toast.append(text, close);
   document.body.append(toast);
-  if (supportsPopover) toast.showPopover();
+  if (supportsPopover) {
+    toast.showPopover();
+  }
   toasts.push(toast);
   restack();
   requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('is-visible')));
 
   // auto-hide, paused while the user hovers or focuses the alert
   const startTimer = () => {
-    if (duration > 0) toast.timer = setTimeout(() => removeToast(toast), duration);
+    if (duration > 0) {
+      toast.timer = setTimeout(() => removeToast(toast), duration);
+    }
   };
   const stopTimer = () => clearTimeout(toast.timer);
   toast.addEventListener('pointerenter', stopTimer);

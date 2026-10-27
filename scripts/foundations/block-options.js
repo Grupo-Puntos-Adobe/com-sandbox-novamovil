@@ -1,12 +1,29 @@
 /*
- * Optional authoring rows for the NovaMóvil blocks (hero-novamovil, card-*). Opt-in:
- * a block calls applyBlockOptions(block) as the FIRST line of its decorate(); template
- * blocks (cards, columns, hero…) do not call it and are left untouched.
+ * Optional authoring rows for the NovaMóvil blocks. Opt-in: a block calls
+ * applyBlockOptions(block) as the FIRST line of its decorate(); template blocks (cards,
+ * columns, hero…) do not call it and are left untouched.
+ * The page Metadata rule (Session / Redirect To) is not here: it runs on every page, with or
+ * without blocks, from scripts/foundations/session.js (loaded first by head.html). This file
+ * only asks session.js about the session when a block has a Session row or session rows.
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
+ *   | Session   | true | false                       |  -> the block depends on the session
  *
- * Both rows are optional and can be anywhere in the table (usually right after the
+ * Session (the whole block and its wrapper; only "is there a session?", a guest counts as no
+ * session):
+ *   true  → shown only WITH a session (hidden without one)
+ *   false → shown only WITHOUT a session (e.g. an "Iniciar sesión" call to action)
+ *   empty or no row → always shown
+ * It never redirects (that is the page Metadata) and changes as soon as the session changes
+ * (scripts/foundations/session.js, styles/foundations/sessions.css).
+ *
+ * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
+ * state (filterRowsBySessionState of session.js); it works with any number of columns:
+ *   | Title     | Tus promociones, cliente | signed-in        |
+ *   | Benefit 1 | 🚚 | Envío gratis          | guest, signed-in |
+ *
+ * The rows are optional and can be anywhere in the table (usually right after the
  * block name). They are removed from the block, so the rest of its code never sees them.
  * Styles: declarations separated by ";" (a comma can be part of a CSS value, e.g.
  * rgba(0, 0, 0, .5) or a font list). Bare numbers get "px" (padding-left: 20 → 20px).
@@ -22,19 +39,33 @@
  *    padding: 0 20px, margin: 10px auto, font: italic bold 12px Arial…)
  *   (Classname acepta ";" de forma defensiva: si el autor lo escribe por error, no rompe)
  *
- * Called by: hero-novamovil, card-categories, card-featured, card-promotions (first line
- * of decorate). New NovaMóvil blocks must do the same.
+ * Called by: hero-novamovil, card-categories, card-featured, card-promotions, breadcrumb,
+ * product-catalog, product-detail, login, block-session-example (first line of decorate).
+ * New NovaMóvil blocks must do the same.
  *
  * Flow:
  *   applyBlockOptions(block)            default export, one call per block
+ *     ├─ page redirecting → the block is emptied, nothing else (isPageAccessAllowed of session.js)
+ *     ├─ session rows    → filterRowsBySessionState(block) (rows of other states are removed; the
+ *     │                     session is read only if the block has such rows)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
- *     └─ "Classname" row → applyAuthorClasses(block, text)
- *     (both rows are then removed)
+ *     ├─ "Classname" row → applyAuthorClasses(block, text)
+ *     └─ "Session" row   → showOnlyForSessionStates(wrapper, BLOCK_SESSION_STATES[value])
+ *     (the rows are then removed)
  *
  * Guide: documentation/06-styles-classname.md
  */
+import {
+  SESSION_STATES, filterRowsBySessionState, isPageAccessAllowed, showOnlyForSessionStates,
+} from './session.js';
 
 const STYLE_KEYS = ['styles', 'style'];
+const SESSION_KEYS = ['session'];
+// "Session" row of a block → who sees it (a guest counts as no session)
+const BLOCK_SESSION_STATES = {
+  true: [SESSION_STATES.SIGNED_IN],
+  false: [SESSION_STATES.SIGNED_OUT, SESSION_STATES.GUEST],
+};
 const CLASS_KEYS = [
   'classname',
   'classnames',
@@ -105,10 +136,18 @@ export function applyAuthorClasses(block, names) {
 }
 
 /**
- * Reads, applies and removes the optional Styles / Classname rows of a block.
+ * Applies the session rows, then reads, applies and removes the optional Styles / Classname /
+ * Session rows of a block.
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
+  // the page is redirecting (Metadata Session rule, session.js): nothing to show
+  if (!isPageAccessAllowed()) {
+    block.replaceChildren();
+    return;
+  }
+  // first: rows that depend on the session (| key | value… | signed-in |)
+  filterRowsBySessionState(block);
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     // name | value; extra cells are allowed only if empty (tables with 3+ columns)
@@ -129,6 +168,15 @@ export default function applyBlockOptions(block) {
       row.remove();
     } else if (CLASS_KEYS.includes(key)) {
       applyAuthorClasses(block, valueCell.textContent);
+      row.remove();
+    } else if (SESSION_KEYS.includes(key)) {
+      // true / false; the wrapper too, so a hidden block leaves no empty space
+      const states = BLOCK_SESSION_STATES[valueCell.textContent.trim().toLowerCase()];
+      if (states) {
+        const wrapper = block.parentElement?.classList.contains(`${block.classList[0]}-wrapper`)
+          ? block.parentElement : block;
+        showOnlyForSessionStates(wrapper, states);
+      }
       row.remove();
     }
   });

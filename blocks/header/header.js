@@ -90,8 +90,12 @@ function buildBrandLink(brandSource, prefix) {
   if (picture) {
     picture.classList.add(`${prefix}-logo`);
     const img = picture.querySelector('img');
-    if (img) img.classList.add(`${prefix}-image`);
-    if (img && !img.alt) img.alt = authoredName ? '' : BRAND_NAME;
+    if (img) {
+      img.classList.add(`${prefix}-image`);
+    }
+    if (img && !img.alt) {
+      img.alt = authoredName ? '' : BRAND_NAME;
+    }
     link.append(picture);
   } else {
     const logo = icon || document.createElement('span');
@@ -100,7 +104,9 @@ function buildBrandLink(brandSource, prefix) {
     link.append(logo);
   }
 
-  if (authoredName || !picture) link.append(buildBrandWordmark(authoredName, prefix));
+  if (authoredName || !picture) {
+    link.append(buildBrandWordmark(authoredName, prefix));
+  }
   return link;
 }
 
@@ -115,9 +121,13 @@ const TOOL_DEFAULTS = {
  * @param {KeyboardEvent} event
  */
 function closeOnEscapeKey(event) {
-  if (event.code !== 'Escape') return;
+  if (event.code !== 'Escape') {
+    return;
+  }
   const nav = document.getElementById('nav');
-  if (!nav) return;
+  if (!nav) {
+    return;
+  }
   // close the search field if open
   const search = nav.querySelector('.nav-search.is-open');
   if (search) {
@@ -145,7 +155,9 @@ function toggleMobileMenu(nav, forceExpanded = null) {
   // the CSS styles the state classes; aria-expanded stays for assistive technology
   nav.classList.toggle('is-open', !expanded);
   document.body.classList.toggle('has-header-menu-open', !expanded);
-  if (button) button.setAttribute('aria-label', expanded ? 'Abrir menú' : 'Cerrar menú');
+  if (button) {
+    button.setAttribute('aria-label', expanded ? 'Abrir menú' : 'Cerrar menú');
+  }
 }
 
 /**
@@ -197,7 +209,9 @@ function buildSearchBox() {
   });
   form.addEventListener('submit', (event) => {
     const value = form.querySelector('.nav-search-input').value.trim();
-    if (!value) event.preventDefault();
+    if (!value) {
+      event.preventDefault();
+    }
   });
   return search;
 }
@@ -245,18 +259,24 @@ export default async function decorate(block) {
   nav.id = 'nav';
   nav.className = 'nav-bar';
   if (fragment) {
-    while (fragment.firstElementChild) nav.append(fragment.firstElementChild);
+    while (fragment.firstElementChild) {
+      nav.append(fragment.firstElementChild);
+    }
   }
 
   const classes = ['brand', 'sections', 'tools'];
   classes.forEach((name, index) => {
     const section = nav.children[index];
-    if (section) section.classList.add(`nav-${name}`);
+    if (section) {
+      section.classList.add(`nav-${name}`);
+    }
   });
 
   // brand: logo + wordmark as one link, ensure it points home
   const brandSource = nav.querySelector('.nav-brand');
-  if (brandSource) brandSource.replaceChildren(buildBrandLink(brandSource, 'nav-brand'));
+  if (brandSource) {
+    brandSource.replaceChildren(buildBrandLink(brandSource, 'nav-brand'));
+  }
 
   // sections: primary navigation links, with class hooks (the CSS never styles tags)
   const navSections = nav.querySelector('.nav-sections');
@@ -265,7 +285,9 @@ export default async function decorate(block) {
     navSections.querySelectorAll('li').forEach((menuItem) => {
       menuItem.classList.add('nav-menu-item');
       // items may be plain text while the author has not linked them yet
-      if (menuItem.querySelector('a')) menuItem.classList.add('has-link');
+      if (menuItem.querySelector('a')) {
+        menuItem.classList.add('has-link');
+      }
     });
     navSections.querySelectorAll('a').forEach((link) => link.classList.add('nav-menu-link'));
   }
@@ -296,7 +318,9 @@ export default async function decorate(block) {
     icon: 'cart',
     badge: '2',
   }));
-  if (!navTools) nav.append(tools);
+  if (!navTools) {
+    nav.append(tools);
+  }
 
   // hamburger for mobile
   const hamburger = document.createElement('div');

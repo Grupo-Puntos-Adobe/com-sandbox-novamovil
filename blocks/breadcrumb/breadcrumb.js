@@ -5,11 +5,13 @@
  * "Breadcrumb" table. It only appears on the pages that add the table in Drive.
  *
  * Authoring: one row per level, every row optional and in any order:
- *   | Styles / Classname | …              (scripts/foundations/block-options.js)
+ *   | Styles / Classname / Session | …    (scripts/foundations/block-options.js)
  *   | Level 1            | [Inicio](/)    |   (a link: a level above the current page)
  *   | Level 2            | Celulares      |   (plain text: the current page)
  *   | Level 3            | {product}      |   (optional: filled at run time, see below)
- * Levels are shown by their number; an empty level is left out.
+ * Levels are shown by their number; an empty level is left out. A level can end with a session
+ * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
+ * levels of the current state before this block reads them.
  * "{product}" is replaced by the name another block sets with setCurrentPageName()
  * (scripts/foundations/page-context.js, e.g. product-detail with the product name); until
  * then that level is not painted.
@@ -78,7 +80,9 @@ function buildBreadcrumbItem(level, isCurrent) {
   } else {
     const text = document.createElement('div');
     text.className = isCurrent ? 'breadcrumb-current' : 'breadcrumb-text';
-    if (isCurrent) text.setAttribute('aria-current', 'page');
+    if (isCurrent) {
+      text.setAttribute('aria-current', 'page');
+    }
     text.textContent = level.text;
     item.append(text);
   }
@@ -124,7 +128,7 @@ function renderBreadcrumbTrail(block, levels, pageName) {
  * @param {Element} block The breadcrumb block element
  */
 export default function decorate(block) {
-  applyBlockOptions(block); // optional Styles / Classname rows, before reading the levels
+  applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const levels = readBreadcrumbLevels(block);
   renderBreadcrumbTrail(block, levels, getCurrentPageName());
   if (levels.some((level) => level.text.includes(PAGE_NAME_PLACEHOLDER))) {

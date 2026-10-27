@@ -52,7 +52,7 @@ Todos los estilos van dentro de `.footer-novamovil` y solo usan clases.
 - `footer-brand-accent` – Parte destacada del nombre ("Móvil")
 - `footer-tagline` – Frase debajo de la marca
 - `footer-column` – Cada columna de enlaces
-- `footer-column-title` – Título de la columna (el encabezado del documento)
+- `footer-column-title` – Título de la columna (el encabezado del documento, siempre como `h2` para que la página no salte niveles de encabezado)
 - `footer-links` – Lista de enlaces de la columna
 - `footer-link` – Cada enlace de la columna (`a`)
 - `footer-column-text` – Texto de la columna que no es título ni lista
@@ -74,7 +74,7 @@ footer
       │  │  │     └─ em.footer-brand-accent
       │  │  └─ p.footer-tagline
       │  └─ div.footer-column   × cada título
-      │     ├─ h3.footer-column-title
+      │     ├─ h2.footer-column-title
       │     └─ ul.footer-links
       │        └─ li > a.footer-link
       └─ div.footer-bottom
@@ -137,6 +137,15 @@ El documento en Drive permite al autor configurar:
 | Falta la sección 3 | No se pinta la parte de abajo |
 | El documento `footer` no existe | El footer sale vacío y la página carga normal |
 
+### Cómo probarlo
+
+1. **Móvil:** marca y frase, las 3 columnas y abajo copyright y medios de pago, todo en una columna.
+2. **Tablet o desktop:** marca + 3 columnas en una fila; abajo, copyright y medios de pago en una
+   fila.
+3. **Un título nuevo** en la sección 2 del documento `footer`: aparece otra columna.
+4. **Sin la sección 3:** no se pinta la parte de abajo.
+5. **Sin documento `footer`:** el footer sale vacío y la página carga normal.
+
 ### Vista previa
 
 Desktop:
@@ -151,6 +160,15 @@ Móvil:
 
 ![Vista Componente móvil](/documentation/readme/footer/component-mobile.png)
 
+### Sesión
+
+El footer **no cambia con la sesión**: siempre muestra lo mismo.
+
+- **No usa `block-options.js`**, así que no tiene fila `Session` ni filas por sesión: el documento
+  `footer` son secciones, títulos y listas, no una tabla.
+- Sus enlaces llevan a páginas normales; si alguna fuera privada, la protege esa página con su
+  Metadata (`Session` / `Redirect To`; ver `documentation/08-sesiones.md`).
+
 ### Archivos y dependencias
 
 - `footer.js` – Carga el documento `footer` y construye la marca, las columnas y la parte de abajo
@@ -161,3 +179,4 @@ Móvil:
 - Colores en `styles/colors.css` (`--footer-*`)
 - La marca se construye igual que en `blocks/header/header.js`: si cambias la marca, cámbiala en los
   dos bloques
+- Guía de sesiones (por si un enlace llevara a una página privada): `documentation/08-sesiones.md`
