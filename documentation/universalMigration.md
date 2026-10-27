@@ -43,6 +43,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `blocks/product-detail/` | Nuevo | Detalle de un celular |
 | `blocks/login/` | Nuevo | Inicio de sesión |
 | `blocks/block-session-example/` | Nuevo | Ejemplo de sesiones |
+| `blocks/account-profile/` | Nuevo | Mi cuenta: datos del usuario de la sesión |
 | `documentation/06-styles-classname.md` | Nuevo | Guía de Styles y Classname |
 | `documentation/07-integracion-endpoints.md` | Nuevo | Guía de servicios |
 | `documentation/08-sesiones.md` | Nuevo | Guía de sesiones |

@@ -1,0 +1,161 @@
+/*
+ * NovaMóvil account profile (block "Account Profile"): the data of the user of the session.
+ *
+ * Rules of this file (keep them when you edit it):
+ *   - Only classes, never tag selectors. account-profile.js builds the block and adds the
+ *     classes.
+ *   - Every rule lives inside .account-profile, at most 2 levels deep:
+ *       .account-profile > & .part > its state (&:hover) or its resolution.
+ *   - Sizes are written directly in px where they apply; each part keeps its resolutions right
+ *     below it (styles/foundations/breakpoints.css).
+ *   - Columns are NOT here: they come from the grid (styles/foundations/grid.css) through the
+ *     classes the JS puts on each column (label: col-24 col-md-8 col-lg-6).
+ *   - The only variables are colours (styles/colors.css, --account-profile-*).
+ *
+ * Sections: 1 layout · 2 card and header · 3 data · 4 sign out · 5 empty
+ */
+
+.account-profile {
+  /* ========================================================================
+     1. Layout
+     ======================================================================== */
+
+  padding-block: 24px;
+
+  @container style(--tablet-desktop: on) {
+    padding-block: 32px;
+  }
+
+  & .account-profile-title {
+    color: var(--account-profile-title);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.25;
+
+    @container style(--desktop: on) {
+      font-size: 24px;
+    }
+  }
+
+  /* ========================================================================
+     2. Card and header (avatar, name, verified badge)
+     ======================================================================== */
+
+  & .account-profile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    border: 1px solid var(--account-profile-border);
+    border-radius: 16px;
+    background: var(--account-profile-surface);
+
+    @container style(--tablet-desktop: on) {
+      padding: 28px;
+    }
+  }
+
+  & .account-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  & .account-profile-avatar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    inline-size: 56px;
+    block-size: 56px;
+    border-radius: 50%;
+    background: var(--account-profile-avatar-background);
+    color: var(--account-profile-avatar-text);
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  & .account-profile-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-inline-size: 0;
+  }
+
+  & .account-profile-name {
+    color: var(--account-profile-title);
+    font-size: 18px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  & .account-profile-badge {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--account-profile-badge-background);
+    color: var(--account-profile-badge-text);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* ========================================================================
+     3. Data (one row per field)
+     ======================================================================== */
+
+  & .account-profile-field {
+    padding-block: 12px;
+    border-block-start: 1px solid var(--account-profile-border);
+  }
+
+  & .account-profile-label {
+    color: var(--account-profile-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  & .account-profile-value {
+    color: var(--account-profile-text);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+
+  /* ========================================================================
+     4. Sign out
+     ======================================================================== */
+
+  & .account-profile-sign-out {
+    align-self: flex-start;
+    min-block-size: 44px;
+    padding: 10px 18px;
+    border: 1px solid var(--account-profile-border);
+    border-radius: 12px;
+    background: var(--account-profile-button-background);
+    color: var(--account-profile-button-text);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--account-profile-button-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--account-profile-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* ========================================================================
+     5. Empty (no session)
+     ======================================================================== */
+
+  & .account-profile-empty {
+    padding: 20px;
+    border: 1px dashed var(--account-profile-border);
+    border-radius: 16px;
+    background: var(--account-profile-surface);
+    color: var(--account-profile-muted);
+    font-size: 15px;
+  }
+}

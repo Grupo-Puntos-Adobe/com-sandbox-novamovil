@@ -32,12 +32,12 @@ bloques o no.
 
 | Archivo | Lo usan |
 |---|---|
-| `block-options.js` | `hero-novamovil`, `card-categories`, `card-featured`, `card-promotions`, `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example` (1.ª línea de `decorate`) |
+| `block-options.js` | `hero-novamovil`, `card-categories`, `card-featured`, `card-promotions`, `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `account-profile` (1.ª línea de `decorate`) |
 | `block-utils.js` | Los mismos bloques (menos `hero-novamovil`) |
 | `messages.js` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `empty-list-message` |
 | `toast.js` | `card-categories`, `card-featured`, `card-promotions`, `product-catalog` |
 | `page-context.js` | `product-detail` (pone el nombre) y `breadcrumb` (lo lee para `{product}`) |
-| `session.js` | `head.html` (arranque en todas las páginas), `block-options.js`, `login`, `block-session-example` y `scripts/api/interceptors.js` (llamada privada) |
+| `session.js` | `head.html` (arranque en todas las páginas), `block-options.js`, `login`, `block-session-example`, `account-profile` y `scripts/api/interceptors.js` (llamada privada) |
 
 ## block-options.js
 
@@ -106,7 +106,7 @@ const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.empt
 
 | Función | Bloques |
 |---|---|
-| `readTableCell` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example` |
+| `readTableCell` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `account-profile` |
 | `readEndpoint` | Disponible para bloques nuevos (los actuales leen su `Endpoint` con `readTableCell`) |
 | `readPrivateEndpoint` | `block-session-example` (y los bloques privados que vengan) |
 | `readRowTextOrDefault` | `card-*`, `product-catalog`, `product-detail` |
@@ -234,7 +234,8 @@ renderBySessionState(greeting, {
 
 - Una sesión vencida cuenta como "sin sesión": se borra sola.
 - Importar `session.js` en un bloque no vuelve a correr el arranque: ya corrió desde `head.html`.
-- Ejemplo de todo junto: `blocks/block-session-example/`.
+- Ejemplo de todo junto: `blocks/block-session-example/`. Un bloque real y sencillo que solo lee los
+  datos: `blocks/account-profile/` (Mi cuenta).
 
 ### Páginas (Metadata) y cómo arranca
 

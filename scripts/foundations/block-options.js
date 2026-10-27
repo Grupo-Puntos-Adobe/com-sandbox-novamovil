@@ -40,7 +40,8 @@
  *   (Classname acepta ";" de forma defensiva: si el autor lo escribe por error, no rompe)
  *
  * Called by: hero-novamovil, card-categories, card-featured, card-promotions, breadcrumb,
- * product-catalog, product-detail, login, block-session-example (first line of decorate).
+ * product-catalog, product-detail, login, block-session-example, account-profile (first line of
+ * decorate).
  * New NovaMóvil blocks must do the same.
  *
  * Flow:

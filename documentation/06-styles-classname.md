@@ -68,7 +68,7 @@ Resultado en la página (con `Styles` y `Classname`):
 | Bloque | ¿Tiene block-options? |
 |---|---|
 | `hero-novamovil`, `card-categories`, `card-featured`, `card-promotions` | ✅ Sí |
-| `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example` | ✅ Sí |
+| `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `account-profile` | ✅ Sí |
 | Bloques nuevos que creemos | ✅ Sí, agregando **una línea** (ver sección 7) |
 | `cards`, `columns`, `hero`, `fragment`, `widget` (template) | ❌ No. Una fila `Styles` o un estado en la última columna se ven como contenido normal |
 | `header`, `footer` | ❌ No |

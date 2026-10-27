@@ -25,6 +25,8 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 | Que el login **no** redirija (paso de compra) | Metadata del paso | Sin la fila `Session` |
 
 Ejemplo de todo junto: `blocks/block-session-example/` y la página `content-drive/ejemplo-sesion.docx`.
+Un bloque real y sencillo que lee los datos con `getSessionData()`: `blocks/account-profile/`
+(página `cuenta`).
 
 ## 2. Los tres estados
 
@@ -55,6 +57,7 @@ Cada regla mira la sesión a su manera:
 | `scripts/api/interceptors.js` | `REQUEST_TYPE.PUBLIC` y `REQUEST_TYPE.PRIVATE` (con Bearer) | Lleva la configuración de la API del proyecto |
 | `blocks/login/` | Inicio de sesión: arma el cuerpo y llama `loginUser(endpoint, body)` | Bloque del sitio |
 | `blocks/block-session-example/` | Ejemplo de todo | Ejemplo para copiar |
+| `blocks/account-profile/` | Mi cuenta: datos del usuario con un solo `getSessionData()` y "Cerrar sesión" | Bloque del sitio |
 
 `head.html` lleva **una sola línea** para la sesión, antes de `scripts.js`:
 
@@ -88,7 +91,7 @@ El navegador corre los módulos de `head.html` en orden, así que la regla se re
 llega a verse. Un módulo se carga una sola vez: cuando `block-options.js`, el login o los
 interceptores importan `session.js`, el arranque ya corrió y no se repite.
 
-Una página **sin** bloques del proyecto (solo texto, como `cuenta` o `perfil`) también revisa su
+Una página **sin** bloques del proyecto (solo texto, como `perfil`) también revisa su
 regla.
 
 ## 5. Páginas: todo se controla en el Metadata
@@ -294,7 +297,8 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 | 2b | `Session: true` sin `Redirect To` o vacía | Va al home `/` |
 | 2c | `Session: false` sin `Redirect To`, con sesión | Va al home `/` |
 | 2d | Sin la fila `Session` o vacía | La página se ve siempre |
-| 2e | Página `Session: true` solo con texto (`cuenta`, `perfil`), sin sesión | Va a `/login`: la regla corre aunque no haya bloques |
+| 2e | Página `Session: true` solo con texto (`perfil`), sin sesión | Va a `/login`: la regla corre aunque no haya bloques |
+| 2f | `cuenta` con sesión | El bloque `account-profile` muestra los datos del usuario; "Cerrar sesión" lleva a `/login` |
 | 3 | Página `Session: true` como invitado | Redirige (el invitado no cuenta como sesión) |
 | 4 | Cerrar sesión en una página `Session: true` | Redirige |
 | 5 | `/login` (`Session: false`) ya con sesión, o al iniciar sesión | Va a `/cuenta` |

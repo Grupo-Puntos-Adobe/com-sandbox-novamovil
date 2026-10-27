@@ -231,6 +231,21 @@
   --block-session-example-signed-out-background: var(--color-gray-100);
   --block-session-example-signed-out-text: var(--color-gray-700);
 
+  /* account-profile ("Mi cuenta": the data of the user of the session) */
+  --account-profile-title: var(--heading-color);
+  --account-profile-text: var(--text-color);
+  --account-profile-muted: var(--color-gray-500);
+  --account-profile-surface: var(--color-white);
+  --account-profile-border: var(--border-color);
+  --account-profile-accent: var(--color-primary);
+  --account-profile-avatar-background: var(--gradient-brand);
+  --account-profile-avatar-text: var(--color-white);
+  --account-profile-badge-background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
+  --account-profile-badge-text: color-mix(in srgb, var(--color-success) 60%, var(--color-gray-900)); /* 4.5:1 */
+  --account-profile-button-background: color-mix(in srgb, var(--color-primary) 3%, var(--color-gray-100));
+  --account-profile-button-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-gray-100));
+  --account-profile-button-text: var(--color-gray-900);
+
   /* empty-list-message (shared "nothing to show" message of the card blocks) */
   --empty-list-message-border: var(--color-gray-200);
   --empty-list-message-background: var(--color-white);
