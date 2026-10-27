@@ -38,7 +38,7 @@ Solo sale en las páginas que agregan la tabla **Breadcrumb** en Drive. Cada niv
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - **Por sesión** (como todo bloque NovaMóvil): la fila `Session` (`true` / `false`) muestra u oculta
   la ruta completa, y un nivel puede llevar el estado en la **última columna** (`Level 2 | Mi cuenta
-  | signed-in`) para cambiar según quién visita
+  | login`) para cambiar según quién visita
 - Accesible: navegación con nombre ("Ruta de navegación"), lista de niveles y la página actual con
   `aria-current="page"`
 
@@ -104,16 +104,16 @@ las filas son opcionales y pueden ir en cualquier orden.
       no llega el valor, el nivel y su `›` esperan ocultos. Sin marca, el nivel muestra su texto
       tal cual. Para otro nivel dinámico se usa otra variable declarada (`{store.breadcrumb.brand}`);
       una que no está declarada en `STORE` se queda como texto
-    - **Nivel por sesión (opcional):** una tercera columna con `signed-in`, `signed-out` o `guest`
+    - **Nivel por sesión (opcional):** una tercera columna con `login`, `logout` o `guest`
       (combinables con coma). Ese nivel solo existe para ese estado; sin la columna lo ven todos.
       Varios niveles con el mismo número y distinto estado se alternan:
 
       | Breadcrumb | | |
       |---|---|---|
       | Level 1 | [Inicio](/) | |
-      | Level 2 | Visitante | signed-out |
+      | Level 2 | Visitante | logout |
       | Level 2 | Invitado | guest |
-      | Level 2 | Mi cuenta | signed-in |
+      | Level 2 | Mi cuenta | login |
 
       Ver `documentation/08-sesiones.md`.
 
@@ -147,7 +147,7 @@ La tabla en Drive permite al autor configurar:
 1. Una página con `Level 1 | Inicio` y `Level 2 | Celulares`: se ve "Inicio › Celulares".
 2. En el detalle (`Level 3 | {store.breadcrumb.name}`): al cargar el celular sale "Inicio › Celulares › Apple
    iPhone 15 Pro".
-3. Con `Level 2 | Visitante | signed-out` y `Level 2 | Mi cuenta | signed-in`: sin sesión
+3. Con `Level 2 | Visitante | logout` y `Level 2 | Mi cuenta | login`: sin sesión
    "Inicio › Visitante"; al iniciar sesión (la página se recarga) "Inicio › Mi cuenta".
 4. Con `Session | true`: la ruta no se ve sin sesión y aparece al iniciar sesión.
 

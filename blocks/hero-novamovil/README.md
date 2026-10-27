@@ -116,22 +116,22 @@ por las estadísticas; en las demás filas el valor ocupa las 2 últimas columna
 > **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
 > **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
-> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> columna** (`login`, `logout`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
 >
 > En esta tabla de 3 columnas, el estado va siempre en la **última**: en una fila con el valor en
-> celdas combinadas, se separan y el estado va en la 3.ª (`| Title | Hola, *cliente* | signed-in |`);
-> una `Stat N` con estado necesita una 4.ª columna (`| Stat 1 | 4.9M+ | Usuarios | signed-in |`).
+> celdas combinadas, se separan y el estado va en la 3.ª (`| Title | Hola, *cliente* | login |`);
+> una `Stat N` con estado necesita una 4.ª columna (`| Stat 1 | 4.9M+ | Usuarios | login |`).
 >
 > Ejemplo: otro título y otro botón secundario (`Button 2`) para quien inició sesión:
 >
 > | Hero Novamovil | | |
 > |---|---|---|
-> | Title | El futuro de la *conectividad* está aquí | signed-out |
-> | Title | Hola de nuevo, tu próximo *celular* te espera | signed-in |
+> | Title | El futuro de la *conectividad* está aquí | logout |
+> | Title | Hola de nuevo, tu próximo *celular* te espera | login |
 > | Button 1 | [Ver celulares](/celulares) | |
-> | Button 2 | [Iniciar sesión](/login) | signed-out |
-> | Button 2 | [Mi cuenta](/cuenta) | signed-in |
+> | Button 2 | [Iniciar sesión](/login) | logout |
+> | Button 2 | [Mi cuenta](/cuenta) | login |
 
 3. **`Tag`**
     - **Tipo:** Texto corto
@@ -182,7 +182,7 @@ La tabla en Drive permite al autor configurar:
 | Caso | Qué se ve |
 |---|---|
 | Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
-| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
+| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Las filas están en otro orden | Se muestran en el orden del diseño: etiqueta, título, descripción, botones, estadísticas e imagen |
 | Una fila no existe o está vacía | Ese elemento no aparece |
 | Palabra en *cursiva* en `Title` | Sale con el degradado de marca |

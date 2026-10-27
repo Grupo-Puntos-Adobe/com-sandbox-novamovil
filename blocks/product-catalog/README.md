@@ -208,15 +208,15 @@ opcionales y pueden ir en cualquier orden.
 > **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
 > **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
-> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> columna** (`login`, `logout`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
 >
 > Ejemplo: un título distinto para quien inició sesión, sin tocar el código del catálogo:
 >
 > | Product Catalog | | |
 > |---|---|---|
-> | Title | Celulares | signed-out |
-> | Title | Celulares para ti | signed-in |
+> | Title | Celulares | logout |
+> | Title | Celulares para ti | login |
 
 2. **`Title`**
     - **Tipo:** Texto
@@ -421,7 +421,7 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 | Caso | Qué se ve |
 |---|---|
 | Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
-| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
+| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Cargando | Caja de filtros y 4 tarjetas grises |
 | Marcar o desmarcar una casilla, cambiar el orden o soltar el deslizador | Nueva búsqueda desde la página 1 |
 | Cambiar de página | Nueva búsqueda de esa página; la barra superior vuelve a quedar a la vista |
@@ -450,7 +450,7 @@ Lo que se recibe: `pagination` y la lista de celulares en `data` (también acept
 4. **Servicio con error:** una sola alerta y el aviso de lista vacía (📱).
 5. **Móvil:** la barra de **Filtros** y **Ordenar por** se queda fija al bajar; **Filtros** abre el
    panel.
-6. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+6. **Por sesión:** con dos filas `Title` (`logout` / `login`), el título cambia al iniciar
    sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
 
 ### Vista previa

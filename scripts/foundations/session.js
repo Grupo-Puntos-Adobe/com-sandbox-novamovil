@@ -18,11 +18,13 @@
  *                 To, or /), isAccessAllowed (false while the page is being redirected) }
  *     isEditingToolPreview   true in the editing tool preview (no redirects, all visible)
  *
- * The USER lives in the store (scripts/foundations/store.js), and only there: this file fills
- * store "user" when the session starts (login or guest) and on EVERY page start (the store is
- * lost when you leave a page, the session is kept in sessionStorage), and empties it when the
- * session ends. Blocks read it with store.get('user') or the Drive mark {store.user.firstName};
- * never the token.
+ * The store (scripts/foundations/store.js) has the session for the blocks, and this file is the
+ * only one that writes it: on EVERY page start (the store is lost when you leave a page, the
+ * session is kept in sessionStorage), on login, guest, logout and expiry.
+ *   store "session"  { isSession (only with a login), isGuest, token ('Bearer …', private) }
+ *                    block-options.js (Session row, session rows) and the private interceptor
+ *   store "user"     the user of the login or the guest; empty without a session. Blocks read it
+ *                    with store.get('user') or the Drive mark {store.user.firstName}. No token.
  *
  *   await loginUser(endpoint, requestBody)  POST to the login service; with a 200 the session is
  *                                           stored (sessionStorage) and the page is told
@@ -44,10 +46,9 @@
  *   No Session row (or empty): public page, nothing is checked. The guest is not a session.
  *   Read it with getSessionData().page. Safe paths: toSafeSitePath() of block-utils.js.
  *
- * Used by other foundations, not by blocks: filterRowsBySessionState(block) (block-options.js:
- * rows whose LAST cell is a state; each row that stays keeps its states in row.dataset.session,
- * e.g. "signed-in guest"), getAuthorizationHeader() and clearUserSession()
- * (scripts/api/interceptors.js: private calls; a block logs out with logoutUser()).
+ * Used by other foundations, not by blocks: isNavigationPending() (block-options.js: the reload
+ * of the session rows waits for goToPage) and clearUserSession() (scripts/api/interceptors.js on
+ * a 401; a block logs out with logoutUser()).
  *
  * In the editing tool preview (EDITOR_PREVIEW_HOSTS) pages never redirect and sessions.css
  * shows everything, so private pages can be edited.
@@ -99,7 +100,6 @@ let expiryTimer;
 let pageAccessAllowed = true;
 // a navigation started by goToPage(): the session rows reload must not cancel it
 let navigationPending = false;
-let reloadOnChangeRegistered = false;
 
 // ---------------------------------------------------------------------------------------------
 // Storage (internal)
@@ -272,16 +272,6 @@ export function getSessionData() {
 }
 
 /**
- * Value for the Authorization header ('Bearer mock-access-token-abc123'), or '' without session.
- * For the private interceptor (scripts/api/interceptors.js).
- * @returns {string}
- */
-export function getAuthorizationHeader() {
-  const session = readLoginSession();
-  return session ? `${session.tokenType || 'Bearer'} ${session.accessToken}` : '';
-}
-
-/**
  * Puts the state class on <html> (sessions.css) and signs out when the token expires.
  */
 function updateSessionStateClass() {
@@ -301,12 +291,19 @@ function updateSessionStateClass() {
 }
 
 /**
- * Fills store "user" with the user of the session (login or guest), or empties it without a
- * session. The only place that writes the user of the store. Never the token.
+ * Fills the store from the saved session: "session" (isSession only with a login, isGuest,
+ * token for private calls) and "user" (of the login or the guest; emptied without a session).
+ * The only place that writes these two slices. The token never goes into "user".
  */
-function syncUserStore() {
+function syncSessionStore() {
   const login = readLoginSession();
-  const session = login || readGuestSession();
+  const guest = login ? null : readGuestSession();
+  store.set('session', {
+    isSession: Boolean(login),
+    isGuest: Boolean(guest),
+    token: login ? `${login.tokenType || 'Bearer'} ${login.accessToken}` : '',
+  });
+  const session = login || guest;
   const stored = session?.user;
   if (!stored) {
     store.reset('user');
@@ -326,12 +323,12 @@ function syncUserStore() {
 }
 
 /**
- * Updates the state class and the user of the store, and tells the blocks of the page
- * (detail = getSessionData()).
+ * Updates the state class and the "session" and "user" slices of the store, and tells the
+ * blocks of the page (detail = getSessionData()).
  */
 function notifySessionChange() {
   updateSessionStateClass();
-  syncUserStore();
+  syncSessionStore();
   document.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail: getSessionData() }));
 }
 
@@ -505,14 +502,14 @@ function loadSessionStyles() {
 
 /**
  * Start of the session on every page (runs once, when this file loads from head.html, before
- * scripts.js): loads sessions.css, fills the user of the store from the saved session, puts the
- * state class on <html> and runs the page Metadata rule. A page without a Session row is not
- * touched; a page that redirects is hidden.
+ * scripts.js): loads sessions.css, fills the "session" and "user" slices of the store from the
+ * saved session, puts the state class on <html> and runs the page Metadata rule. A page without
+ * a Session row is not touched; a page that redirects is hidden.
  */
 function initPageSession() {
   loadSessionStyles();
-  // the store starts empty on every page: fill its user again from the saved session
-  syncUserStore();
+  // the store starts empty on every page: fill it again from the saved session
+  syncSessionStore();
   pageAccessAllowed = applyPageSessionRule();
   if (!pageAccessAllowed) {
     document.body.style.visibility = 'hidden';
@@ -538,66 +535,12 @@ function parseSessionStateList(text) {
 }
 
 /**
- * True when every word of the text is a state ('signed-in, guest'); false for anything else.
- * @param {string} text
+ * True while goToPage() is leaving the page: a reload asked by the session rows of a block
+ * (block-options.js) must not cancel that navigation.
  * @returns {boolean}
  */
-function isSessionStateText(text) {
-  const words = String(text || '').toLowerCase().split(/[\s,;]+/).filter(Boolean);
-  const valid = Object.values(SESSION_STATES);
-  return words.length > 0 && words.every((word) => valid.includes(word));
-}
-
-/**
- * Reloads the page once when the session changes (pages whose tables have session rows),
- * unless a navigation already started (goToPage).
- */
-function reloadPageOnSessionChange() {
-  if (reloadOnChangeRegistered) {
-    return;
-  }
-  reloadOnChangeRegistered = true;
-  document.addEventListener(SESSION_CHANGE_EVENT, () => {
-    setTimeout(() => {
-      if (!navigationPending) {
-        window.location.reload();
-      }
-    }, 0);
-  });
-}
-
-/**
- * Session rows of a block table (block-options.js): a row of 2 or more cells whose LAST cell is
- * made only of states (| … | signed-in |, | … | signed-out, guest |) stays only for those
- * states, whatever the block and its number of columns. The state cell is removed from the rows
- * that stay (row.dataset.session keeps it, e.g. "signed-in guest"), so the block reads its
- * table as always. Rows with an empty last cell, a single cell, or a last cell that is not only
- * states are not touched (always shown). The session is read only when the block has such rows.
- * @param {Element} block
- * @returns {boolean} true when the block had session rows
- */
-export function filterRowsBySessionState(block) {
-  let state = null;
-  let hasSessionRows = false;
-  [...block.querySelectorAll(':scope > div')].forEach((row) => {
-    const cells = [...row.children];
-    const lastCell = cells[cells.length - 1];
-    if (cells.length < 2 || !isSessionStateText(lastCell.textContent)) {
-      return;
-    }
-    hasSessionRows = true;
-    state = state || readSessionState();
-    const states = parseSessionStateList(lastCell.textContent);
-    lastCell.remove();
-    row.dataset.session = states.join(' ');
-    if (!states.includes(state)) {
-      row.remove();
-    }
-  });
-  if (hasSessionRows) {
-    reloadPageOnSessionChange();
-  }
-  return hasSessionRows;
+export function isNavigationPending() {
+  return navigationPending;
 }
 
 /**

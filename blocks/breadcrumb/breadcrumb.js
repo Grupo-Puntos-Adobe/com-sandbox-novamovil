@@ -10,7 +10,7 @@
  *   | Level 2            | Celulares      |   (plain text: the current page)
  *   | Level 3            | {store.breadcrumb.name} | (optional: filled at run time, below)
  * Levels are shown by their number; an empty level is left out. A level can end with a session
- * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
+ * state in a 3rd cell (| Level 2 | Mi cuenta | login |): block-options.js keeps only the
  * levels of the current state before this block reads them.
  * Dynamic levels: a level can have a mark of the store ({store.breadcrumb.name},
  * {store.breadcrumb.brand}), alone or with text ("Detalle de {store.breadcrumb.name}"). This

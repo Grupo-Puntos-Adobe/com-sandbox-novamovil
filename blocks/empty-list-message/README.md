@@ -107,8 +107,8 @@ quién visita. Por ejemplo, en `card-promotions`:
 
 | Card Promotions | | |
 |---|---|---|
-| Empty List Title | Inicia sesión para ver tus promociones | signed-out |
-| Empty List Title | Por ahora no hay promociones para ti | signed-in |
+| Empty List Title | Inicia sesión para ver tus promociones | logout |
+| Empty List Title | Por ahora no hay promociones para ti | login |
 
 El aviso no sabe nada de sesiones: solo pinta lo que le llega. Ver `documentation/08-sesiones.md`.
 
@@ -131,7 +131,7 @@ El aviso no sabe nada de sesiones: solo pinta lo que le llega. Ver `documentatio
 3. **Con las filas vacías:** el aviso usa los genéricos ("Por ahora no hay elementos disponibles",
    📭).
 4. **En el detalle:** `/celulares/?id=NO_VALIDO!` muestra "Este celular no existe" con 📱.
-5. **Por sesión:** con dos filas `Empty List Title` (`signed-out` / `signed-in`) el texto del aviso
+5. **Por sesión:** con dos filas `Empty List Title` (`logout` / `login`) el texto del aviso
    cambia al iniciar sesión.
 
 ### Vista previa

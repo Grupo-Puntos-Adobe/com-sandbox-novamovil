@@ -417,12 +417,18 @@ Normalmente nadie las escribe a mano:
 
 | Desde | Cómo |
 |---|---|
-| Drive, un bloque completo | Fila `Session` del bloque: `true` → `session-only-signed-in`; `false` → `session-only-signed-out session-only-guest` (lo hace `block-options.js` en el bloque y su `-wrapper`) |
+| Drive, un bloque completo | Fila `Session` del bloque: `block-options.js` lee `store` `session.isSession` y pone `session-hidden` en el `-wrapper` mientras no le toca (`true` → se ve solo con sesión; `false` → solo sin sesión, también el invitado). Cambia al instante con el store; en el panel de edición se ve todo |
 | JavaScript de un bloque | `showOnlyForSessionStates(element, 'signed-in, guest')` de `scripts/foundations/session.js` |
 | HTML o CSS propio | Escribir las clases directamente |
 
-> Las **filas** por sesión (estado en la última columna de una tabla) no usan estas clases: esas
-> filas se quitan antes de que el bloque lea su tabla (`filterRowsBySessionState`).
+> Las **filas** por sesión (`login`, `logout`, `guest` en la última columna de una tabla) no usan
+> estas clases: esas filas se quitan antes de que el bloque lea su tabla (`filterRowsBySessionState`
+> de `block-options.js`, con el estado del store).
+
+```css
+/* fila Session de un bloque (block-options.js); en el panel de edición se ve */
+:root:not(.session-state-editor) .session-hidden { display: none !important; }
+```
 
 ### Seguridad
 

@@ -9,7 +9,7 @@
  * Promo Link ("/promociones/{id}"), Alert Duration, Alert Color, Error Response Message,
  * Empty List Title, Empty List Description, Empty List Icon.
  * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
- * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
+ * whole block, and a session state in the last cell of any row (login | logout | guest).
  * Defaults only for messages and the alert:
  *   - Title and Promo Link have no default: without text in the table there is no title,
  *     and a promotion without its own path has no link (the card is not clickable).

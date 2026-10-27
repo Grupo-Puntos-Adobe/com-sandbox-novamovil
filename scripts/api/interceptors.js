@@ -22,9 +22,8 @@
 
 // session.js loads the client on demand for loginUser(): not a cycle when the page loads
 // eslint-disable-next-line import/no-cycle
-import {
-  clearUserSession, getAuthorizationHeader, getSessionData, goToPage,
-} from '../foundations/session.js';
+import { clearUserSession, getSessionData, goToPage } from '../foundations/session.js';
+import { store } from '../foundations/store.js';
 
 /**
  * Normalised error thrown by the HTTP client, whatever went wrong
@@ -91,7 +90,8 @@ export const publicRequestInterceptor = {
 
 /**
  * Calls that need a session (goes after publicRequestInterceptor):
- *   - request: Authorization: Bearer … and, when the body has security.auth (the NovaMóvil
+ *   - request: Authorization: Bearer … (store session.token, filled by session.js and emptied
+ *     when the session ends or expires) and, when the body has security.auth (the NovaMóvil
  *     request format), the same value there. Without session the service is not called.
  *   - error 401 (no session, expired or rejected token): clearUserSession() and go to the session
  *     redirect page (getSessionData().page.redirectPath, never in the editing tool preview).
@@ -99,7 +99,7 @@ export const publicRequestInterceptor = {
 export const privateRequestInterceptor = {
   name: REQUEST_TYPE.PRIVATE,
   request(config) {
-    const token = getAuthorizationHeader();
+    const token = store.get('session.token');
     if (!token) {
       throw new ApiError('Session required', { status: 401, url: config.url });
     }

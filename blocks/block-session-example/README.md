@@ -38,7 +38,7 @@ solo lo pone en práctica.
   texto por estado; con sesión saluda con el nombre usando la marca del store
   `{store.user.firstName}` en Drive (se llena sola)
 - **Filas por sesión, igual que en cualquier bloque NovaMóvil:** el estado va en la **última
-  columna** (`Item | texto | signed-in`), tenga la fila 2 o más columnas; las filas de otros estados
+  columna** (`Item | texto | login`), tenga la fila 2 o más columnas; las filas de otros estados
   se quitan antes de pintar y la página se recarga al cambiar la sesión
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
@@ -151,8 +151,8 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
 
 5. **`Item`** (las que quieras)
     - **Tipo:** `Item` | texto | estado (opcional, en la **última columna**)
-    - **Descripción:** Una tarjeta. Estado: `signed-in`, `guest`, `signed-out` o combinados
-      (`signed-in, guest`); sin estado (o vacía) la ven todos. Es la regla general: **cualquier
+    - **Descripción:** Una tarjeta. Estado: `login`, `guest`, `logout` o combinados
+      (`login, guest`); sin estado (o vacía) la ven todos. Es la regla general: **cualquier
       fila de cualquier bloque NovaMóvil** puede terminar con un estado, sin importar cuántas
       columnas tenga; si la celda trae otro texto además del estado, no cuenta
     - **Por defecto:** ninguna
@@ -210,9 +210,9 @@ La tabla en Drive permite al autor configurar:
 
 | Caso | Qué se ve |
 |---|---|
-| Sin sesión | Etiqueta "Sin sesión", tarjetas `signed-out` y para todos, botones "Iniciar sesión" y "Continuar como invitado" |
-| Clic en "Continuar como invitado" | La página se recarga: etiqueta "Invitado", "Tus datos" del invitado (Tipo Invitado, Nombre Invitado, ID `guest`, Verificado No, ID de sesión `guest-…`), tarjetas `guest` y `signed-in, guest`, botón "Cerrar sesión" |
-| Con sesión | "Hola, Cliente…", "Tus datos" (Tipo Con sesión, Cliente Nova, correo, teléfono, `USR-10001`, Verificado Sí, `SES-LOGIN-001`), tarjetas `signed-in` y `signed-in, guest`, botón "Cerrar sesión" y llamada privada |
+| Sin sesión | Etiqueta "Sin sesión", tarjetas `logout` y para todos, botones "Iniciar sesión" y "Continuar como invitado" |
+| Clic en "Continuar como invitado" | La página se recarga: etiqueta "Invitado", "Tus datos" del invitado (Tipo Invitado, Nombre Invitado, ID `guest`, Verificado No, ID de sesión `guest-…`), tarjetas `guest` y `login, guest`, botón "Cerrar sesión" |
+| Con sesión | "Hola, Cliente…", "Tus datos" (Tipo Con sesión, Cliente Nova, correo, teléfono, `USR-10001`, Verificado Sí, `SES-LOGIN-001`), tarjetas `login` y `login, guest`, botón "Cerrar sesión" y llamada privada |
 | Sin sesión y fila `User Title` | "Tus datos" no se ve |
 | Clic en "Cerrar sesión" | La página se recarga y vuelve a "Sin sesión" |
 | Fila `Session` = `true` | El bloque entero solo se ve con sesión (la página no redirige) |
@@ -230,10 +230,10 @@ Página `/ejemplo-sesion`:
 1. **Sin sesión:** se ven "Ejemplo de sesión" y "Solo sin sesión"; tarjetas "Inicia sesión para ver
    tus cupones" y "Envío gratis…". "Solo con sesión" está oculto.
 2. **"Continuar como invitado":** la página se recarga; etiqueta "Invitado", "Tus datos" con el
-   perfil de invitado y tarjetas `guest` y `signed-in, guest`. "Solo sin sesión" se sigue viendo
+   perfil de invitado y tarjetas `guest` y `login, guest`. "Solo sin sesión" se sigue viendo
    (el invitado cuenta como sin sesión).
 3. **Iniciar sesión** en `/login` y volver a `/ejemplo-sesion`: "Hola, Cliente…", "Tus datos" con
-   el usuario del login, tarjetas `signed-in` y `signed-in, guest`, "Solo con sesión" visible y
+   el usuario del login, tarjetas `login` y `login, guest`, "Solo con sesión" visible y
    "Solo sin sesión" oculto.
 4. **"Cerrar sesión":** vuelve al paso 1.
 5. **Llamada privada:** poner en `Private Endpoint` la URL de un servicio y, con sesión, revisar en
@@ -269,7 +269,7 @@ import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
 // 0) en Drive, sin código (cualquier bloque que llame applyBlockOptions):
 //    | Session | true |                          ← el bloque entero solo con sesión
-//    | Title   | Tus promociones | signed-in |   ← esta fila solo con sesión (última columna)
+//    | Title   | Tus promociones | login |       ← esta fila solo con sesión (última columna)
 
 // 1) el estado de la sesión con un solo llamado
 const { state, isSignedIn, isGuest } = getSessionData();

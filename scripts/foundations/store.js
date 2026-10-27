@@ -16,6 +16,9 @@
  * Blocks only call store.set(); to show a value as text they need nothing. Marks without
  * "store." ({id}, {count}) belong to the block that paints them: the store never touches them.
  *
+ * Private variables (PRIVATE_VARIABLES, e.g. session.token) are read from JS only: a mark of
+ * one is never filled. Never log the store or its "session" slice: it carries the token.
+ *
  * The store starts empty on every page (each navigation loads the page again).
  * Something that is not declared in STORE is rejected with an error and nothing is stored.
  * Guide: scripts/foundations/README.md (store.js).
@@ -41,12 +44,24 @@ const STORE = {
     sessionId: '',
     isGuest: false, // true for "Continuar como invitado" (userId 'guest', firstName 'Invitado')
   },
+  // who is visiting, filled ONLY by session.js (every page start, login, guest, logout, expiry):
+  //   login → isSession true · guest → isGuest true · nobody → both false
+  session: {
+    isSession: false, // true ONLY with a real login (it has a token); a guest is not a session
+    isGuest: false, // true after "Continuar como invitado"
+    token: '', // 'Bearer …' for the Authorization header of private calls; '' without a login
+  },
 };
+
+// variables that a Drive mark can never show (the mark stays hidden and a warning is logged)
+const PRIVATE_VARIABLES = ['session.token'];
 
 const state = structuredClone(STORE);
 const listeners = new Set();
 // text nodes of the page with marks → their authored text (with the marks)
 const boundTexts = new Map();
+// marks of private variables already reported in the console (once each)
+const warnedMarks = new Set();
 // a mark of the store in a text: {store.slice.variable} (marks without "store." belong to the
 // block that paints them, like {id} or {count}, and are never touched)
 const MARK = /\{store\.([a-z][\w-]*)\.([a-z][\w-]*)\}/gi;
@@ -91,6 +106,15 @@ function fillMarks(text) {
   const filled = text.replace(MARK, (mark, slice, variable) => {
     if (!STORE[slice] || !(variable in STORE[slice])) {
       return mark; // not a variable of the store: plain text
+    }
+    if (PRIVATE_VARIABLES.includes(`${slice}.${variable}`)) {
+      if (!warnedMarks.has(mark)) {
+        warnedMarks.add(mark);
+        // eslint-disable-next-line no-console
+        console.warn(`store: ${mark} is private and is never shown on the page`);
+      }
+      missing = true;
+      return '';
     }
     const value = state[slice][variable];
     missing = missing || value === '' || value === null || value === undefined;

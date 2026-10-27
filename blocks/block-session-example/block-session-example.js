@@ -14,7 +14,7 @@
  *      Every part that changes with the session does the same, in one line each:
  *        paint(getSessionData());
  *        document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
- *   3. Items by session, the generic way of ANY block: "Item | text | signed-in" (the state in
+ *   3. Items by session, the generic way of ANY block: "Item | text | login" (the state in
  *      the LAST cell). filterRowsBySessionState() (block-options.js) removes the rows of other
  *      states
  *      before this block reads its table, and the page reloads when the session changes.
@@ -32,7 +32,7 @@
  * Login Link (link), Guest Button Text, Sign Out Text, User Title, Private Title,
  * Private Endpoint.
  * Content rows have no default: without text that part is not painted. Any row can end with a
- * state cell (signed-in | guest | signed-out, combined with commas); without it, everybody.
+ * state cell (login | guest | logout, combined with commas); without it, everybody.
  *
  * Flow:
  *   decorate(block)
