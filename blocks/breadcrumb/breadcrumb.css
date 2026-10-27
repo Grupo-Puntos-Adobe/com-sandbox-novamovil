@@ -35,10 +35,16 @@
     align-items: center;
     gap: 8px;
 
-    &:not(:last-child)::after {
+    /* "›" before every level but the first, so a hidden level takes its "›" with it */
+    &:not(:first-child)::before {
       content: '›';
       color: var(--breadcrumb-separator);
       font-size: 14px;
+    }
+
+    /* a level whose {breadcrumb.…} mark still has no value (store.js) waits hidden */
+    &:has([data-store-pending]) {
+      display: none;
     }
   }
 

@@ -12,19 +12,17 @@
  * Levels are shown by their number; an empty level is left out. A level can end with a session
  * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
  * levels of the current state before this block reads them.
- * Dynamic levels: a mark {breadcrumb.value} is replaced by the value of the breadcrumb slice of
- * the store (scripts/foundations/store.js) that another block sets — today {breadcrumb.name},
- * set by product-detail with store.set('breadcrumb.name', …). A level can mix text and marks
- * ("Detalle de {breadcrumb.name}") and several levels can be dynamic ({breadcrumb.brand},
- * {breadcrumb.name}); a level waits for its values (not painted until they arrive). Without
- * marks the level is shown as authored.
+ * Dynamic levels: a level can have a mark of the store ({breadcrumb.name}, {breadcrumb.brand}),
+ * alone or with text ("Detalle de {breadcrumb.name}"). This block paints it as plain text; the
+ * store (scripts/foundations/store.js, loaded by head.html) fills it with the value another
+ * block sets — today product-detail with store.set('breadcrumb.name', …) — and keeps the level
+ * hidden until it arrives (breadcrumb.css). Without marks the level is shown as authored.
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)       scripts/foundations/block-options.js
  *     ├─ readBreadcrumbLevels(block)    "Level N" rows sorted by N → [{ text, href }]
- *     └─ renderBreadcrumbTrail(block, levels)   store.fill(); again on
- *                                               store.subscribe('breadcrumb')
+ *     └─ renderBreadcrumbTrail(block, levels)   marks painted as text (the store fills them)
  *          └─ buildBreadcrumbItem() per level (the last one is the current page)
  *
  * Markup is all divs except the links (<a>). Classes used by breadcrumb.css:
@@ -35,7 +33,6 @@
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { getSafeHref } from '../../scripts/foundations/block-utils.js';
-import { store } from '../../scripts/foundations/store.js';
 
 // accessible name of the navigation landmark (only read by screen readers)
 const LANDMARK_LABEL = 'Ruta de navegación';
@@ -92,19 +89,13 @@ function buildBreadcrumbItem(level, isCurrent) {
 }
 
 /**
- * Paints the trail; the dynamic levels take their values (store.fill), or are left out while a
- * value is missing.
+ * Paints the trail. The marks of the dynamic levels ({breadcrumb.name}) are painted as text: the
+ * store fills them and keeps the level hidden until its value arrives.
  * @param {Element} block
  * @param {{text: string, href: string|null}[]} levels readBreadcrumbLevels() result
  */
 function renderBreadcrumbTrail(block, levels) {
-  const visibleLevels = levels
-    .map((level) => ({
-      ...level,
-      text: store.fill(level.text),
-    }))
-    .filter((level) => level.text);
-  if (!visibleLevels.length) {
+  if (!levels.length) {
     block.replaceChildren();
     return;
   }
@@ -112,8 +103,8 @@ function renderBreadcrumbTrail(block, levels) {
   const list = document.createElement('div');
   list.className = 'breadcrumb-list';
   list.setAttribute('role', 'list');
-  const lastIndex = visibleLevels.length - 1;
-  list.append(...visibleLevels.map(
+  const lastIndex = levels.length - 1;
+  list.append(...levels.map(
     (level, index) => buildBreadcrumbItem(level, index === lastIndex),
   ));
 
@@ -131,11 +122,5 @@ function renderBreadcrumbTrail(block, levels) {
  */
 export default function decorate(block) {
   applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
-  const levels = readBreadcrumbLevels(block);
-  if (levels.some((level) => store.has(level.text))) {
-    // painted now and again every time a value of the breadcrumb slice arrives or changes
-    store.subscribe('breadcrumb', () => renderBreadcrumbTrail(block, levels));
-  } else {
-    renderBreadcrumbTrail(block, levels);
-  }
+  renderBreadcrumbTrail(block, readBreadcrumbLevels(block));
 }

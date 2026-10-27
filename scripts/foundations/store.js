@@ -1,276 +1,233 @@
 /*
- * Store (foundations): global variables that any block can write, read at any time and listen
- * to, like a simple Redux (one state, get / set / subscribe) without reducers.
+ * Store (foundations): global variables for the whole site, like the state of React.
+ * head.html loads this file on every page, so it is always listening.
  *
- * STRICT: only the variables declared in STORE_SLICES below exist. A slice, a variable or a
- * type that is not declared is rejected with an error and nothing is stored, so the store never
- * fills up with values nobody planned. To store something new, declare it first.
+ *   STORE                          the ONLY variables that exist (declare new ones here first)
+ *   store.get('breadcrumb.name')   one variable · store.get('breadcrumb') a slice · store.get() all
+ *   store.set('breadcrumb.name', 'iPhone')   one · store.set('breadcrumb', { name, brand }) several
+ *   store.reset('breadcrumb.name') one · store.reset('breadcrumb') a slice · store.reset() all
+ *   store.subscribe('breadcrumb', (breadcrumb) => …)   optional: logic when a value changes
  *
- * Each slice ("apartado") declares its variables (name → initial value; the initial value also
- * fixes the type) and how long it lives:
- *   keep: 'page'      in memory: built on the page where it is used, gone when you navigate
- *   keep: 'session'   in sessionStorage: still there on the next pages, gone when the tab
- *                     closes (loaded again when a page opens)
+ * Automatic text: any text of the page with a mark {slice.variable} ("Detalle de
+ * {breadcrumb.name}"), in any block or authored text, is filled with its value and filled again
+ * on every set / reset. While a mark has no value its element waits hidden
+ * (data-store-pending, styles/foundations/store.css). Only text is changed, never HTML, and
+ * the texts of a block are filled once the block finished loading (it reads its table first).
+ * Blocks only call store.set(); to show a value as text they need nothing.
  *
- *   import { store } from '../../scripts/foundations/store.js';
- *
- *   store.set('breadcrumb.name', 'Apple iPhone 15 Pro')   one variable
- *   store.set('breadcrumb', { name, brand })               several variables of a slice at once
- *   store.get('breadcrumb.name')                           'Apple iPhone 15 Pro'
- *   store.get('breadcrumb')                                { name: 'Apple iPhone 15 Pro', … }
- *   store.reset('breadcrumb')                              back to the initial values
- *   store.getState()                                       the whole state (a copy)
- *   store.subscribe('breadcrumb', (breadcrumb) => …)       called now and on every change of
- *                                                          the slice (or of one variable:
- *                                                          'breadcrumb.name'); returns a
- *                                                          function to stop listening
- *   store.fill('Detalle de {breadcrumb.name}')             Drive text with marks {slice.variable}:
- *                                                          'Detalle de Apple iPhone 15 Pro';
- *                                                          without marks the text comes back as
- *                                                          authored; a mark without its value
- *                                                          yet → ''
- *   store.has('Detalle de {breadcrumb.name}')              true when the text has a mark
- *
- * Today: product-detail sets breadcrumb.name when the product arrives; breadcrumb shows it in
- * its "{breadcrumb.name}" level. Guide: scripts/foundations/README.md (store.js).
+ * The store starts empty on every page (each navigation loads the page again).
+ * Something that is not declared in STORE is rejected with an error and nothing is stored.
+ * Guide: scripts/foundations/README.md (store.js).
  */
 
-// the ONLY variables of the store, by slice: how long the slice lives and each variable with its
-// initial value (which also fixes its type)
-const STORE_SLICES = {
-  // Breadcrumb: one variable per dynamic level, built on the page of the breadcrumb
+// the variables of the site, by slice, with their initial (empty) values
+const STORE = {
   breadcrumb: {
-    keep: 'page',
-    variables: {
-      name: '', // {breadcrumb.name}: the current page (e.g. the product)
-      brand: '', // {breadcrumb.brand}: e.g. "Apple"
-    },
+    name: '', // {breadcrumb.name}: the current page (e.g. the product)
+    brand: '', // {breadcrumb.brand}: e.g. "Apple"
   },
 };
-const STORAGE_PREFIX = 'novamovil-store:';
-// a mark of a Drive text: {slice.variable}
-const MARK = /\{([a-z][\w-]*)\.([a-z][\w-]*)\}/gi;
 
-const state = {};
+const state = structuredClone(STORE);
 const listeners = new Set();
+// text nodes of the page with marks → their authored text (with the marks)
+const boundTexts = new Map();
+const MARK = /\{([a-z][\w-]*)\.([a-z][\w-]*)\}/gi;
+const STORE_CSS_URL = new URL('../../styles/foundations/store.css', import.meta.url).href;
 
 /**
- * Copy of a value, so nobody changes the state without set().
- * @param {*} value
- * @returns {*}
- */
-const copy = (value) => (value && typeof value === 'object' ? structuredClone(value) : value);
-
-/**
- * The declared variables of a slice ({ name: '', brand: '' }).
- * @param {string} slice
- * @returns {Object}
- */
-const variablesOf = (slice) => STORE_SLICES[slice].variables;
-
-/**
- * The slice and the variable of a path, after checking that both are declared:
- * 'breadcrumb.name' → ['breadcrumb', 'name'].
- * @param {string} path
- * @returns {[string, string|undefined]}
- * @throws {Error} The slice or the variable is not declared in STORE_SLICES
+ * Slice and variable of a path, after checking that they are declared in STORE.
+ * @param {string} [path] 'breadcrumb.name', 'breadcrumb' or nothing (the whole store)
+ * @returns {[string|undefined, string|undefined]}
  */
 function readPath(path) {
-  const [slice, variable, ...rest] = String(path || '').split('.');
-  if (!STORE_SLICES[slice]) {
-    throw new Error(`store: "${slice}" is not a slice (declared: ${Object.keys(STORE_SLICES).join(', ')})`);
+  if (!path) {
+    return [undefined, undefined];
   }
-  if (rest.length || (variable !== undefined && !(variable in variablesOf(slice)))) {
-    const declared = Object.keys(variablesOf(slice)).join(', ');
-    throw new Error(`store: "${path}" is not declared (variables of ${slice}: ${declared})`);
+  const [slice, variable, ...rest] = path.split('.');
+  if (!STORE[slice] || rest.length || (variable !== undefined && !(variable in STORE[slice]))) {
+    throw new Error(`store: "${path}" does not exist (declared: ${JSON.stringify(STORE)})`);
   }
   return [slice, variable];
 }
 
 /**
- * Checks that a value has the type of the declared variable (its initial value).
- * @param {string} slice
- * @param {string} variable
- * @param {*} value
- * @throws {Error} Different type
- */
-function checkType(slice, variable, value) {
-  const expected = typeof variablesOf(slice)[variable];
-  const received = typeof value;
-  if (received !== expected) {
-    throw new Error(`store: ${slice}.${variable} is a ${expected}, not a ${received}`);
-  }
-}
-
-/**
- * Saves a slice that lives for the session (sessionStorage; never throws).
- * @param {string} slice
- */
-function persistSlice(slice) {
-  if (STORE_SLICES[slice].keep !== 'session') {
-    return;
-  }
-  try {
-    sessionStorage.setItem(`${STORAGE_PREFIX}${slice}`, JSON.stringify(state[slice]));
-  } catch {
-    // storage blocked: the slice lives only on this page
-  }
-}
-
-/**
- * Initial state: the initial values of every slice and, for the session slices, the saved
- * values of the declared variables only (anything else that was saved is ignored).
- */
-function loadState() {
-  Object.entries(STORE_SLICES).forEach(([slice, { keep, variables }]) => {
-    state[slice] = copy(variables);
-    if (keep !== 'session') {
-      return;
-    }
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(`${STORAGE_PREFIX}${slice}`) || 'null');
-      Object.keys(variables).forEach((variable) => {
-        if (saved && typeof saved[variable] === typeof variables[variable]) {
-          state[slice][variable] = saved[variable];
-        }
-      });
-    } catch {
-      // nothing saved or storage blocked: the initial values
-    }
-  });
-}
-
-/**
- * A declared variable, or a whole slice.
- * @param {string} path 'breadcrumb.name' or 'breadcrumb'
- * @returns {*} A copy
- * @throws {Error} Not declared
+ * One variable, a slice or the whole store (a copy).
+ * @param {string} [path]
+ * @returns {*}
  */
 function get(path) {
   const [slice, variable] = readPath(path);
-  return copy(variable === undefined ? state[slice] : state[slice][variable]);
+  if (!slice) {
+    return structuredClone(state);
+  }
+  return structuredClone(variable ? state[slice][variable] : state[slice]);
 }
 
 /**
- * Tells the subscribers that a slice (or one of its variables) changed.
- * @param {string} slice
- * @param {string} [variable]
+ * The text with its marks replaced by their values; '' while a mark has no value.
+ * @param {string} text
+ * @returns {string}
  */
-function notify(slice, variable) {
-  persistSlice(slice);
-  listeners.forEach((listener) => listener(slice, variable));
+function fillMarks(text) {
+  let missing = false;
+  const filled = text.replace(MARK, (mark, slice, variable) => {
+    if (!STORE[slice] || !(variable in STORE[slice])) {
+      return mark; // not a variable of the store: plain text
+    }
+    const value = state[slice][variable];
+    missing = missing || value === '' || value === null || value === undefined;
+    return String(value);
+  });
+  return missing ? '' : filled;
 }
 
 /**
- * Changes a declared variable, or several variables of a slice at once. Everything is checked
- * first: if one variable is not declared or has another type, nothing is stored.
- * @param {string} path 'breadcrumb.name' (one variable) or 'breadcrumb' (an object with some of
- *   its variables)
- * @param {*} value
- * @throws {Error} Not declared, or a different type
+ * Paints every text of the page that has marks, and tells the subscribers.
+ */
+function update() {
+  boundTexts.forEach((template, node) => {
+    if (!node.isConnected) {
+      boundTexts.delete(node);
+      return;
+    }
+    const filled = fillMarks(template);
+    node.nodeValue = filled;
+    node.parentElement?.toggleAttribute('data-store-pending', !filled);
+  });
+  listeners.forEach((listener) => listener());
+}
+
+/**
+ * Changes one variable or several variables of a slice. Everything is checked first.
+ * @param {string} path 'breadcrumb.name' or 'breadcrumb'
+ * @param {*} value A value, or an object with variables of the slice
  */
 function set(path, value) {
   const [slice, variable] = readPath(path);
-  const clean = (item) => (typeof item === 'string' ? item.trim() : copy(item));
-  if (variable !== undefined) {
-    checkType(slice, variable, value);
-    state[slice][variable] = clean(value);
-    notify(slice, variable);
-    return;
+  if (!slice) {
+    throw new Error('store: set() needs a slice or a variable, e.g. set(\'breadcrumb.name\', …)');
   }
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(`store: set('${slice}', …) needs an object with variables of ${slice}`);
-  }
-  Object.entries(value).forEach(([name, item]) => {
-    readPath(`${slice}.${name}`);
-    checkType(slice, name, item);
-  });
-  Object.entries(value).forEach(([name, item]) => {
-    state[slice][name] = clean(item);
-  });
-  notify(slice);
+  const changes = variable ? { [variable]: value } : value;
+  Object.keys(changes || {}).forEach((name) => readPath(`${slice}.${name}`));
+  Object.assign(state[slice], changes);
+  update();
 }
 
 /**
- * Puts a slice back to its initial values (e.g. when the session ends).
- * @param {string} slice
+ * Back to the initial values of STORE: one variable, a slice or the whole store.
+ * @param {string} [path]
  */
-function reset(slice) {
-  const [name] = readPath(slice);
-  state[name] = copy(variablesOf(name));
-  notify(name);
+function reset(path) {
+  const [slice, variable] = readPath(path);
+  if (!slice) {
+    Object.assign(state, structuredClone(STORE));
+  } else if (variable) {
+    state[slice][variable] = STORE[slice][variable];
+  } else {
+    state[slice] = structuredClone(STORE[slice]);
+  }
+  update();
 }
 
 /**
- * Calls callback with the value of path now and every time it changes.
- * @param {string} path 'breadcrumb' (any variable of the slice) or 'breadcrumb.name' (only that
- *   one)
- * @param {Function} callback Receives get(path)
+ * Optional: calls callback with get(path) now and every time the store changes.
+ * @param {string|Function} path 'breadcrumb.name', 'breadcrumb', or the callback (whole store)
+ * @param {Function} [callback]
  * @returns {Function} Stops listening
  */
 function subscribe(path, callback) {
-  const [slice, variable] = readPath(path);
-  const listener = (changedSlice, changedVariable) => {
-    const sameSlice = changedSlice === slice;
-    const sameVariable = variable === undefined || changedVariable === undefined
-      || changedVariable === variable;
-    if (sameSlice && sameVariable) {
-      callback(get(path));
+  const [watched, onChange] = typeof path === 'function' ? [undefined, path] : [path, callback];
+  readPath(watched);
+  let last = JSON.stringify(get(watched));
+  const listener = () => {
+    const now = JSON.stringify(get(watched));
+    if (now !== last) {
+      last = now;
+      onChange(get(watched));
     }
   };
   listeners.add(listener);
-  callback(get(path));
+  onChange(get(watched));
   return () => listeners.delete(listener);
 }
 
 /**
- * The marks of a text that are declared variables ({breadcrumb.name}); any other {…} is text.
- * @param {string} text
- * @returns {{mark: string, path: string}[]}
- */
-function readMarks(text) {
-  return [...String(text || '').matchAll(MARK)]
-    .filter(([, slice, variable]) => STORE_SLICES[slice] && variable in variablesOf(slice))
-    .map(([mark, slice, variable]) => ({ mark, path: `${slice}.${variable}` }));
-}
-
-/**
- * True when a Drive text has a mark of a declared variable ({breadcrumb.name}…).
- * @param {string} text
+ * True when a text can be filled now: outside blocks, or inside a block that finished loading.
+ * The table of a block is never touched before the block reads it (a block that is still a
+ * raw table — main > div > div.blockname — or still loading waits).
+ * @param {Text} node
  * @returns {boolean}
  */
-function has(text) {
-  return readMarks(text).length > 0;
-}
-
-/**
- * The Drive text with every mark replaced by its value.
- * @param {string} text Authored text, e.g. 'Detalle de {breadcrumb.name}'
- * @returns {string} '' while a mark has no value yet; the text as authored without marks
- */
-function fill(text) {
-  const marks = readMarks(text);
-  const values = marks.map(({ path }) => get(path));
-  if (values.some((value) => value === '' || value === null || value === undefined)) {
-    return '';
+function isReady(node) {
+  const element = node.parentElement;
+  if (!element) {
+    return false;
   }
-  return marks
-    .reduce((result, { mark }, index) => result.split(mark).join(String(values[index])), String(text || ''))
-    .trim();
+  const block = element.closest('.block');
+  if (block) {
+    return block.dataset.blockStatus === 'loaded';
+  }
+  return !element.closest('main > div > div[class]:not([class$="-wrapper"])');
 }
 
 /**
- * The whole state (a copy).
- * @returns {Object}
+ * Finds the texts with marks inside an element and paints them.
+ * @param {Node} root
  */
-function getState() {
-  return copy(state);
+function bindTexts(root) {
+  const texts = [];
+  if (root.nodeType === Node.TEXT_NODE) {
+    texts.push(root);
+  } else {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      texts.push(node);
+    }
+  }
+  let changed = false;
+  texts.forEach((node) => {
+    MARK.lastIndex = 0;
+    if (!boundTexts.has(node) && MARK.test(node.nodeValue) && isReady(node)) {
+      boundTexts.set(node, node.nodeValue);
+      changed = true;
+    }
+  });
+  if (changed) {
+    update();
+  }
 }
 
-loadState();
+/**
+ * Start: the CSS of the waiting marks, the texts already on the page and every new one.
+ */
+function initStore() {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = STORE_CSS_URL;
+  document.head.append(link);
+  bindTexts(document.body);
+  new MutationObserver((mutations) => {
+    mutations.forEach(({ type, target, addedNodes }) => {
+      // a block that finished loading: its texts can be filled now
+      if (type === 'attributes' && target.dataset.blockStatus === 'loaded') {
+        bindTexts(target);
+      }
+      addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+          bindTexts(node);
+        }
+      });
+    });
+  }).observe(document.body, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['data-block-status'],
+  });
+}
+
+initStore();
 
 export const store = {
-  get, set, reset, subscribe, getState, fill, has,
+  get, set, reset, subscribe,
 };
 
 export default store;

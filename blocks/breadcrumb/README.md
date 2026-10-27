@@ -97,12 +97,13 @@ las filas son opcionales y pueden ir en cualquier orden.
     - **Descripción:** Cada nivel de la ruta, ordenado por número. El último es la página actual y,
       aunque tenga enlace, se muestra como texto
     - **Por defecto:** ninguno. Un nivel vacío no se pinta
-    - **Nivel dinámico:** una marca del apartado `breadcrumb` del store (`{breadcrumb.name}`) se
-      cambia por el valor que pone otro bloque con `store.set('breadcrumb.name', …)`
-      (`store.fill` de `scripts/foundations/store.js`). Puede ir sola o con texto
-      (`Detalle de {breadcrumb.name}`); sin marca, el nivel muestra su texto tal cual. Para otro
-      nivel dinámico se usa otra variable declarada del apartado (`{breadcrumb.brand}`); una que
-      no está declarada en `store.js` se queda como texto
+    - **Nivel dinámico:** una marca del store (`{breadcrumb.name}`) se cambia sola por el valor
+      que pone otro bloque con `store.set('breadcrumb.name', …)`: el store
+      (`scripts/foundations/store.js`, cargado por `head.html`) llena el texto, y este bloque no
+      tiene código para eso. Puede ir sola o con texto (`Detalle de {breadcrumb.name}`); mientras
+      no llega el valor, el nivel y su `›` esperan ocultos. Sin marca, el nivel muestra su texto
+      tal cual. Para otro nivel dinámico se usa otra variable declarada (`{breadcrumb.brand}`);
+      una que no está declarada en `STORE` se queda como texto
     - **Nivel por sesión (opcional):** una tercera columna con `signed-in`, `signed-out` o `guest`
       (combinables con coma). Ese nivel solo existe para ese estado; sin la columna lo ven todos.
       Varios niveles con el mismo número y distinto estado se alternan:
@@ -171,8 +172,8 @@ Móvil:
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y niveles por
   sesión (última columna)
 - `scripts/foundations/block-utils.js` – `getSafeHref` para validar los enlaces
-- `scripts/foundations/store.js` – Apartado `breadcrumb` del store: `store.fill`, `store.has` y
-  `store.subscribe` para las marcas como `{breadcrumb.name}`
+- `scripts/foundations/store.js` – Llena solo las marcas como `{breadcrumb.name}` (el bloque no lo
+  importa)
 - Colores en `styles/colors.css` (`--breadcrumb-*`)
 - Se usa en: la página Celulares (junto con `blocks/product-catalog/`) y la de detalle (junto con
   `blocks/product-detail/`)

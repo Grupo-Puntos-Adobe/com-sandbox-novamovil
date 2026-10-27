@@ -6,7 +6,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 |---|---|---|
 | `.hlxignore` | Modificado | No publicar docs ni archivos internos |
 | `404.html` | Modificado | Carga breakpoints, grid y colores |
-| `head.html` | Modificado | Carga breakpoints, grid, colores y `session.js` (antes de `scripts.js`) |
+| `head.html` | Modificado | Carga breakpoints, grid, colores, `session.js` y `store.js` (antes de `scripts.js`) |
 | `AGENTS.md` | Modificado | Reglas del proyecto |
 | `package.json` | Modificado | Lint de CSS en subcarpetas |
 | `styles/styles.css` | Modificado | Fuente, tamaños y capas (z-index) |
@@ -27,7 +27,8 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `scripts/foundations/block-utils.js` | Nuevo | Ayudas compartidas de los bloques |
 | `scripts/foundations/messages.js` | Nuevo | Mensajes, idioma y moneda |
 | `scripts/foundations/toast.js` | Nuevo | Alerta flotante |
-| `scripts/foundations/store.js` | Nuevo | Store global (variables compartidas entre bloques, por apartados de página o de sesión) |
+| `scripts/foundations/store.js` | Nuevo | Variables globales del sitio; llena solas las marcas `{apartado.variable}` |
+| `styles/foundations/store.css` | Nuevo | Oculta lo que espera un valor del store |
 | `scripts/foundations/session.js` | Nuevo | Único archivo de sesión: arranca en todas las páginas, reglas de página y mostrar u ocultar por sesión |
 | `scripts/foundations/README.md` | Nuevo | Guía de los JS portables |
 | `blocks/header/` | Modificado | Header NovaMóvil |
