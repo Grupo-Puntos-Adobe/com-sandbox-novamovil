@@ -31,7 +31,7 @@ Ejemplo de todo junto: `blocks/block-session-example/` y la página `content-dri
 | Estado | Cuándo | Clase en `<html>` |
 |---|---|---|
 | `signed-in` | Hay sesión vigente (login 200 y no venció `expiresIn`) | `session-state-signed-in` |
-| `guest` | Eligió "Continuar como invitado": se guarda un perfil de invitado con la misma forma que una sesión real (usuario `guest`, nombre "Invitado"), sin token | `session-state-guest` |
+| `guest` | Eligió "Continuar como invitado": se guarda un usuario `guest` ("Invitado") con los mismos campos que uno real, sin token | `session-state-guest` |
 | `signed-out` | Ninguno (o la sesión venció) | `session-state-signed-out` |
 
 En el panel de edición la clase es `session-state-editor`: se ve todo y no hay redirecciones, para
@@ -78,7 +78,7 @@ head.html carga session.js (antes de scripts.js; una vez por página)
             └─ si no acepta al visitante: oculta la página y redirige
 scripts.js → decorate(block) de cada bloque
   └─ applyBlockOptions(block)            (solo bloques del proyecto)
-       ├─ la página redirige → el bloque se vacía (isPageAccessAllowed)
+       ├─ la página redirige → el bloque se vacía (getSessionData().page.isAccessAllowed)
        ├─ filterRowsBySessionState(block)  → solo si hay filas con estado en la última columna
        └─ Styles / Classname / Session (true | false)
 ```
@@ -179,15 +179,19 @@ Cualquier bloque que use `applyBlockOptions` acepta la fila **`Session`**:
 
 ```js
 import {
-  SESSION_STATES, renderBySessionState, showOnlyForSessionStates,
+  SESSION_STATES, getSessionData, renderBySessionState, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
+
+// todo lo de la sesión con un solo llamado
+const { state, isSignedIn, isGuest, user, fields } = getSessionData();
 
 // se oculta / aparece sola al cambiar la sesión (clases de sessions.css)
 showOnlyForSessionStates(couponCard, 'signed-in, guest');
 
-// contenido que depende del usuario: se vuelve a pintar al cambiar la sesión
+// contenido que depende del usuario: cada vista recibe getSessionData() y se vuelve a pintar
+// al cambiar la sesión
 renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: (session) => `Hola, ${session.user.firstName}`,
+  [SESSION_STATES.SIGNED_IN]: ({ user }) => `Hola, ${user.firstName}`,
   [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
   // sin vista de guest usa la de signed-out
 });
@@ -245,41 +249,39 @@ Guía de la API: `documentation/07-integracion-endpoints.md`.
 
 ## 9. Funciones de `session.js`
 
-| Parte | Función | Para |
-|---|---|---|
-| 1 | `loginUser(endpoint, requestBody)` | Inicia sesión: hace el `POST` y guarda la sesión en `sessionStorage` (lanza `ApiError` si falla) |
-| 1 | `logoutUser()` | Cierra sesión: por ahora solo borra `sessionStorage` (es `async`, lista para un servicio) |
-| 1 | `clearUserSession()` / `saveUserSession(data)` | Solo borrar / solo guardar lo de la sesión |
-| 1 | `continueAsGuest()` | Modo invitado: guarda la sesión del invitado (`GUEST_USER`, sin token) |
-| 1 | `getGuestSession()` / `getCurrentSession()` / `getCurrentUser()` | Sesión del invitado; la sesión de quien visita (real o invitado); sus datos de usuario |
-| 1 | `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
-| 1 | `getUserSession()` / `hasActiveSession()` / `getAuthorizationHeader()` | Usuario, ¿hay sesión?, `'Bearer …'` |
-| 0 | `initPageSession()` | Arranque en cada página: `sessions.css`, estado y `applyPageSessionRule()` (corre sola al cargar `session.js`) |
-| 0 | `isPageAccessAllowed()` | `false` mientras la página redirige (los bloques no pintan nada) |
-| 2 | `applyPageSessionRule()` | Regla de la página (la llama `initPageSession()` una vez) |
-| 2 | `requireActiveSession({ allowGuest, redirectTo })` | La regla `true` para un bloque que debe redirigir por sí mismo |
-| 2 | `requireNoActiveSession({ redirectTo })` | La regla `false` |
-| 2 | `readPageSessionRule()` | El valor de `Session` de la página: `'true'`, `'false'` o `''` |
-| 2 | `getPageRedirectPath()` / `toSafeSitePath()` | Ruta de `Redirect To` (o `/`) y rutas validadas (solo del sitio) |
-| 2 | `goToPage(path, { replace })` | Ir a otra página sin que la recarga de las filas la cancele |
-| 2 | `isEditingToolPreview()` | `true` en el panel de edición (no redirige, se ve todo) |
-| 3 | `filterRowsBySessionState(block)` | Filas con el estado en la última columna (la llama `applyBlockOptions`) |
-| 3 | `showOnlyForSessionStates(el, states)` / `parseSessionStateList(text)` | Mostrar u ocultar |
-| 3 | `renderBySessionState(target, views)` | Pintar según el estado |
-
-**¿Hay sesión activa?** Cualquier bloque, con o sin `block-options`, lo puede revisar:
+**Leer la sesión: un solo llamado.** Cualquier bloque, con o sin `block-options`:
 
 ```js
-import { hasActiveSession, getUserSession, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
+import { getSessionData } from '../../scripts/foundations/session.js';
 
-if (hasActiveSession()) {            // true / false; el invitado da false
-  const { user } = getUserSession(); // e.g. user.firstName
-}
-document.addEventListener(SESSION_CHANGE_EVENT, () => { /* check again */ });
+const { state, isSignedIn, isGuest, user, fields } = getSessionData();
 ```
 
-Una sesión vencida cuenta como "sin sesión". Si también importa el invitado, usar
-`getSessionState()`.
+| Propiedad | Qué trae | Sin sesión |
+|---|---|---|
+| `state` | `'signed-in'`, `'guest'` o `'signed-out'` | `'signed-out'` |
+| `isSignedIn` | `true` con sesión real (el invitado no cuenta) | `false` |
+| `isGuest` | `true` como invitado | `false` |
+| `user` | `{ userId, firstName, lastName, fullName, email, phone, verified, sessionId }` (con sesión o del invitado: `guest`, "Invitado") | `null` |
+| `fields` | Los datos ya armados para pintar, sin vacíos: `[{ key: 'fullName', value: 'Cliente Nova' }, …]` (keys de `USER_FIELDS`) | `[]` |
+
+El bloque controla qué pintar y con qué texto: solo le pone su etiqueta a cada `key`. Nunca trae
+el token. Una sesión vencida cuenta como "sin sesión".
+
+| Para | Función |
+|---|---|
+| Iniciar sesión | `loginUser(endpoint, requestBody)`: hace el `POST`, guarda la sesión y devuelve `getSessionData()` (lanza `ApiError` si falla) |
+| Cerrar sesión | `logoutUser()`: por ahora solo borra `sessionStorage` (es `async`, lista para un servicio) |
+| Modo invitado | `continueAsGuest()`: guarda el usuario `guest` ("Invitado"), sin token |
+| Mostrar u ocultar | `showOnlyForSessionStates(el, 'signed-in, guest')` |
+| Pintar según el estado | `renderBySessionState(target, views)`: cada vista recibe `getSessionData()` |
+| Enterarse de un cambio | `SESSION_CHANGE_EVENT` en `document` (`detail` = `getSessionData()`) |
+| Ir a otra página | `goToPage(path, { replace })` (la recarga de las filas por sesión no la cancela) |
+| Rutas seguras | `toSafeSitePath(path)` de `block-utils.js` (solo rutas del sitio) |
+| Otros foundations | `filterRowsBySessionState(block)` y `parseSessionStateList(text)` (`block-options.js`); `getAuthorizationHeader()` y `clearUserSession()` (interceptores) |
+
+El arranque de cada página (`sessions.css`, estado en `<html>` y la regla del Metadata) es
+interno: corre solo al cargar `session.js` desde `head.html`.
 
 Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sección `session.js`).
 

@@ -52,7 +52,7 @@ Filas opcionales de autor. Guía completa:
 | Estado en la **última columna** de cualquier fila | `signed-in`, `signed-out`, `guest` (combinables): la fila solo existe para ese estado |
 
 No arranca nada al importarse: la regla del Metadata (`Session` / `Redirect To`) la revisa
-`session.js` desde `head.html`. Si la página está redirigiendo (`isPageAccessAllowed()` en `false`), el
+`session.js` desde `head.html`. Si la página está redirigiendo (`getSessionData().page.isAccessAllowed` en `false`), el
 bloque se vacía. Un bloque nuevo solo necesita:
 
 ```js
@@ -98,6 +98,7 @@ const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.empt
 | Función | Qué hace |
 |---|---|
 | `getSafeHref(path)` | Solo rutas del sitio y `http(s)`: `/celulares` → `/celulares`; `https://otro.com/x` → la URL; `javascript:…`, `data:…`, vacío → `null` |
+| `toSafeSitePath(path)` | Solo rutas **de este sitio** (`/cuenta?x=1`); `''` para `https://otro.com`, `//otro.com`, `javascript:`… |
 | `buildSectionTitle(block, prefix)` | Fila `Title` → `div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]` **dentro** del bloque (así `Styles` lo rodea); sin texto → `null` |
 | `formatPrice(value, currency)` | `$19,999` en `LOCALE`, sin decimales; un código de moneda inválido usa `CURRENCY` |
 
@@ -110,7 +111,8 @@ const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.empt
 | `readPrivateEndpoint` | `block-session-example` (y los bloques privados que vengan) |
 | `readRowTextOrDefault` | `card-*`, `product-catalog`, `product-detail` |
 | `getAlertOptions` | `card-*`, `product-catalog` |
-| `getSafeHref` | `breadcrumb`, `card-*`, `product-catalog`, `product-detail`, `login` y `session.js` |
+| `getSafeHref` | `breadcrumb`, `card-*`, `product-catalog`, `product-detail`, `login` y `toSafeSitePath` |
+| `toSafeSitePath` | `login`, `block-session-example` y `session.js` (`Redirect To`) |
 | `buildSectionTitle` | `card-*` |
 | `formatPrice` | `card-featured`, `product-catalog`, `product-detail` |
 
@@ -149,7 +151,7 @@ nombre del celular del detalle para el nivel `{product}` del breadcrumb).
    import { readTableCell, formatPrice } from '../../scripts/foundations/block-utils.js';
    import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
    import { showToast } from '../../scripts/foundations/toast.js';
-   import { loginUser, getSessionState, renderBySessionState } from '../../scripts/foundations/session.js';
+   import { getSessionData, loginUser, renderBySessionState } from '../../scripts/foundations/session.js';
    ```
 
 3. Ajusta lo propio del sitio:
@@ -173,81 +175,72 @@ Todo lo de sesión en **un solo archivo**: quién visita, qué páginas puede ab
 propio del sitio llega desde Drive (Metadata y filas de las tablas) o desde sus [ajustes](#ajustes).
 Guía completa para autores y desarrolladores: `documentation/08-sesiones.md`.
 
-### Cómo arranca
-
-`head.html` lo carga en **todas las páginas**, antes de `scripts.js`, y al cargar corre solo
-`initPageSession()` (una vez por página):
-
-1. Agrega `styles/foundations/sessions.css`.
-2. Pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
-   el panel de edición).
-3. Llama `applyPageSessionRule()`: sin la fila `Session` en el Metadata no hace nada; con `true` / `false`
-   revisa la regla y, si no acepta al visitante, oculta la página y redirige.
-
-Después, en cada bloque del proyecto, `applyBlockOptions` usa `isPageAccessAllowed()` y, **solo si el
-bloque los trae**, aplica las filas por sesión (`filterRowsBySessionState`) y la fila `Session`. Los bloques
-y los interceptores importan este mismo módulo: el arranque no se repite.
-
-| Función | Qué hace |
-|---|---|
-| `initPageSession()` | El arranque de arriba; corre sola al cargar el archivo. Devuelve `false` si la página redirige |
-| `isPageAccessAllowed()` | `false` mientras la página redirige (los bloques no pintan nada) |
-
-### Los tres estados
-
-| Estado | Cuándo |
-|---|---|
-| `signed-in` | Hay sesión vigente (el login respondió 200 y no venció `expiresIn`) |
-| `guest` | Eligió "Continuar como invitado": se guarda una sesión de invitado con la misma forma que una real (`user` = `GUEST_USER`, `sessionId` propio), **sin token** |
-| `signed-out` | Ninguno de los dos |
-
-### Parte 1 · Datos de la sesión
-
-| Función | Qué hace |
-|---|---|
-| `loginUser(endpoint, requestBody)` | **Inicia sesión**: hace el `POST` (llamada pública) y, con un 200, guarda la sesión en `sessionStorage`. Devuelve la sesión; si falla lanza el `ApiError` (el JSON del servicio en `error.cause`). Cualquier bloque que inicie sesión solo manda estos dos |
-| `logoutUser()` | **Cierra sesión**: por ahora solo borra la sesión y el modo invitado de `sessionStorage`. Es `async` para que después pueda llamar un servicio sin cambiar a quien la usa |
-| `clearUserSession()` | Solo borra lo guardado (la usan `logoutUser`, la sesión vencida y el 401 de la llamada privada) |
-| `saveUserSession(data)` | Guarda la sesión de un login 200 (`user`, `accessToken`, `tokenType`, `expiresIn`, `sessionId`) y quita el modo invitado. Devuelve la sesión o `null` sin `accessToken` |
-| `continueAsGuest()` | Activa el modo invitado: guarda `{ user: GUEST_USER, sessionId: 'guest-…', startedAt }` en `sessionStorage` |
-| `getGuestSession()` | La sesión del invitado `{ user, sessionId, startedAt }` o `null` |
-| `getCurrentSession()` | La sesión real, si no la del invitado, si no `null` (es la que reciben las vistas de `renderBySessionState`) |
-| `getCurrentUser()` | Los datos de quien visita, con sesión o invitado: `{ userId, email, phone, firstName, lastName, verified, isGuest }` o `null`. Nunca el token |
-| `getUserSession()` | `{ user, accessToken, tokenType, expiresAt, sessionId }` o `null` (si venció, la borra) |
-| `hasActiveSession()` | `true` mientras hay sesión |
-| `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
-| `getAuthorizationHeader()` | `'Bearer …'` para el header `Authorization`, o `''` |
-| `SESSION_CHANGE_EVENT` | Evento en `document` después de cualquier cambio; `detail = { state, session }` |
-
-La sesión vive en `sessionStorage` (se borra al cerrar la pestaña) y se cierra sola al vencer. El
-`refreshToken` no se guarda. Nunca se escribe la sesión en `console`.
-
-#### Revisar la sesión desde cualquier bloque
-
-Cualquier bloque (con o sin `block-options`) puede preguntar si hay una sesión activa:
-
-| Quiero saber… | Función | Devuelve |
-|---|---|---|
-| ¿Hay sesión activa? | `hasActiveSession()` | `true` / `false` (el invitado da `false`) |
-| ¿Quién visita, contando al invitado? | `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
-| Los datos del usuario con sesión | `getUserSession()` | `{ user, accessToken, … }` o `null` |
-| Los datos de quien visita (con sesión **o invitado**) | `getCurrentUser()` | `{ firstName, email, …, isGuest }` o `null` |
-| Cuándo cambia | `SESSION_CHANGE_EVENT` | Evento en `document` (`detail = { state, session, user }`) |
+### Cómo se usa (un llamado para cada cosa)
 
 ```js
-import { hasActiveSession, getUserSession, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
+import {
+  getSessionData, loginUser, logoutUser, continueAsGuest,
+} from '../../scripts/foundations/session.js';
 
-if (hasActiveSession()) {
-  const { user } = getUserSession(); // e.g. user.firstName
-}
-document.addEventListener(SESSION_CHANGE_EVENT, () => { /* check again */ });
+// leer: todo lo de la sesión en un solo llamado
+const { state, isSignedIn, isGuest, user, fields } = getSessionData();
+
+// actuar
+await loginUser(endpoint, { meta, security, data: { emailOrPhone, password } });
+await logoutUser();
+continueAsGuest();
 ```
 
-- Una sesión vencida cuenta como "sin sesión": se borra sola e `hasActiveSession()` da `false`.
-- Importar `session.js` en un bloque no vuelve a correr el arranque: ya corrió desde `head.html`.
-- Para pintar algo distinto por estado y que se repinte solo, usar `renderBySessionState` (Parte 3).
+`getSessionData()` devuelve:
 
-### Parte 2 · Páginas y redirecciones (Metadata de la página)
+| Propiedad | Qué trae | Sin sesión |
+|---|---|---|
+| `state` | `'signed-in'`, `'guest'` o `'signed-out'` | `'signed-out'` |
+| `isSignedIn` | `true` con una sesión real (el invitado **no** cuenta) | `false` |
+| `isGuest` | `true` después de "Continuar como invitado" | `false` |
+| `user` | `{ userId, firstName, lastName, fullName, email, phone, verified, sessionId }` de la sesión o del invitado (`guest`, "Invitado") | `null` |
+| `fields` | Los datos del usuario **ya armados** para pintar, en el orden de `USER_FIELDS` y sin vacíos: `[{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: … }, …]` | `[]` |
+
+El bloque solo pone su texto a cada `key` (`fullName`, `email`, `phone`, `userId`, `verified`,
+`sessionId`) y decide qué pintar. **Nunca** trae el token.
+
+```js
+const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono', verified: 'Verificado' };
+const { fields } = getSessionData();
+fields.forEach(({ key, value }) => paint(LABELS[key] || key, value));
+```
+
+| Acción | Qué hace |
+|---|---|
+| `loginUser(endpoint, requestBody)` | **Inicia sesión**: `POST` (llamada pública) y, con un 200, guarda la sesión en `sessionStorage` y avisa a la página. Devuelve `getSessionData()`; si falla lanza el `ApiError` (el JSON del servicio en `error.cause`) |
+| `logoutUser()` | **Cierra sesión**: por ahora solo borra `sessionStorage`. Es `async` para que después pueda llamar un servicio sin cambiar a quien la usa |
+| `continueAsGuest()` | **Modo invitado**: guarda un usuario `guest` ("Invitado") con los mismos campos que uno real y su propio `sessionId`, sin token |
+
+### Mostrar y pintar según la sesión
+
+| Función | Qué hace |
+|---|---|
+| `showOnlyForSessionStates(element, states)` | El elemento solo se ve para esos estados (`'signed-in, guest'` o `['signed-in']`); lo hacen las clases de `sessions.css`, al instante |
+| `renderBySessionState(target, views)` | Pinta la vista del estado actual y la vuelve a pintar al cambiar. **Cada vista recibe `getSessionData()`**: `{ 'signed-in': ({ user }) => …, guest: …, 'signed-out': () => … }`; sin vista de `guest` usa la de `signed-out`. Devuelve una función para dejar de escuchar |
+| `SESSION_CHANGE_EVENT` | Evento en `document` después de cualquier cambio; `detail` = `getSessionData()` |
+
+```js
+renderBySessionState(greeting, {
+  [SESSION_STATES.SIGNED_IN]: ({ user }) => `Hola, ${user.firstName}`,
+  [SESSION_STATES.GUEST]: ({ user }) => `Hola, ${user.firstName}`, // "Invitado"
+  [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
+});
+```
+
+- Una sesión vencida cuenta como "sin sesión": se borra sola.
+- Importar `session.js` en un bloque no vuelve a correr el arranque: ya corrió desde `head.html`.
+- Ejemplo de todo junto: `blocks/block-session-example/`.
+
+### Páginas (Metadata) y cómo arranca
+
+`head.html` lo carga en **todas las páginas**, antes de `scripts.js`. Al cargar, una sola vez:
+agrega `styles/foundations/sessions.css`, pone el estado en `<html>` (`session-state-signed-in`,
+`-guest`, `-signed-out`, o `-editor` en el panel de edición) y revisa la regla del Metadata:
 
 | Metadata | Sin sesión | Con sesión |
 |---|---|---|
@@ -256,49 +249,33 @@ document.addEventListener(SESSION_CHANGE_EVENT, () => { /* check again */ });
 | sin `Session` o vacía | Se ve | Se ve |
 
 `Redirect To` sin la fila o vacía → home `/`. Nada se agrega a la URL. El invitado no cuenta como
-sesión.
+sesión. La regla se vuelve a revisar al cambiar la sesión en la página.
 
-| Función | Qué hace |
+Lo de la página también sale de `getSessionData()`:
+
+| Propiedad | Qué trae |
 |---|---|
-| `applyPageSessionRule()` | Aplica la regla de la página; la llama `initPageSession()` una vez. Se repite al cambiar la sesión |
-| `requireActiveSession({ allowGuest, redirectTo })` | La regla `true` para un bloque que deba redirigir por sí mismo |
-| `requireNoActiveSession({ redirectTo })` | La regla `false` |
-| `readPageSessionRule()` | `'true'`, `'false'` o `''` (la fila `Session` de la página) |
-| `getPageRedirectPath({ redirectTo })` | La ruta de `Redirect To`, o `/` |
-| `goToPage(path, { replace })` | Ir a otra página sin que la recarga de las filas por sesión la cancele |
-| `toSafeSitePath(path)` | Solo rutas del sitio (`/cuenta`); `''` para `//otro.com`, `javascript:`… |
-| `isEditingToolPreview()` | `true` en el panel de edición: ahí nunca redirige y se ve todo |
-
-### Parte 3 · Mostrar y pintar según la sesión
-
-| Función | Qué hace |
-|---|---|
-| `filterRowsBySessionState(block)` | Filas de 2 o más columnas cuya **última celda** es solo estados (`signed-in`, `signed-out`, `guest`, combinables con coma): quedan solo para esos estados y se les quita esa celda. Si la página tiene filas así, se recarga al cambiar la sesión |
-| `showOnlyForSessionStates(element, states)` | Pone las clases de `sessions.css` (`session-only session-only-signed-in`…); sin estados, visible para todos |
-| `parseSessionStateList(text)` | `'Signed-in, guest'` → `['signed-in', 'guest']` |
-| `renderBySessionState(target, views)` | Pinta la vista del estado actual (`{ 'signed-in': (session) => …, 'signed-out': () => … }`) y la vuelve a pintar al cambiar; sin vista de `guest` usa la de `signed-out`. Devuelve una función para dejar de escuchar |
-
-### Ejemplo en un bloque
+| `page.rule` | `'true'`, `'false'` o `''` (la fila `Session` de la página) |
+| `page.redirectPath` | La ruta de `Redirect To`, o `/` |
+| `page.isAccessAllowed` | `false` mientras la página redirige (los bloques no pintan nada) |
+| `isEditingToolPreview` | `true` en el panel de edición: ahí nunca redirige y se ve todo |
 
 ```js
-import {
-  SESSION_STATES, getSessionState, renderBySessionState, showOnlyForSessionStates,
-} from '../../scripts/foundations/session.js';
-
-// algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
-showOnlyForSessionStates(couponCard, [SESSION_STATES.SIGNED_IN]);
-
-// datos del usuario que se vuelven a pintar al cambiar la sesión
-renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: (session) => `Hola, ${session.user.firstName}`,
-  [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
-});
-
-if (getSessionState() === SESSION_STATES.GUEST) { /* … */ }
+const { page, isEditingToolPreview } = getSessionData();
+if (page.rule === PAGE_SESSION_RULES.SIGNED_OUT_ONLY) { /* es la página de login */ }
 ```
 
-Llamadas privadas con el token: `post(url, body, { interceptor: REQUEST_TYPE.PRIVATE })`
-(`scripts/api/`). Ejemplo de todo junto: `blocks/block-session-example/`.
+Para ir a otra página: `goToPage(path, { replace })` (la recarga de las filas por sesión no la
+cancela). Rutas seguras del sitio: `toSafeSitePath(path)` de `block-utils.js`.
+
+### Lo que usan otros archivos de foundations
+
+| Función | Quién la usa | Qué hace |
+|---|---|---|
+| `filterRowsBySessionState(block)` | `block-options.js` | Filas cuya **última celda** es solo estados (`signed-in`, `signed-out`, `guest`, combinables): quedan solo para esos estados y se les quita esa celda; la página se recarga al cambiar la sesión |
+| `parseSessionStateList(text)` | `block-options.js`, bloques | `'Signed-in, guest'` → `['signed-in', 'guest']` |
+| `getAuthorizationHeader()` | `scripts/api/interceptors.js` | `'Bearer …'` para la llamada privada, o `''` |
+| `clearUserSession()` | `scripts/api/interceptors.js` | Solo borra lo guardado (también la usan `logoutUser` y la sesión vencida) |
 
 ### Ajustes
 
@@ -308,7 +285,8 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 |---|---|---|
 | `SESSION_STORAGE_KEY` / `GUEST_STORAGE_KEY` | `novamovil-session` / `novamovil-guest` | Llaves en `sessionStorage` |
 | `DEFAULT_REDIRECT_PATH` | `/` | A dónde va una página sin `Redirect To` |
-| `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', …, isGuest: true }` | El usuario que se guarda al continuar como invitado |
+| `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', … }` | El usuario que se guarda al continuar como invitado |
+| `USER_FIELDS` | `fullName`, `email`, `phone`, `userId`, `verified`, `sessionId` | Qué datos trae `fields` y en qué orden |
 | `EDITOR_PREVIEW_HOSTS` | `preview-aemcoder.adobe.io` | Dónde no se redirige y se ve todo |
 | `SESSION_CHANGE_EVENT` | `session:change` | Nombre del evento |
 

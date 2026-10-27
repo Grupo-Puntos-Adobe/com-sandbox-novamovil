@@ -40,8 +40,9 @@ solo lo pone en práctica.
   se quitan antes de pintar y la página se recarga al cambiar la sesión
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
-- **Tus datos:** con la fila `User Title`, una tarjeta con los datos del usuario de la sesión
-  (`getCurrentSession()`): tipo, nombre, correo, teléfono, ID, verificado e ID de sesión. Se ve con
+- **Tus datos:** con la fila `User Title`, una tarjeta con los datos del usuario. Un solo llamado,
+  `getSessionData()`, trae `fields` ya armados (nombre, correo, teléfono, ID, verificado e ID de
+  sesión); el bloque solo le pone su texto a cada uno y agrega el tipo. Se ve con
   sesión **y como invitado** (el invitado guarda un perfil con la misma forma: usuario `guest`,
   nombre "Invitado"); sin sesión no se ve. Nunca muestra el token
 - **Llamada privada:** con `Private Endpoint` y sesión, llama con el token (Bearer) y muestra la
@@ -167,7 +168,7 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
     - **Tipo:** Texto
     - **Descripción:** Título de la tarjeta "Tus datos". Con la fila, el bloque pinta los datos del
       usuario de la sesión: con sesión, los del login; como invitado, los del perfil de invitado
-      (`GUEST_USER`: ID `guest`, nombre "Invitado"). Los datos vacíos (un invitado no tiene correo
+      (ID `guest`, nombre "Invitado"). Los datos vacíos (un invitado no tiene correo
       ni teléfono) no se pintan
     - **Por defecto:** sin la fila, no se pinta la tarjeta
 
@@ -258,7 +259,7 @@ Móvil:
 
 ```js
 import {
-  SESSION_STATES, getCurrentUser, renderBySessionState, showOnlyForSessionStates,
+  SESSION_STATES, getSessionData, renderBySessionState, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
@@ -267,21 +268,26 @@ import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 //    | Session | true |                          ← el bloque entero solo con sesión
 //    | Title   | Tus promociones | signed-in |   ← esta fila solo con sesión (última columna)
 
-// 1) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
+// 1) todo lo de la sesión con un solo llamado
+const { state, isSignedIn, isGuest, user, fields } = getSessionData();
+// user   → { userId, firstName, lastName, fullName, email, phone, verified, sessionId } o null
+// fields → [{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: '…' }, …]
+
+// 2) pintar los datos: el bloque solo pone su texto a cada key
+const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono' };
+fields.forEach(({ key, value }) => list.append(`${LABELS[key] || key}: ${value}`));
+
+// 3) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
 showOnlyForSessionStates(couponCard, 'signed-in');
 
-// 2) datos del usuario que se vuelven a pintar al cambiar la sesión (con sesión o invitado,
-//    session.user tiene los mismos campos; el del invitado trae isGuest: true)
+// 4) que se vuelva a pintar solo al cambiar la sesión: cada vista recibe getSessionData()
 renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: (session) => `Hola, ${session.user.firstName}`,
-  [SESSION_STATES.GUEST]: (session) => `Hola, ${session.user.firstName}`, // "Invitado"
+  [SESSION_STATES.SIGNED_IN]: ({ user }) => `Hola, ${user.firstName}`,
+  [SESSION_STATES.GUEST]: ({ user }) => `Hola, ${user.firstName}`, // "Invitado"
   [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
 });
 
-// o, sin pintar: los datos de quien visita (null sin sesión)
-const user = getCurrentUser();
-
-// 3) una llamada privada: la URL va en la fila Private Endpoint (Endpoint es para los públicos)
+// 5) una llamada privada: la URL va en la fila Private Endpoint (Endpoint es para los públicos)
 const privateEndpoint = readPrivateEndpoint(block);
 if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRIVATE }); // Bearer
 ```
@@ -290,14 +296,16 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 
 - `block-session-example.js` – Lee la tabla y arma el estado, las tarjetas y los botones
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
-- `scripts/foundations/session.js` – Estado, `renderBySessionState` (pasa `getCurrentSession()`:
-  la sesión o la del invitado), `showOnlyForSessionStates`, `continueAsGuest`, `logoutUser`
+- `scripts/foundations/session.js` – `getSessionData` (estado y `fields` del usuario),
+  `renderBySessionState` (cada vista recibe `getSessionData()`), `showOnlyForSessionStates`,
+  `continueAsGuest`, `logoutUser`
 - `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
   `session.js`)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por
   sesión (última columna)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PRIVATE`
-- `scripts/foundations/block-utils.js` – `readPrivateEndpoint` para la fila `Private Endpoint`
+- `scripts/foundations/block-utils.js` – `readPrivateEndpoint` para la fila `Private Endpoint` y
+  `toSafeSitePath` para el enlace de `Login Link`
 - `styles/foundations/grid.css` y `breakpoints.css` – Columnas y resoluciones
 - Colores en `styles/colors.css` (`--block-session-example-*`)
 - Documento de Drive: `content-drive/ejemplo-sesion.docx` (3 bloques: completo, `Session` `true` y

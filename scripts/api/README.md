@@ -156,7 +156,8 @@ Un nombre que no existe usa la cadena pública.
 
 - `http-client.js` → `interceptors.js`.
 - `interceptors.js` → `scripts/foundations/session.js` (`getAuthorizationHeader`, `clearUserSession`,
-  `getPageRedirectPath`, `goToPage`, `isEditingToolPreview`), solo para la llamada privada.
+  `getSessionData` para `page.redirectPath` e `isEditingToolPreview`, y `goToPage`), solo para la
+  llamada privada.
 
 Para llevarlo: copia `scripts/api/` (y `scripts/foundations/` si usas la llamada privada) y cambia
 `API_BASE_URL` en `http-client.js`. Un servicio nuevo debe contestar la consulta `OPTIONS` (CORS)

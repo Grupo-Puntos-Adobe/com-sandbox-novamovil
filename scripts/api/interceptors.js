@@ -23,7 +23,7 @@
 // session.js loads the client on demand for loginUser(): not a cycle when the page loads
 // eslint-disable-next-line import/no-cycle
 import {
-  clearUserSession, getAuthorizationHeader, getPageRedirectPath, goToPage, isEditingToolPreview,
+  clearUserSession, getAuthorizationHeader, getSessionData, goToPage,
 } from '../foundations/session.js';
 
 /**
@@ -94,7 +94,7 @@ export const publicRequestInterceptor = {
  *   - request: Authorization: Bearer … and, when the body has security.auth (the NovaMóvil
  *     request format), the same value there. Without session the service is not called.
  *   - error 401 (no session, expired or rejected token): clearUserSession() and go to the session
- *     redirect page (getPageRedirectPath, never in the editing tool preview).
+ *     redirect page (getSessionData().page.redirectPath, never in the editing tool preview).
  */
 export const privateRequestInterceptor = {
   name: REQUEST_TYPE.PRIVATE,
@@ -116,8 +116,9 @@ export const privateRequestInterceptor = {
   error(error) {
     if (error.status === 401) {
       clearUserSession();
-      if (!isEditingToolPreview()) {
-        goToPage(getPageRedirectPath(), { replace: true });
+      const { page, isEditingToolPreview } = getSessionData();
+      if (!isEditingToolPreview) {
+        goToPage(page.redirectPath, { replace: true });
       }
     }
     throw error;

@@ -9,7 +9,7 @@
  *   1. Whole block by session: the optional Session row (block-options.js) → the block is only
  *      shown to signed-in / guest / signed-out visitors. It never redirects.
  *   2. Status panel: renderBySessionState() paints the badge and the text of the current state
- *      ("Hola, {name}…" with the user of the session) and repaints them when it changes.
+ *      ("Hola, {name}…" with data.user.firstName) and repaints them when it changes.
  *   3. Items by session, the generic way of ANY block: "Item | text | signed-in" (the state in
  *      the LAST cell). filterRowsBySessionState() (block-options.js) removes the rows of other
  *      states
@@ -18,9 +18,9 @@
  *      invitado (continueAsGuest) and Cerrar sesión (logoutUser), each one only for its state.
  *   5. Private call: with Private Endpoint and a session, post(…, REQUEST_TYPE.PRIVATE) sends
  *      the Bearer token and shows the answer of the service.
- *   6. User data (User Title row): the user of the session, signed in or guest
- *      (renderBySessionState passes getCurrentSession(); a guest has GUEST_USER). Hidden
- *      without a session; the token is never painted.
+ *   6. User data (User Title row): one call, getSessionData(), gives the fields of the user
+ *      (signed in or guest) ready to paint; this block only puts a label to each key
+ *      (LABELS.user). Hidden without a session; the token is never in the data.
  *
  * Authored rows (all optional): Styles, Classname, Session, Title, Status Title,
  * Signed In Text ({name} = first name), Guest Text, Signed Out Text, Item (text, any number),
@@ -35,7 +35,7 @@
  *     ├─ readExampleSettings(block)        texts, items, links, endpoint
  *     └─ renderSessionExample()
  *          ├─ buildExampleStatus()         renderBySessionState: badge + text, actions by session
- *          ├─ buildExampleUser()           renderBySessionState: user data (signed in / guest)
+ *          ├─ buildExampleUser()           renderBySessionState: data.fields (signed in / guest)
  *          ├─ buildExampleItem() × N       the Item rows left for the current state
  *          └─ buildExamplePrivate()        renderBySessionState: private call when signed in
  *
@@ -49,11 +49,11 @@
  * Guide: blocks/block-session-example/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
-import { readPrivateEndpoint, readTableCell } from '../../scripts/foundations/block-utils.js';
+import { readPrivateEndpoint, readTableCell, toSafeSitePath } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
   SESSION_STATES, continueAsGuest, parseSessionStateList, renderBySessionState,
-  logoutUser, showOnlyForSessionStates, toSafeSitePath,
+  logoutUser, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
@@ -66,11 +66,11 @@ const LABELS = {
   },
   everybody: 'Todos',
   audience: 'Lo ve:',
-  // user data card (the values come from the session)
+  // user data card: a label for each key of getSessionData().fields (USER_FIELDS)
   user: {
     table: 'Datos del usuario',
     type: 'Tipo',
-    name: 'Nombre',
+    fullName: 'Nombre',
     email: 'Correo',
     phone: 'Teléfono',
     userId: 'ID de usuario',
@@ -161,16 +161,16 @@ function buildStateBadge(state) {
 }
 
 /**
- * Text of a state; {name} is the first name (or the email) of the session user.
+ * Text of a state; {name} is the first name (or the email) of the user.
  * @param {string} text Authored text
- * @param {Object|null} session
+ * @param {Object} data getSessionData() result
  * @returns {Element|null}
  */
-function buildStateText(text, session) {
+function buildStateText(text, { user }) {
   if (!text) {
     return null;
   }
-  const name = session?.user?.firstName || session?.user?.email || '';
+  const name = user?.firstName || user?.email || '';
   return createElementWithClass('div', 'block-session-example-status-text', text.replace('{name}', name).trim());
 }
 
@@ -218,19 +218,19 @@ function buildExampleStatus(settings) {
   // repainted on every session change; read by screen readers when it changes
   const current = createElementWithClass('div', 'block-session-example-status-current');
   current.setAttribute('aria-live', 'polite');
-  const view = (state) => (session) => {
+  const view = (data) => {
     const content = createElementWithClass('div', 'block-session-example-status-body');
-    content.append(buildStateBadge(state));
-    const text = buildStateText(texts[state], session);
+    content.append(buildStateBadge(data.state));
+    const text = buildStateText(texts[data.state], data);
     if (text) {
       content.append(text);
     }
     return content;
   };
   renderBySessionState(current, {
-    [SESSION_STATES.SIGNED_IN]: view(SESSION_STATES.SIGNED_IN),
-    [SESSION_STATES.GUEST]: view(SESSION_STATES.GUEST),
-    [SESSION_STATES.SIGNED_OUT]: view(SESSION_STATES.SIGNED_OUT),
+    [SESSION_STATES.SIGNED_IN]: view,
+    [SESSION_STATES.GUEST]: view,
+    [SESSION_STATES.SIGNED_OUT]: view,
   });
   status.append(current);
 
@@ -242,36 +242,30 @@ function buildExampleStatus(settings) {
 }
 
 /**
- * Fields of the user card, in order; empty values are left out (a guest has no email or
- * phone). Never the token.
- * @param {Object} session getCurrentSession(): the real session or the guest one
- * @returns {string[][]} [label, value] pairs
- */
-function readUserFields(session) {
-  const user = session?.user || {};
-  const labels = LABELS.user;
-  const type = user.isGuest ? SESSION_STATES.GUEST : SESSION_STATES.SIGNED_IN;
-  return [
-    [labels.type, LABELS.states[type]],
-    [labels.name, [user.firstName, user.lastName].filter(Boolean).join(' ')],
-    [labels.email, user.email],
-    [labels.phone, user.phone],
-    [labels.userId, user.userId],
-    [labels.verified, user.verified ? labels.yes : labels.no],
-    [labels.sessionId, session?.sessionId],
-  ].filter(([, value]) => value);
-}
-
-/**
- * The user data as a table: one row per field (label + value), columns from the grid.
- * @param {Object} session getCurrentSession() result
+ * The user data as a table: the type (signed in or guest) and one row per field of
+ * getSessionData().fields, with the label of this block.
+ * @param {Object} data getSessionData() result
  * @returns {Element} div.block-session-example-user-table[role=table]
  */
-function buildUserTable(session) {
+function buildUserTable({ isGuest, fields }) {
+  const labels = LABELS.user;
+  const type = LABELS.states[isGuest ? SESSION_STATES.GUEST : SESSION_STATES.SIGNED_IN];
+  // verified is true / false: shown as Sí / No
+  const toText = (value) => {
+    if (typeof value === 'boolean') {
+      return value ? labels.yes : labels.no;
+    }
+    return value;
+  };
+  const rows = [
+    { label: labels.type, value: type },
+    ...fields.map(({ key, value }) => ({ label: labels[key] || key, value: toText(value) })),
+  ];
+
   const table = createElementWithClass('div', 'block-session-example-user-table container-fluid');
   table.setAttribute('role', 'table');
-  table.setAttribute('aria-label', LABELS.user.table);
-  readUserFields(session).forEach(([label, value]) => {
+  table.setAttribute('aria-label', labels.table);
+  rows.forEach(({ label, value }) => {
     const field = createElementWithClass('div', 'block-session-example-user-field row row-gutter-16');
     field.setAttribute('role', 'row');
     const name = createElementWithClass('div', 'block-session-example-user-label col-10 col-md-6 col-lg-4', label);

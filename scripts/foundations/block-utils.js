@@ -14,6 +14,8 @@
  *   getSafeHref(path)
  *     only same-site paths and http(s) URLs, else null       breadcrumb, card-*, product-*, login,
  *                                                             session.js
+ *   toSafeSitePath(path)
+ *     only paths of this site (/cuenta), else ''             login, example, session.js
  *   buildSectionTitle(block, prefix)
  *     Title row → div.{prefix}-header > section title        card-* (any block with a Title)
  *   formatPrice(value, currency)
@@ -141,6 +143,16 @@ export function getSafeHref(path) {
   } catch {
     return null;
   }
+}
+
+/**
+ * A path of this site (/perfil?x=1), or '' for anything else (other sites, //host, javascript:).
+ * @param {string} path
+ * @returns {string}
+ */
+export function toSafeSitePath(path) {
+  const href = getSafeHref(path);
+  return href && href.startsWith('/') && !href.startsWith('//') ? href : '';
 }
 
 /**

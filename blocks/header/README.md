@@ -196,9 +196,9 @@ El header **no cambia con la sesión** por ahora: siempre muestra los mismos ico
   `nav` son secciones y listas, no una tabla.
 - El icono de **Mi cuenta** lleva a `/cuenta`. Quien decide si se puede entrar es esa página, con su
   Metadata (`Session: true` + `Redirect To: /login`; ver `documentation/08-sesiones.md`). La regla
-  corre cuando la página tiene al menos un bloque del proyecto.
+  corre en todas las páginas, tengan bloques o no.
 - Pendiente para otra entrega: mostrar "Hola, {nombre}" y "Cerrar sesión" con sesión, usando
-  `renderBySessionState` de `scripts/foundations/session.js`.
+  `getSessionData()` y `renderBySessionState` de `scripts/foundations/session.js`.
 
 ### Archivos y dependencias
 

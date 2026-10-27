@@ -83,7 +83,7 @@ Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloq
 | Archivo | Origen | Qué tiene |
 |---|---|---|
 | `scripts/foundations/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions` y sus ayudantes |
-| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`initPageSession`), regla de la página (`applyPageSessionRule`), `isPageAccessAllowed`, filas por sesión (`filterRowsBySessionState`) y `showOnlyForSessionStates` |
+| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`initPageSession`), regla de la página (`applyPageSessionRule`), `getSessionData` (lo que se pregunta de la sesión, también `page.isAccessAllowed`), filas por sesión (`filterRowsBySessionState`) y `showOnlyForSessionStates` |
 | `styles/foundations/sessions.css` | 🆕 nuevo | Clases que muestran u ocultan por sesión; lo carga `session.js` |
 | `scripts/foundations/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
 | `blocks/<bloque NovaMóvil>/<bloque>.js` | 🆕 nuevo | `import` + llamada en la 1.ª línea de `decorate` |
@@ -111,7 +111,7 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
            └─ 🆕 import block-options.js   (session.js ya está cargado: no se repite)
 3. 🆕 decorate(block) del bloque
       ├─ 🆕 applyBlockOptions(block)   ← PRIMERA línea:
-      │     ├─ página redirigiendo (isPageAccessAllowed) → vacía el bloque y termina
+      │     ├─ página redirigiendo (getSessionData().page.isAccessAllowed) → vacía el bloque
       │     ├─ filterRowsBySessionState(block) → solo si hay filas con estado en la última columna
       │     └─ lee, aplica y QUITA Styles / Classname / Session
       ├─    readTableCell(…)           ← ya no ve esas filas
@@ -133,12 +133,13 @@ Archivo: `scripts/foundations/block-options.js`.
 
 ```js
 import {
-  SESSION_STATES, filterRowsBySessionState, isPageAccessAllowed, showOnlyForSessionStates,
+  SESSION_STATES, filterRowsBySessionState, getSessionData, showOnlyForSessionStates,
 } from './session.js';
 ```
 
 - `block-options.js` no arranca nada: `session.js` ya corrió desde `head.html`.
-- `isPageAccessAllowed()`: si la página está redirigiendo, el bloque se vacía y no hace nada más.
+- `getSessionData().page.isAccessAllowed`: si la página está redirigiendo, el bloque se vacía y no
+  hace nada más.
 - `filterRowsBySessionState(block)` solo lee la sesión si el bloque tiene una fila con el estado en la
   última columna; si no, no hace nada.
 - La fila `Session` solo se aplica si el bloque la trae con `true` o `false`.

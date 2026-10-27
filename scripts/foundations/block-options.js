@@ -45,7 +45,8 @@
  *
  * Flow:
  *   applyBlockOptions(block)            default export, one call per block
- *     ├─ page redirecting → the block is emptied, nothing else (isPageAccessAllowed of session.js)
+ *     ├─ page redirecting → the block is emptied, nothing else
+ *     │                     (getSessionData().page.isAccessAllowed of session.js)
  *     ├─ session rows    → filterRowsBySessionState(block) (rows of other states are removed; the
  *     │                     session is read only if the block has such rows)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
@@ -56,7 +57,7 @@
  * Guide: documentation/06-styles-classname.md
  */
 import {
-  SESSION_STATES, filterRowsBySessionState, isPageAccessAllowed, showOnlyForSessionStates,
+  SESSION_STATES, filterRowsBySessionState, getSessionData, showOnlyForSessionStates,
 } from './session.js';
 
 const STYLE_KEYS = ['styles', 'style'];
@@ -142,7 +143,7 @@ export function applyAuthorClasses(block, names) {
  */
 export default function applyBlockOptions(block) {
   // the page is redirecting (Metadata Session rule, session.js): nothing to show
-  if (!isPageAccessAllowed()) {
+  if (!getSessionData().page.isAccessAllowed) {
     block.replaceChildren();
     return;
   }

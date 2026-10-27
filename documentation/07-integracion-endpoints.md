@@ -150,7 +150,7 @@ Hay **dos tipos de llamada**, con nombre claro en la constante `REQUEST_TYPE`:
 | Nombre | Interceptores | Para | Qué hace |
 |---|---|---|---|
 | `REQUEST_TYPE.PUBLIC` = `'public-request'` (por defecto) | `publicRequestInterceptor` | **Llamadas simples, sin sesión**: categorías, catálogo, detalle, login | Headers JSON; OK → JSON; con error (400, 401, 500…) lanza `ApiError` con el JSON del servicio en `error.cause` |
-| `REQUEST_TYPE.PRIVATE` = `'private-request'` | `publicRequestInterceptor` + `privateRequestInterceptor` | **Llamadas privadas, con sesión**: perfil, pedidos, datos de compra | `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. Sin sesión **no llama** (`ApiError` 401). Con un 401: `clearUserSession()` y redirige a `getPageRedirectPath()` |
+| `REQUEST_TYPE.PRIVATE` = `'private-request'` | `publicRequestInterceptor` + `privateRequestInterceptor` | **Llamadas privadas, con sesión**: perfil, pedidos, datos de compra | `Authorization: Bearer {token}` y el mismo valor en `security.auth.value` del cuerpo. Sin sesión **no llama** (`ApiError` 401). Con un 401: `clearUserSession()` y redirige a `getSessionData().page.redirectPath` |
 
 ```js
 export const REQUEST_TYPE = { PUBLIC: 'public-request', PRIVATE: 'private-request' };

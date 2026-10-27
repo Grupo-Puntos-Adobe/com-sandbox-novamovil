@@ -4,92 +4,62 @@
  * Portable: copy it with styles/foundations/sessions.css (and block-utils.js, used for the
  * safe paths) and add one line to head.html, before scripts.js:
  *   <script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>
- * Everything specific to a site comes from Drive (Metadata / Session rows) or from the
- * settings right below. Guide: documentation/08-sesiones.md
+ * Guide: documentation/08-sesiones.md
  *
- * Start (every page, with or without blocks): head.html loads this file first, and
- * initPageSession() runs once when it loads: sessions.css, the state class on <html> and the
- * page Metadata rule (applyPageSessionRule). A page without a Session row is left as it is.
- * Blocks, block-options.js and the interceptors import this same module afterwards (it never
- * runs twice).
- *   initPageSession()          runs by itself; returns false when the page is being redirected
- *   isPageAccessAllowed()      false while the page is being redirected (do not paint blocks)
+ * How a block uses it (everything with one call each):
  *
- * Three states (the same words the author writes in Drive):
- *   signed-in    there is a session that has not expired
- *   guest        "Continuar como invitado" (no token: only lets the screens through)
- *   signed-out   neither
+ *   import { getSessionData, loginUser, logoutUser, continueAsGuest } from '…/session.js';
  *
- * Part 1 · Session data (log in, log out, read it)
- *   loginUser(endpoint, requestBody)  POSTs the login and stores the session of a 200 in
- *                                     sessionStorage; any block that logs in only sends these
- *   logoutUser()                      logs out (for now only clears the storage; async, ready
- *                                     for a logout service)
- *   clearUserSession()                only removes the stored session and guest mode
- *   saveUserSession(loginData)        stores a login answer (used by loginUser)
- *   continueAsGuest()                 guest mode: stores a guest session with the same shape
- *                                     as a real one (user = GUEST_USER, its own sessionId)
- *   getUserSession()                  { user, accessToken, tokenType, expiresAt, sessionId }
- *                                     or null
- *   hasActiveSession()                true while there is a session (a guest is not one)
- *   getGuestSession()                 { user, sessionId, startedAt } of the guest, or null
- *   getCurrentSession()               the real session, else the guest one, else null
- *   getCurrentUser()                  user data of whoever visits (signed in or guest), or
- *                                     null; never the token
- *   getSessionState()                 'signed-in' | 'guest' | 'signed-out'
- *   getAuthorizationHeader()          'Bearer …' for the Authorization header, or ''
- *   SESSION_CHANGE_EVENT              on document after any change,
- *                                     detail = { state, session, user }
- *   The state is also a class on <html> (session-state-*), used by sessions.css.
+ *   const { state, isSignedIn, isGuest, user, fields, page, isEditingToolPreview } =
+ *     getSessionData();                    everything you can ask about the session, one call
+ *     state       'signed-in' | 'guest' | 'signed-out'
+ *     isSignedIn  true with a real session (a guest is not one)
+ *     isGuest     true after "Continuar como invitado"
+ *     user        { userId, firstName, lastName, fullName, email, phone, verified, sessionId }
+ *                 of the session or of the guest ('guest', 'Invitado'); null without a session
+ *     fields      the user data ready to paint, without empty values ([] without a session):
+ *                 [{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: … }, …]
+ *                 keys: USER_FIELDS (fullName, email, phone, userId, verified, sessionId); the
+ *                 block puts its own label to each key. Never the token.
+ *     page        Metadata of this page: { rule: 'true' | 'false' | '', redirectPath (Redirect
+ *                 To, or /), isAccessAllowed (false while the page is being redirected) }
+ *     isEditingToolPreview   true in the editing tool preview (no redirects, all visible)
  *
- * Part 2 · Pages and redirects (page Metadata in Drive)
+ *   await loginUser(endpoint, requestBody)  POST to the login service; with a 200 the session is
+ *                                           stored (sessionStorage) and the page is told
+ *   await logoutUser()                      logs out (for now only clears the storage)
+ *   continueAsGuest()                       guest mode (stores a guest user, no token)
+ *   goToPage(path, { replace })             goes to a page (a session reload does not cancel it)
+ *
+ *   showOnlyForSessionStates(element, 'signed-in, guest')   shown only to those states
+ *   renderBySessionState(target, { 'signed-in': (data) => …, guest: …, 'signed-out': … })
+ *                                           paints the view of the current state with
+ *                                           getSessionData() and repaints it when it changes
+ *   SESSION_CHANGE_EVENT                    on document after any change, detail =
+ *                                           getSessionData()
+ *
+ * Pages (Metadata in Drive), checked on every page as soon as head.html loads this file:
  *   | Session     | true  |   only WITH a session: without one → Redirect To
  *   | Session     | false |   only WITHOUT a session (login): with one → Redirect To
  *   | Redirect To | /x    |   where both go; missing or empty → home /
  *   No Session row (or empty): public page, nothing is checked. The guest is not a session.
- *   applyPageSessionRule()            reads both rows; called once by initPageSession(), before
- *                                     the page is shown
- *   readPageSessionRule()             'true' | 'false' | '' (the Session row of the page)
- *   requireActiveSession(options)     the "true" rule, for a block that must redirect by itself
- *   requireNoActiveSession(options)   the "false" rule
- *   getPageRedirectPath()             the Redirect To path as authored, or / (nothing is added
- *                                     to the URL)
- *   goToPage(path)                    goes to a page (use it after loginUser/continueAsGuest:
- *                                     the page does not reload over the navigation)
- *   toSafeSitePath(path)              only paths of this site, '' for anything else
- *   isEditingToolPreview()            true in the editing tool preview
+ *   Read it with getSessionData().page. Safe paths: toSafeSitePath() of block-utils.js.
  *
- * Part 3 · Showing things by session (blocks)
- *   filterRowsBySessionState(block)   rows of ANY block whose LAST cell is a state (signed-in,
- *                                     signed-out, guest, combined with commas), 2+ cells:
- *                                       | Promociones | signed-out |
- *                                       | Title       | Hola, cliente   | signed-in |
- *                                       | Benefit 1   | 🚚 | Envío gratis | guest, signed-in |
- *                                     the rows of other states are removed (and the state cell
- *                                     of the others) before the block reads its table; empty
- *                                     last cell or no state word → always shown. Called by
- *                                     block-options.js (it reads the session only when the
- *                                     block has such rows); when the session changes, a page
- *                                     with such rows reloads.
- *   showOnlyForSessionStates(element, 'signed-in, guest')   classes of sessions.css
- *   parseSessionStateList(text)       'signed-in, guest' → ['signed-in', 'guest']
- *   renderBySessionState(target, views)  paints the view of the current state and repaints it
- *                                        when it changes
- *   Any block: optional Session row (scripts/foundations/block-options.js).
+ * Used by other foundations: filterRowsBySessionState(block) and parseSessionStateList(text)
+ * (block-options.js: rows whose LAST cell is a state), getAuthorizationHeader() and
+ * clearUserSession() (scripts/api/interceptors.js: private calls).
  *
  * In the editing tool preview (EDITOR_PREVIEW_HOSTS) pages never redirect and sessions.css
  * shows everything, so private pages can be edited.
  * Stored in sessionStorage (removed when the tab is closed). The refresh token is not kept.
  * Never log the session: it carries the access token.
  */
-import { getSafeHref } from './block-utils.js';
+import { toSafeSitePath } from './block-utils.js';
 
 // ---------------------------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------------------------
 export const SESSION_CHANGE_EVENT = 'session:change';
-export const SESSION_STORAGE_KEY = 'novamovil-session';
-export const GUEST_STORAGE_KEY = 'novamovil-guest';
 export const SESSION_STATES = {
   SIGNED_IN: 'signed-in',
   GUEST: 'guest',
@@ -100,18 +70,20 @@ export const PAGE_SESSION_RULES = {
   REQUIRED: 'true', // only with a session
   SIGNED_OUT_ONLY: 'false', // only without a session (login)
 };
-// where a page sends the visitor it does not accept, when its Metadata has no "Redirect To"
-// row (or it is empty): the home page
-export const DEFAULT_REDIRECT_PATH = '/';
-// user stored by continueAsGuest(): same shape as the user of a real session, marked as guest
-export const GUEST_USER = Object.freeze({
+// keys of getSessionData().fields, in this order
+export const USER_FIELDS = ['fullName', 'email', 'phone', 'userId', 'verified', 'sessionId'];
+const SESSION_STORAGE_KEY = 'novamovil-session';
+const GUEST_STORAGE_KEY = 'novamovil-guest';
+// where a page sends the visitor it does not accept, without "Redirect To": the home page
+const DEFAULT_REDIRECT_PATH = '/';
+// user stored by continueAsGuest(): same fields as the user of a real session
+const GUEST_USER = Object.freeze({
   userId: 'guest',
   email: '',
   phone: '',
   firstName: 'Invitado',
   lastName: '',
   verified: false,
-  isGuest: true,
 });
 // editing tool preview: no redirects, everything visible
 const EDITOR_PREVIEW_HOSTS = /^preview-aemcoder\.adobe\.io$/;
@@ -130,13 +102,9 @@ let pageAccessAllowed = true;
 let navigationPending = false;
 let reloadOnChangeRegistered = false;
 
-/**
- * True inside the editing tool preview.
- * @returns {boolean}
- */
-export function isEditingToolPreview() {
-  return EDITOR_PREVIEW_HOSTS.test(window.location.hostname);
-}
+// ---------------------------------------------------------------------------------------------
+// Storage (internal)
+// ---------------------------------------------------------------------------------------------
 
 /**
  * sessionStorage access that never throws (storage blocked by the browser).
@@ -162,9 +130,26 @@ function useStorage(action, key, value) {
   return null;
 }
 
-// ---------------------------------------------------------------------------------------------
-// Part 1 · Session data
-// ---------------------------------------------------------------------------------------------
+/**
+ * JSON stored under a key, or null (missing or not JSON).
+ * @param {string} key
+ * @returns {Object|null}
+ */
+function readStoredJson(key) {
+  try {
+    return JSON.parse(useStorage('get', key) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True inside the editing tool preview (getSessionData().isEditingToolPreview).
+ * @returns {boolean}
+ */
+function isEditingToolPreview() {
+  return EDITOR_PREVIEW_HOSTS.test(window.location.hostname);
+}
 
 /**
  * Only removes what is stored (session and guest mode) and tells the page. Used by
@@ -178,17 +163,13 @@ export function clearUserSession() {
 }
 
 /**
- * The stored session, or null when there is none or it expired (an expired one is removed).
+ * The stored login session, or null when there is none or it expired (an expired one is
+ * removed). Internal: blocks use getSessionData().
  * @returns {{user: Object, accessToken: string, tokenType: string, expiresAt: number,
  *   sessionId: string}|null}
  */
-export function getUserSession() {
-  let session = null;
-  try {
-    session = JSON.parse(useStorage('get', SESSION_STORAGE_KEY) || 'null');
-  } catch {
-    return null;
-  }
+function readLoginSession() {
+  const session = readStoredJson(SESSION_STORAGE_KEY);
   if (!session?.accessToken) {
     return null;
   }
@@ -200,197 +181,31 @@ export function getUserSession() {
 }
 
 /**
- * True while there is a session that has not expired.
- * @returns {boolean}
+ * The guest session stored by continueAsGuest() ({ user, sessionId }), or null. An older guest
+ * flag that is not JSON still counts as a guest.
+ * @returns {{user: Object, sessionId: string}|null}
  */
-export function hasActiveSession() {
-  return getUserSession() !== null;
-}
-
-/**
- * The guest session stored by continueAsGuest(): { user (GUEST_USER), sessionId, startedAt },
- * or null when the visitor is not a guest. No token: it only lets the guest screens through.
- * @returns {{user: Object, sessionId: string, startedAt: number}|null}
- */
-export function getGuestSession() {
-  const stored = useStorage('get', GUEST_STORAGE_KEY);
-  if (!stored) {
+function readGuestSession() {
+  if (!useStorage('get', GUEST_STORAGE_KEY)) {
     return null;
   }
-  try {
-    const guest = JSON.parse(stored);
-    if (guest?.user?.isGuest) {
-      return guest;
-    }
-  } catch {
-    // not JSON: an older guest flag, still a guest
-  }
-  return { user: { ...GUEST_USER }, sessionId: '', startedAt: 0 };
+  const guest = readStoredJson(GUEST_STORAGE_KEY);
+  return guest?.user ? guest : { user: { ...GUEST_USER }, sessionId: '' };
 }
 
 /**
- * The session of whoever is visiting: the real session, else the guest session, else null.
- * Both have a `user` with the same fields (the guest one is GUEST_USER, user.isGuest = true).
- * @returns {Object|null}
- */
-export function getCurrentSession() {
-  return getUserSession() || getGuestSession();
-}
-
-/**
- * The user data of whoever is visiting (signed in or guest): { userId, email, phone,
- * firstName, lastName, verified, isGuest }, or null without a session. Never the token.
- * @returns {Object|null}
- */
-export function getCurrentUser() {
-  const user = getCurrentSession()?.user;
-  return user ? { ...user } : null;
-}
-
-/**
- * Who is visiting: 'signed-in', 'guest' or 'signed-out'.
+ * 'signed-in', 'guest' or 'signed-out'.
  * @returns {string} One of SESSION_STATES
  */
-export function getSessionState() {
-  if (hasActiveSession()) {
+function readSessionState() {
+  if (readLoginSession()) {
     return SESSION_STATES.SIGNED_IN;
   }
-  if (getGuestSession()) {
+  if (readGuestSession()) {
     return SESSION_STATES.GUEST;
   }
   return SESSION_STATES.SIGNED_OUT;
 }
-
-/**
- * Value for the Authorization header ('Bearer mock-access-token-abc123'), or '' without session.
- * @returns {string}
- */
-export function getAuthorizationHeader() {
-  const session = getUserSession();
-  return session ? `${session.tokenType || 'Bearer'} ${session.accessToken}` : '';
-}
-
-/**
- * Puts the state class on <html> (sessions.css) and signs out when the token expires.
- */
-function updateSessionStateClass() {
-  const root = document.documentElement;
-  [...root.classList]
-    .filter((name) => name.startsWith(STATE_CLASS_PREFIX))
-    .forEach((name) => root.classList.remove(name));
-  root.classList.add(isEditingToolPreview() ? EDITOR_STATE_CLASS : `${STATE_CLASS_PREFIX}${getSessionState()}`);
-
-  clearTimeout(expiryTimer);
-  const session = getUserSession();
-  if (session?.expiresAt) {
-    // getUserSession() removes the expired session and tells the page
-    const delay = Math.min(session.expiresAt - Date.now(), MAX_TIMER_DELAY);
-    expiryTimer = setTimeout(getUserSession, delay);
-  }
-}
-
-/**
- * Updates the state class and tells the blocks of the page.
- */
-function notifySessionChange() {
-  updateSessionStateClass();
-  const detail = { state: getSessionState(), session: getUserSession(), user: getCurrentUser() };
-  document.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail }));
-}
-
-/**
- * Guest mode ("Continuar como invitado"): stores a guest session with the same shape as a real
- * one (user = GUEST_USER, its own sessionId) and tells the page. No token.
- */
-export function continueAsGuest() {
-  const guestSession = {
-    user: { ...GUEST_USER },
-    sessionId: `guest-${window.crypto?.randomUUID?.() || Date.now()}`,
-    startedAt: Date.now(),
-  };
-  useStorage('set', GUEST_STORAGE_KEY, JSON.stringify(guestSession));
-  notifySessionChange();
-}
-
-/**
- * Stores the session of a successful login (leaves guest mode) and tells the page.
- * loginUser() calls it with the answer of the service; call it directly only when the login
- * answer arrives some other way.
- * @param {Object} data `data` of the login response
- * @param {Object} data.user userId, email, phone, firstName, lastName, verified
- * @param {string} data.accessToken
- * @param {string} [data.tokenType='Bearer']
- * @param {number} [data.expiresIn] Seconds the token lasts
- * @param {string} [data.sessionId]
- * @returns {Object|null} The stored session (null without accessToken)
- */
-export function saveUserSession({
-  user, accessToken, tokenType, expiresIn, sessionId,
-} = {}) {
-  if (typeof accessToken !== 'string' || !accessToken) {
-    return null;
-  }
-  const seconds = Number(expiresIn);
-  const session = {
-    user: {
-      userId: user?.userId ?? '',
-      email: user?.email ?? '',
-      phone: user?.phone != null ? String(user.phone) : '',
-      firstName: user?.firstName ?? '',
-      lastName: user?.lastName ?? '',
-      verified: user?.verified === true,
-      isGuest: false,
-    },
-    accessToken,
-    tokenType: typeof tokenType === 'string' && tokenType ? tokenType : 'Bearer',
-    expiresAt: Number.isFinite(seconds) && seconds > 0 ? Date.now() + seconds * 1000 : 0,
-    sessionId: sessionId ?? '',
-  };
-  useStorage('set', SESSION_STORAGE_KEY, JSON.stringify(session));
-  useStorage('remove', GUEST_STORAGE_KEY);
-  notifySessionChange();
-  return session;
-}
-
-/**
- * Logs the user in: POSTs requestBody to endpoint (public call) and, with a 200, stores the
- * session in sessionStorage and tells the page. Any block that logs in only sends these two.
- * The HTTP client is loaded on the first call (pages that never log in do not load it).
- * @param {string} endpoint URL of the login service
- * @param {Object} requestBody Body the service expects, e.g.
- *   { meta, security, data: { emailOrPhone, password } }
- * @returns {Promise<Object>} The stored session
- * @throws {ApiError} The service answered an error (its JSON body is in error.cause), there
- *   was no answer, or the answer has no accessToken
- */
-export async function loginUser(endpoint, requestBody) {
-  // loaded on demand: the interceptors import this file, so a static import would be a cycle
-  const [{ post, REQUEST_TYPE }, { ApiError }] = await Promise.all([
-    // eslint-disable-next-line import/no-cycle
-    import('../api/http-client.js'),
-    // eslint-disable-next-line import/no-cycle
-    import('../api/interceptors.js'),
-  ]);
-  const response = await post(endpoint, requestBody, { interceptor: REQUEST_TYPE.PUBLIC });
-  const session = saveUserSession(response?.data);
-  if (!session) {
-    throw new ApiError('Login answer without accessToken', { status: 200, url: endpoint, cause: response });
-  }
-  return session;
-}
-
-/**
- * Logs the user out. For now it only removes the stored session and guest mode (there is no
- * logout service yet); it is async so it can call one later without changing the callers.
- * @returns {Promise<void>}
- */
-export async function logoutUser() {
-  clearUserSession();
-}
-
-// ---------------------------------------------------------------------------------------------
-// Part 2 · Pages and redirects
-// ---------------------------------------------------------------------------------------------
 
 /**
  * A row of the page Metadata, read from the <meta> tags of the page. aem.page writes
@@ -406,27 +221,205 @@ function readPageMetadataValue(name) {
 }
 
 /**
- * A path of this site (/perfil?x=1), or '' for anything else (other sites, //host, javascript:).
- * @param {string} path
- * @returns {string}
+ * Where to send who cannot stay on the current page: the "Redirect To" Metadata row (a path of
+ * this site, as authored: nothing is added to the URL); missing or empty → home.
+ * (getSessionData().page.redirectPath)
+ * @returns {string} e.g. /login, or /
  */
-export function toSafeSitePath(path) {
-  const href = getSafeHref(path);
-  return href && href.startsWith('/') && !href.startsWith('//') ? href : '';
+function getPageRedirectPath() {
+  return toSafeSitePath(readPageMetadataValue('redirect-to')) || DEFAULT_REDIRECT_PATH;
 }
 
 /**
- * Where to send who cannot stay on the current page: redirectTo, else the "Redirect To"
- * Metadata row (a path of this site, as authored: nothing is added to the URL). Missing or
- * empty: DEFAULT_REDIRECT_PATH, the home page.
- * @param {Object} [options]
- * @param {string} [options.redirectTo] Page to go to (a block that redirects by itself)
- * @returns {string} e.g. /login, or /
+ * The page Metadata "Session" row in lower case: 'true', 'false' or '' (public).
+ * (getSessionData().page.rule)
+ * @returns {string}
  */
-export function getPageRedirectPath({ redirectTo } = {}) {
-  return toSafeSitePath(redirectTo) || toSafeSitePath(readPageMetadataValue('redirect-to'))
-    || DEFAULT_REDIRECT_PATH;
+function readPageSessionRule() {
+  return readPageMetadataValue('session').toLowerCase();
 }
+
+// ---------------------------------------------------------------------------------------------
+// Reading the session: one call
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Everything about whoever is visiting, in one call.
+ * @returns {{
+ *   state: string,
+ *   isSignedIn: boolean,
+ *   isGuest: boolean,
+ *   user: {userId: string, firstName: string, lastName: string, fullName: string,
+ *     email: string, phone: string, verified: boolean, sessionId: string}|null,
+ *   fields: {key: string, value: (string|boolean)}[],
+ *   page: {rule: string, redirectPath: string, isAccessAllowed: boolean},
+ *   isEditingToolPreview: boolean,
+ * }} user and fields come from the login session or the guest one; null / [] without a
+ *   session. fields keeps the USER_FIELDS order and leaves out empty values. page is the
+ *   Metadata of the current page: rule 'true' | 'false' | '', redirectPath (Redirect To or /)
+ *   and isAccessAllowed (false while the page is being redirected). Never the token.
+ */
+export function getSessionData() {
+  const state = readSessionState();
+  const isSignedIn = state === SESSION_STATES.SIGNED_IN;
+  const isGuest = state === SESSION_STATES.GUEST;
+  const session = (isSignedIn && readLoginSession()) || (isGuest && readGuestSession()) || null;
+  const stored = session?.user;
+  const user = stored ? {
+    userId: stored.userId ?? '',
+    firstName: stored.firstName ?? '',
+    lastName: stored.lastName ?? '',
+    fullName: [stored.firstName, stored.lastName].filter(Boolean).join(' '),
+    email: stored.email ?? '',
+    phone: stored.phone ?? '',
+    verified: stored.verified === true,
+    sessionId: session.sessionId ?? '',
+  } : null;
+  const fields = user
+    ? USER_FIELDS
+      .map((key) => ({ key, value: user[key] }))
+      .filter(({ value }) => value !== '' && value !== null && value !== undefined)
+    : [];
+  return {
+    state,
+    isSignedIn,
+    isGuest,
+    user,
+    fields,
+    page: {
+      rule: readPageSessionRule(),
+      redirectPath: getPageRedirectPath(),
+      isAccessAllowed: pageAccessAllowed,
+    },
+    isEditingToolPreview: isEditingToolPreview(),
+  };
+}
+
+/**
+ * Value for the Authorization header ('Bearer mock-access-token-abc123'), or '' without session.
+ * For the private interceptor (scripts/api/interceptors.js).
+ * @returns {string}
+ */
+export function getAuthorizationHeader() {
+  const session = readLoginSession();
+  return session ? `${session.tokenType || 'Bearer'} ${session.accessToken}` : '';
+}
+
+/**
+ * Puts the state class on <html> (sessions.css) and signs out when the token expires.
+ */
+function updateSessionStateClass() {
+  const root = document.documentElement;
+  [...root.classList]
+    .filter((name) => name.startsWith(STATE_CLASS_PREFIX))
+    .forEach((name) => root.classList.remove(name));
+  root.classList.add(isEditingToolPreview() ? EDITOR_STATE_CLASS : `${STATE_CLASS_PREFIX}${readSessionState()}`);
+
+  clearTimeout(expiryTimer);
+  const session = readLoginSession();
+  if (session?.expiresAt) {
+    // readLoginSession() removes the expired session and tells the page
+    const delay = Math.min(session.expiresAt - Date.now(), MAX_TIMER_DELAY);
+    expiryTimer = setTimeout(readLoginSession, delay);
+  }
+}
+
+/**
+ * Updates the state class and tells the blocks of the page (detail = getSessionData()).
+ */
+function notifySessionChange() {
+  updateSessionStateClass();
+  document.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail: getSessionData() }));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Actions: log in, log out, guest
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Stores the data of a 200 login answer (leaves guest mode) and tells the page.
+ * @param {Object} data `data` of the login response: user, accessToken, tokenType, expiresIn,
+ *   sessionId
+ * @returns {boolean} false without accessToken (nothing is stored)
+ */
+function storeLoginSession({
+  user, accessToken, tokenType, expiresIn, sessionId,
+} = {}) {
+  if (typeof accessToken !== 'string' || !accessToken) {
+    return false;
+  }
+  const seconds = Number(expiresIn);
+  const session = {
+    user: {
+      userId: user?.userId ?? '',
+      email: user?.email ?? '',
+      phone: user?.phone != null ? String(user.phone) : '',
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      verified: user?.verified === true,
+    },
+    accessToken,
+    tokenType: typeof tokenType === 'string' && tokenType ? tokenType : 'Bearer',
+    expiresAt: Number.isFinite(seconds) && seconds > 0 ? Date.now() + seconds * 1000 : 0,
+    sessionId: sessionId ?? '',
+  };
+  useStorage('set', SESSION_STORAGE_KEY, JSON.stringify(session));
+  useStorage('remove', GUEST_STORAGE_KEY);
+  notifySessionChange();
+  return true;
+}
+
+/**
+ * Logs the user in: POSTs requestBody to endpoint (public call) and, with a 200, stores the
+ * session in sessionStorage and tells the page. Any block that logs in only sends these two.
+ * The HTTP client is loaded on the first call (pages that never log in do not load it).
+ * @param {string} endpoint URL of the login service
+ * @param {Object} requestBody Body the service expects, e.g.
+ *   { meta, security, data: { emailOrPhone, password } }
+ * @returns {Promise<Object>} getSessionData() after the login
+ * @throws {ApiError} The service answered an error (its JSON body is in error.cause), there
+ *   was no answer, or the answer has no accessToken
+ */
+export async function loginUser(endpoint, requestBody) {
+  // loaded on demand: the interceptors import this file, so a static import would be a cycle
+  const [{ post, REQUEST_TYPE }, { ApiError }] = await Promise.all([
+    // eslint-disable-next-line import/no-cycle
+    import('../api/http-client.js'),
+    // eslint-disable-next-line import/no-cycle
+    import('../api/interceptors.js'),
+  ]);
+  const response = await post(endpoint, requestBody, { interceptor: REQUEST_TYPE.PUBLIC });
+  if (!storeLoginSession(response?.data)) {
+    throw new ApiError('Login answer without accessToken', { status: 200, url: endpoint, cause: response });
+  }
+  return getSessionData();
+}
+
+/**
+ * Logs the user out. For now it only removes the stored session and guest mode (there is no
+ * logout service yet); it is async so it can call one later without changing the callers.
+ * @returns {Promise<void>}
+ */
+export async function logoutUser() {
+  clearUserSession();
+}
+
+/**
+ * Guest mode ("Continuar como invitado"): stores a guest user with the same fields as a real
+ * one (GUEST_USER: 'guest', 'Invitado') and its own sessionId, and tells the page. No token.
+ */
+export function continueAsGuest() {
+  const guestSession = {
+    user: { ...GUEST_USER },
+    sessionId: `guest-${window.crypto?.randomUUID?.() || Date.now()}`,
+  };
+  useStorage('set', GUEST_STORAGE_KEY, JSON.stringify(guestSession));
+  notifySessionChange();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Pages and redirects (page Metadata)
+// ---------------------------------------------------------------------------------------------
 
 /**
  * Goes to a page of the site; a page reload asked by session rows does not cancel it.
@@ -444,88 +437,52 @@ export function goToPage(path, { replace = false } = {}) {
 }
 
 /**
- * True when the visitor can open something that needs a session (or a guest, if allowed).
- * @param {boolean} allowGuest
+ * True when the visitor can stay on a page with this Metadata rule. Always true in the
+ * editing tool preview.
+ *   true  → only with a session (a guest is not enough)
+ *   false → only without a session (a guest can stay)
+ *   other → public
+ * @param {string} rule readPageSessionRule()
  * @returns {boolean}
  */
-function hasSessionAccess(allowGuest) {
-  const state = getSessionState();
-  return state === SESSION_STATES.SIGNED_IN || (allowGuest && state === SESSION_STATES.GUEST);
-}
-
-/**
- * Lets the visitor stay only with a session (or as a guest when allowGuest); otherwise sends
- * them to getPageRedirectPath() with location.replace ("back" does not return here).
- * Never redirects in the editing tool preview.
- * @param {Object} [options]
- * @param {boolean} [options.allowGuest=false]
- * @param {string} [options.redirectTo] Overrides the "Redirect To" Metadata row
- * @returns {boolean} true = can stay
- */
-export function requireActiveSession({ allowGuest = false, redirectTo } = {}) {
-  if (isEditingToolPreview() || hasSessionAccess(allowGuest)) {
+function canStayOnPage(rule) {
+  if (isEditingToolPreview()) {
     return true;
   }
-  goToPage(getPageRedirectPath({ redirectTo }), { replace: true });
-  return false;
-}
-
-/**
- * The opposite: lets the visitor stay only WITHOUT a session (the login page); with one sends
- * them to getPageRedirectPath(). A guest can stay. Never redirects in the editing tool preview.
- * @param {Object} [options]
- * @param {string} [options.redirectTo] Overrides the "Redirect To" Metadata row
- * @returns {boolean} true = can stay
- */
-export function requireNoActiveSession({ redirectTo } = {}) {
-  if (isEditingToolPreview() || getSessionState() !== SESSION_STATES.SIGNED_IN) {
-    return true;
+  const { isSignedIn } = getSessionData();
+  if (rule === PAGE_SESSION_RULES.REQUIRED) {
+    return isSignedIn;
   }
-  goToPage(getPageRedirectPath({ redirectTo }), { replace: true });
-  return false;
-}
-
-/**
- * The page Metadata "Session" row in lower case: 'true', 'false' or '' (public).
- * @returns {string}
- */
-export function readPageSessionRule() {
-  return readPageMetadataValue('session').toLowerCase();
-}
-
-/**
- * Page rule from the Metadata "Session" row (case-insensitive):
- *   true  → only with a session (a guest is not enough); without one → "Redirect To"
- *   false → only without a session; with one → "Redirect To" (after a login on the page too)
- *   empty or no row → public, nothing is checked
- * "Redirect To" missing or empty → home. Called by initPageSession() before the page is
- * shown; the rule runs again whenever the session changes on the page.
- * @returns {boolean} false = the page is being redirected (do not paint it)
- */
-export function applyPageSessionRule() {
-  updateSessionStateClass();
-  const rule = readPageSessionRule();
-  const checks = {
-    [PAGE_SESSION_RULES.REQUIRED]: requireActiveSession,
-    [PAGE_SESSION_RULES.SIGNED_OUT_ONLY]: requireNoActiveSession,
-  };
-  const check = checks[rule];
-  if (!check) {
-    return true;
+  if (rule === PAGE_SESSION_RULES.SIGNED_OUT_ONLY) {
+    return !isSignedIn;
   }
-  if (!check()) {
-    return false;
-  }
-  document.addEventListener(SESSION_CHANGE_EVENT, () => check());
   return true;
 }
 
 /**
- * False while the page Metadata rule is redirecting: blocks should not paint anything.
- * @returns {boolean}
+ * Page rule from the Metadata "Session" row: a visitor who cannot stay goes to "Redirect To"
+ * (location.replace: "back" does not return here). It runs again whenever the session changes
+ * on the page (after a login on /login, after a logout on a private page).
+ * @returns {boolean} false = the page is being redirected (do not paint it)
  */
-export function isPageAccessAllowed() {
-  return pageAccessAllowed;
+function applyPageSessionRule() {
+  updateSessionStateClass();
+  const rule = readPageSessionRule();
+  if (rule !== PAGE_SESSION_RULES.REQUIRED && rule !== PAGE_SESSION_RULES.SIGNED_OUT_ONLY) {
+    return true;
+  }
+  const checkPage = () => {
+    if (canStayOnPage(rule)) {
+      return true;
+    }
+    goToPage(getPageRedirectPath(), { replace: true });
+    return false;
+  };
+  if (!checkPage()) {
+    return false;
+  }
+  document.addEventListener(SESSION_CHANGE_EVENT, checkPage);
+  return true;
 }
 
 /**
@@ -547,19 +504,17 @@ function loadSessionStyles() {
  * Start of the session on every page (runs once, when this file loads from head.html, before
  * scripts.js): loads sessions.css, puts the state class on <html> and runs the page Metadata
  * rule. A page without a Session row is not touched; a page that redirects is hidden.
- * @returns {boolean} false = the page is being redirected
  */
-export function initPageSession() {
+function initPageSession() {
   loadSessionStyles();
   pageAccessAllowed = applyPageSessionRule();
   if (!pageAccessAllowed) {
     document.body.style.visibility = 'hidden';
   }
-  return pageAccessAllowed;
 }
 
 // ---------------------------------------------------------------------------------------------
-// Part 3 · Showing things by session
+// Showing things by session
 // ---------------------------------------------------------------------------------------------
 
 /**
@@ -606,17 +561,16 @@ function reloadPageOnSessionChange() {
 }
 
 /**
- * Session rows of a block table: a row of 2 or more cells whose LAST cell is made only of states
- * (| … | signed-in |, | … | signed-out, guest |) stays only for those states, whatever the block
- * and its number of columns. The state cell is removed from the rows that stay
- * (row.dataset.session keeps it, e.g. "signed-in guest"), so the block reads its table as
- * always. Rows with an empty last cell, a single cell, or a last cell that is not only states
- * are not touched (always shown). Running it twice changes nothing.
+ * Session rows of a block table (block-options.js): a row of 2 or more cells whose LAST cell is
+ * made only of states (| … | signed-in |, | … | signed-out, guest |) stays only for those
+ * states, whatever the block and its number of columns. The state cell is removed from the rows
+ * that stay (row.dataset.session keeps it, e.g. "signed-in guest"), so the block reads its
+ * table as always. Rows with an empty last cell, a single cell, or a last cell that is not only
+ * states are not touched (always shown). The session is read only when the block has such rows.
  * @param {Element} block
  * @returns {boolean} true when the block had session rows
  */
 export function filterRowsBySessionState(block) {
-  // the session is read only when the block has a session row
   let state = null;
   let hasSessionRows = false;
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
@@ -626,7 +580,7 @@ export function filterRowsBySessionState(block) {
       return;
     }
     hasSessionRows = true;
-    state = state || getSessionState();
+    state = state || readSessionState();
     const states = parseSessionStateList(lastCell.textContent);
     lastCell.remove();
     row.dataset.session = states.join(' ');
@@ -659,18 +613,18 @@ export function showOnlyForSessionStates(element, states) {
 
 /**
  * Paints in target the view of the current state and repaints it when the session changes.
- * A view is a function (session) → Element | string | null. Missing guest view → the
- * signed-out one; missing view → target stays empty.
+ * A view is a function (getSessionData() result) → Element | string | null. Missing guest
+ * view → the signed-out one; missing view → target stays empty.
  * @param {Element} target
  * @param {{'signed-in'?: Function, guest?: Function, 'signed-out'?: Function}} views
  * @returns {Function} Stops listening to the session
  */
 export function renderBySessionState(target, views) {
   const render = () => {
-    const state = getSessionState();
-    const view = views[state]
-      || (state === SESSION_STATES.GUEST ? views[SESSION_STATES.SIGNED_OUT] : null);
-    const content = view ? view(getCurrentSession()) : null;
+    const data = getSessionData();
+    const view = views[data.state]
+      || (data.isGuest ? views[SESSION_STATES.SIGNED_OUT] : null);
+    const content = view ? view(data) : null;
     target.replaceChildren(...(content === null || content === undefined ? [] : [content]));
   };
   render();
