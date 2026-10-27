@@ -27,7 +27,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `scripts/foundations/block-utils.js` | Nuevo | Ayudas compartidas de los bloques |
 | `scripts/foundations/messages.js` | Nuevo | Mensajes, idioma y moneda |
 | `scripts/foundations/toast.js` | Nuevo | Alerta flotante |
-| `scripts/foundations/store.js` | Nuevo | Variables globales del sitio; llena solas las marcas `{apartado.variable}` |
+| `scripts/foundations/store.js` | Nuevo | Variables globales del sitio (breadcrumb y usuario); llena solas las marcas `{store.apartado.variable}` |
 | `styles/foundations/store.css` | Nuevo | Oculta lo que espera un valor del store |
 | `scripts/foundations/session.js` | Nuevo | Único archivo de sesión: arranca en todas las páginas, reglas de página y mostrar u ocultar por sesión |
 | `scripts/foundations/README.md` | Nuevo | Guía de los JS portables |

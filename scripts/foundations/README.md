@@ -17,8 +17,8 @@ bloques o no.
 | [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
 | [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
 | [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
-| [`store.js`](#5-storejs) | **Variables globales** del sitio (como el estado de React): solo las declaradas en `STORE`; `get`, `set`, `reset` y `subscribe`, y las marcas `{breadcrumb.name}` de cualquier texto se llenan solas. Lo carga `head.html` (hoy: `breadcrumb.name` y `breadcrumb.brand`) | `head.html`, `product-detail` (pone `breadcrumb.name`) | `styles/foundations/store.css` |
-| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, leer los datos, reglas de las páginas y mostrar u ocultar | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `styles/foundations/sessions.css` |
+| [`store.js`](#5-storejs) | **Variables globales** del sitio (como el estado de React): solo las declaradas en `STORE`; `get`, `set`, `reset` y `subscribe`, y las marcas `{store.breadcrumb.name}` de cualquier texto se llenan solas. Lo carga `head.html` (hoy: `breadcrumb` y `user`) | `head.html`, `session.js` (pone `user`), `product-detail` (pone `breadcrumb.name`), `account-profile` y `block-session-example` (leen `user`) | `styles/foundations/store.css` |
+| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, estado, reglas de las páginas y mostrar u ocultar; pone el usuario en el store | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `store.js` (pone `user`), `styles/foundations/sessions.css` |
 
 ```js
 // cómo se importan desde un bloque (blocks/<bloque>/<bloque>.js)
@@ -180,9 +180,16 @@ páginas**, así que siempre está escuchando.
 
 ```js
 const STORE = {
+  // los niveles dinámicos del breadcrumb (los pone el bloque que los conoce, p. ej. product-detail)
   breadcrumb: {
-    name: '',   // {breadcrumb.name}
-    brand: '',  // {breadcrumb.brand}
+    name: '',   // {store.breadcrumb.name}
+    brand: '',  // {store.breadcrumb.brand}
+  },
+  // el usuario de la sesión: SOLO lo llena session.js; nunca el token
+  user: {
+    userId: '', firstName: '', lastName: '', fullName: '',
+    email: '', phone: '', verified: false, sessionId: '',
+    isGuest: false,   // true para el invitado ("Invitado", userId "guest")
   },
 };
 ```
@@ -210,20 +217,30 @@ store.reset();                                    // dejar todo vacío
 
 ### 3. Mostrar un valor: no hace falta código
 
-Cualquier texto de la página con una marca **`{apartado.variable}`**, en cualquier bloque o texto de
-Drive, **se llena solo** y se vuelve a llenar en cada `set` o `reset`:
+Cualquier texto de la página con una marca **`{store.apartado.variable}`**, en cualquier bloque o
+texto de Drive, **se llena solo** y se vuelve a llenar en cada `set` o `reset`:
 
 ```
-| Level 3 | {breadcrumb.name}            |   → "Apple iPhone 15 Pro"
-| Title   | Detalle de {breadcrumb.name} |   → "Detalle de Apple iPhone 15 Pro"
+| Level 3      | {store.breadcrumb.name}            |   → "Apple iPhone 15 Pro"
+| Title        | Detalle de {store.breadcrumb.name} |   → "Detalle de Apple iPhone 15 Pro"
+| Signed In Text | Hola, {store.user.firstName}     |   → "Hola, Cliente"
 ```
+
+**Dos tipos de marca en Drive** (para saber de dónde viene cada valor):
+
+| Marca | De dónde viene | Quién la llena |
+|---|---|---|
+| `{store.apartado.variable}` | Del **store** (variables globales) | El store, solo, en cualquier bloque o texto |
+| `{variable}` (sin `store.`) | Del **bloque** (datos de su servicio o de su JS) | El JS del bloque: `/celulares/?id={id}`, `{count} productos encontrados` |
+
+El store **solo toca** las marcas que empiezan con `store.`; las del bloque nunca las mira.
 
 - Mientras una marca no tiene valor, su elemento **espera oculto** (`data-store-pending`,
   `styles/foundations/store.css`). El breadcrumb también oculta ese nivel con su `›`.
 - Solo cambia **texto**, nunca HTML.
 - Los textos de un bloque se llenan **cuando el bloque terminó de cargar**, para que el bloque lea
   su tabla de Drive tal cual.
-- Una marca que no está declarada (`{breadcrumb.price}`) se queda como texto.
+- Una marca del store que no está declarada (`{store.breadcrumb.price}`) se queda como texto.
 
 Por eso el breadcrumb no tiene código del store: pinta sus niveles como texto y el store los llena.
 
@@ -244,16 +261,37 @@ store.subscribe('cart.count', (count) => {
 ### 5. Cuánto duran
 
 Mientras estás en la página. Cada navegación carga la página de nuevo, así que el store **empieza
-vacío** y el bloque que conoce el dato lo vuelve a llenar (el detalle del celular pone
-`breadcrumb.name`). Si hace falta limpiar a mano (por ejemplo al cerrar sesión), `store.reset(…)`.
+vacío** y se vuelve a llenar:
+
+- `breadcrumb`: lo llena el bloque que conoce el dato (el detalle del celular pone
+  `breadcrumb.name`).
+- `user`: lo llena **`session.js` al abrir cada página**, desde la sesión guardada en
+  `sessionStorage`. También lo actualiza al iniciar sesión o entrar como invitado, y lo limpia
+  (`store.reset('user')`) al cerrar sesión o cuando vence. Los bloques solo lo leen.
+
+### 6. El usuario: solo desde el store
+
+```js
+store.get('user');             // { userId, firstName, fullName, email, …, isGuest }
+store.get('user.firstName');   // 'Cliente'   ('' sin sesión)
+// en Drive: "Hola, {store.user.firstName}"   → se llena solo
+
+// un bloque que pinta HTML con el usuario (Mi cuenta)
+store.subscribe('user', (user) => render(user));   // ahora y cada vez que cambie
+```
+
+Sin sesión, `user` tiene sus valores vacíos (`userId: ''`). **Nunca** trae el token: el token solo
+lo usa `getAuthorizationHeader()` para la llamada privada.
 
 ---
 
 ## 6. `session.js`
 
 **Para qué es:** todo lo de sesión en **un solo archivo**: iniciar y cerrar sesión, el modo
-invitado, leer los datos del usuario, las reglas de cada página (Metadata `Session` /
-`Redirect To`) y mostrar u ocultar elementos según quién visita. No depende de `aem.js`. Guía para
+invitado, el estado de quien visita, las reglas de cada página (Metadata `Session` /
+`Redirect To`) y mostrar u ocultar elementos según quién visita. **Los datos del usuario los pone en
+el store** (`store.get('user')`, ver `store.js`), que es el único lugar de donde los leen los
+bloques. No depende de `aem.js`. Guía para
 autores y desarrolladores: `documentation/08-sesiones.md`.
 
 ### Cómo arranca
@@ -262,9 +300,10 @@ autores y desarrolladores: `documentation/08-sesiones.md`.
 solo:
 
 1. agrega `styles/foundations/sessions.css`;
-2. pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
+2. **llena el usuario del store** desde la sesión guardada (el store empieza vacío en cada página);
+3. pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
    el panel de edición);
-3. revisa la regla del Metadata de la página y, si el visitante no puede estar ahí, oculta la
+4. revisa la regla del Metadata de la página y, si el visitante no puede estar ahí, oculta la
    página y lo manda a `Redirect To`.
 
 | Metadata | Sin sesión (o invitado) | Con sesión |
@@ -280,10 +319,10 @@ redirige. La regla se vuelve a revisar si la sesión cambia en la página.
 
 | Función | Recibe | Qué hace / devuelve | Para qué sirve |
 |---|---|---|---|
-| `getSessionData()` | — | **Todo lo de la sesión en un solo llamado** (tabla de abajo) | Saber si hay sesión, quién visita, sus datos y la regla de la página |
-| `loginUser(endpoint, requestBody)` | La URL del servicio de login y el cuerpo que pide (`{ meta, security, data: { emailOrPhone, password } }`) | `POST` (llamada pública); con un 200 guarda la sesión en `sessionStorage`, avisa a la página y devuelve `getSessionData()`. Si falla lanza el `ApiError` (el JSON del servicio en `error.cause`) | **Iniciar sesión** desde cualquier bloque |
-| `logoutUser()` | — | Por ahora borra la sesión y el modo invitado de `sessionStorage` y avisa a la página. Es `async`, lista para llamar un servicio de logout | **Cerrar sesión** |
-| `continueAsGuest()` | — | Guarda un usuario `guest` ("Invitado") con los mismos campos que uno real y su propio `sessionId`, sin token | El botón "Continuar como invitado" |
+| `getSessionData()` | — | El estado de la sesión y de la página en un solo llamado (tabla de abajo) | Saber si hay sesión, si es invitado y la regla de la página. **Los datos del usuario están en el store** |
+| `loginUser(endpoint, requestBody)` | La URL del servicio de login y el cuerpo que pide (`{ meta, security, data: { emailOrPhone, password } }`) | `POST` (llamada pública); con un 200 guarda la sesión en `sessionStorage`, llena el usuario del store, avisa a la página y devuelve `getSessionData()`. Si falla lanza el `ApiError` (el JSON del servicio en `error.cause`) | **Iniciar sesión** desde cualquier bloque |
+| `logoutUser()` | — | Por ahora borra la sesión y el modo invitado de `sessionStorage`, vacía el usuario del store y avisa a la página. Es `async`, lista para llamar un servicio de logout | **Cerrar sesión** |
+| `continueAsGuest()` | — | Guarda un usuario `guest` ("Invitado") con los mismos campos que uno real y su propio `sessionId`, sin token, y lo pone en el store (`isGuest: true`) | El botón "Continuar como invitado" |
 | `goToPage(path, { replace })` | Una ruta del sitio | Va a esa página; una recarga pedida por las filas por sesión no la cancela | Navegar después de iniciar sesión o entrar como invitado |
 | `showOnlyForSessionStates(element, states)` | Un elemento y los estados (`'signed-in, guest'` o `['signed-in']`) | Le pone las clases de `sessions.css`; sin estados, se ve para todos | Mostrar u ocultar una parte de un bloque, al instante |
 
@@ -292,14 +331,11 @@ redirige. La regla se vuelve a revisar si la sesión cambia en la página.
 | `SESSION_CHANGE_EVENT` | `'session:change'` | Evento en `document` después de **cualquier** cambio (iniciar o cerrar sesión, invitado, vencimiento); `detail` = `getSessionData()`. Sirve para volver a pintar sin recargar |
 | `SESSION_STATES` | `{ SIGNED_IN: 'signed-in', GUEST: 'guest', SIGNED_OUT: 'signed-out' }` | Comparar estados sin escribir el texto a mano |
 | `PAGE_SESSION_RULES` | `{ REQUIRED: 'true', SIGNED_OUT_ONLY: 'false' }` | Comparar `getSessionData().page.rule` |
-| `USER_FIELDS` | `['fullName', 'email', 'phone', 'userId', 'verified', 'sessionId']` | Las `key` de `fields`, en ese orden |
 
 ### Qué trae `getSessionData()`
 
 ```js
-const {
-  state, isSignedIn, isGuest, user, fields, page, isEditingToolPreview,
-} = getSessionData();
+const { state, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionData();
 ```
 
 | Propiedad | Qué trae | Sin sesión |
@@ -307,31 +343,33 @@ const {
 | `state` | `'signed-in'`, `'guest'` o `'signed-out'` | `'signed-out'` |
 | `isSignedIn` | `true` con una sesión real (el invitado **no** cuenta) | `false` |
 | `isGuest` | `true` después de "Continuar como invitado" | `false` |
-| `user` | `{ userId, firstName, lastName, fullName, email, phone, verified, sessionId }`, de la sesión o del invitado (`guest`, "Invitado") | `null` |
-| `fields` | Los datos del usuario **ya armados para pintar**, sin vacíos: `[{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: … }, …]` | `[]` |
 | `page.rule` | `'true'`, `'false'` o `''` (la fila `Session` del Metadata) | igual |
 | `page.redirectPath` | La ruta de `Redirect To`, o `/` | igual |
 | `page.isAccessAllowed` | `false` mientras la página está redirigiendo | igual |
 | `isEditingToolPreview` | `true` en el panel de edición (no redirige, se ve todo) | igual |
 
-**Nunca** trae el token. Una sesión vencida cuenta como "sin sesión" (se borra sola).
+Los datos del usuario **no** están aquí: están en el store (`store.get('user')`). **Nunca** se da
+el token. Una sesión vencida cuenta como "sin sesión" (se borra sola).
 
-### Ejemplo: leer y volver a pintar
+### Ejemplo: estado de la sesión y datos del usuario
 
 ```js
 import { SESSION_CHANGE_EVENT, getSessionData } from '../../scripts/foundations/session.js';
+import { store } from '../../scripts/foundations/store.js';
 
+// ¿hay sesión? → session.js
+const { isSignedIn } = getSessionData();
+
+// los datos del usuario → el store (o la marca {store.user.firstName} en Drive, sin código)
 const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono' };
+store.subscribe('user', (user) => {
+  list.replaceChildren(...Object.keys(LABELS)
+    .filter((key) => user[key])
+    .map((key) => createElementWithClass('div', 'my-block-field', `${LABELS[key]}: ${user[key]}`)));
+});
 
-// el bloque decide qué pintar y con qué texto: solo pone su etiqueta a cada key
-const paint = ({ user, fields }) => {
-  list.replaceChildren(...fields
-    .filter(({ key }) => LABELS[key])
-    .map(({ key, value }) => createElementWithClass('div', 'my-block-field', `${LABELS[key]}: ${value}`)));
-  greeting.textContent = user ? `Hola, ${user.firstName}` : 'Inicia sesión';
-};
-paint(getSessionData());                                                          // al cargar
-document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));  // al cambiar
+// repintar algo que depende del estado (no del usuario)
+document.addEventListener(SESSION_CHANGE_EVENT, (event) => paintButtons(event.detail));
 ```
 
 Ejemplos reales: `blocks/account-profile/` (sencillo: Mi cuenta) y `blocks/block-session-example/`
@@ -349,7 +387,8 @@ Ejemplos reales: `blocks/account-profile/` (sencillo: Mi cuenta) y `blocks/block
 
 | Función | Qué hace |
 |---|---|
-| `initPageSession()` | El arranque de cada página (CSS, estado, regla); corre sola al cargar el archivo |
+| `initPageSession()` | El arranque de cada página (CSS, usuario del store, estado, regla); corre sola al cargar el archivo |
+| `syncUserStore()` | Llena el usuario del store desde la sesión guardada (login o invitado) o lo vacía sin sesión. Es el **único** que escribe `user` en el store |
 | `applyPageSessionRule()` / `canStayOnPage(rule)` | Aplican la regla `Session` del Metadata y redirigen si hace falta |
 | `readPageSessionRule()` / `getPageRedirectPath()` / `readPageMetadataValue(name)` | Leen el Metadata (`page.rule`, `page.redirectPath`) |
 | `readLoginSession()` / `readGuestSession()` / `readSessionState()` | Leen lo guardado en `sessionStorage` (la sesión vencida se borra) |
@@ -368,7 +407,6 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 | `SESSION_STORAGE_KEY` / `GUEST_STORAGE_KEY` | `novamovil-session` / `novamovil-guest` | Llaves en `sessionStorage` |
 | `DEFAULT_REDIRECT_PATH` | `/` | A dónde va una página sin `Redirect To` |
 | `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', … }` | El usuario que se guarda al continuar como invitado |
-| `USER_FIELDS` | `fullName`, `email`, `phone`, `userId`, `verified`, `sessionId` | Qué datos trae `fields` y en qué orden |
 | `EDITOR_PREVIEW_HOSTS` | `preview-aemcoder.adobe.io` | Dónde no se redirige y se ve todo |
 
 ### Seguridad

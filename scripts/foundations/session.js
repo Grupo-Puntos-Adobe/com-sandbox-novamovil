@@ -10,20 +10,19 @@
  *
  *   import { getSessionData, loginUser, logoutUser, continueAsGuest } from '…/session.js';
  *
- *   const { state, isSignedIn, isGuest, user, fields, page, isEditingToolPreview } =
- *     getSessionData();                    everything you can ask about the session, one call
+ *   const { state, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionData();
  *     state       'signed-in' | 'guest' | 'signed-out'
  *     isSignedIn  true with a real session (a guest is not one)
  *     isGuest     true after "Continuar como invitado"
- *     user        { userId, firstName, lastName, fullName, email, phone, verified, sessionId }
- *                 of the session or of the guest ('guest', 'Invitado'); null without a session
- *     fields      the user data ready to paint, without empty values ([] without a session):
- *                 [{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: … }, …]
- *                 keys: USER_FIELDS (fullName, email, phone, userId, verified, sessionId); the
- *                 block puts its own label to each key. Never the token.
  *     page        Metadata of this page: { rule: 'true' | 'false' | '', redirectPath (Redirect
  *                 To, or /), isAccessAllowed (false while the page is being redirected) }
  *     isEditingToolPreview   true in the editing tool preview (no redirects, all visible)
+ *
+ * The USER lives in the store (scripts/foundations/store.js), and only there: this file fills
+ * store "user" when the session starts (login or guest) and on EVERY page start (the store is
+ * lost when you leave a page, the session is kept in sessionStorage), and empties it when the
+ * session ends. Blocks read it with store.get('user') or the Drive mark {store.user.firstName};
+ * never the token.
  *
  *   await loginUser(endpoint, requestBody)  POST to the login service; with a 200 the session is
  *                                           stored (sessionStorage) and the page is told
@@ -34,7 +33,7 @@
  *   showOnlyForSessionStates(element, 'signed-in, guest')   shown only to those states
  *   SESSION_CHANGE_EVENT                    on document after any change, detail =
  *                                           getSessionData(). To repaint a part:
- *     const paint = ({ state, user, fields }) => { … };
+ *     const paint = ({ state, isSignedIn }) => { … };
  *     paint(getSessionData());
  *     document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
  *
@@ -56,6 +55,7 @@
  * Never log the session: it carries the access token.
  */
 import { toSafeSitePath } from './block-utils.js';
+import { store } from './store.js';
 
 // ---------------------------------------------------------------------------------------------
 // Settings
@@ -71,8 +71,6 @@ export const PAGE_SESSION_RULES = {
   REQUIRED: 'true', // only with a session
   SIGNED_OUT_ONLY: 'false', // only without a session (login)
 };
-// keys of getSessionData().fields, in this order
-export const USER_FIELDS = ['fullName', 'email', 'phone', 'userId', 'verified', 'sessionId'];
 const SESSION_STORAGE_KEY = 'novamovil-session';
 const GUEST_STORAGE_KEY = 'novamovil-guest';
 // where a page sends the visitor it does not accept, without "Redirect To": the home page
@@ -250,43 +248,20 @@ function readPageSessionRule() {
  *   state: string,
  *   isSignedIn: boolean,
  *   isGuest: boolean,
- *   user: {userId: string, firstName: string, lastName: string, fullName: string,
- *     email: string, phone: string, verified: boolean, sessionId: string}|null,
- *   fields: {key: string, value: (string|boolean)}[],
  *   page: {rule: string, redirectPath: string, isAccessAllowed: boolean},
  *   isEditingToolPreview: boolean,
- * }} user and fields come from the login session or the guest one; null / [] without a
- *   session. fields keeps the USER_FIELDS order and leaves out empty values. page is the
- *   Metadata of the current page: rule 'true' | 'false' | '', redirectPath (Redirect To or /)
- *   and isAccessAllowed (false while the page is being redirected). Never the token.
+ * }} page is the Metadata of the current page: rule 'true' | 'false' | '', redirectPath
+ *   (Redirect To or /) and isAccessAllowed (false while the page is being redirected). The user
+ *   is in the store: store.get('user').
  */
 export function getSessionData() {
   const state = readSessionState();
   const isSignedIn = state === SESSION_STATES.SIGNED_IN;
   const isGuest = state === SESSION_STATES.GUEST;
-  const session = (isSignedIn && readLoginSession()) || (isGuest && readGuestSession()) || null;
-  const stored = session?.user;
-  const user = stored ? {
-    userId: stored.userId ?? '',
-    firstName: stored.firstName ?? '',
-    lastName: stored.lastName ?? '',
-    fullName: [stored.firstName, stored.lastName].filter(Boolean).join(' '),
-    email: stored.email ?? '',
-    phone: stored.phone ?? '',
-    verified: stored.verified === true,
-    sessionId: session.sessionId ?? '',
-  } : null;
-  const fields = user
-    ? USER_FIELDS
-      .map((key) => ({ key, value: user[key] }))
-      .filter(({ value }) => value !== '' && value !== null && value !== undefined)
-    : [];
   return {
     state,
     isSignedIn,
     isGuest,
-    user,
-    fields,
     page: {
       rule: readPageSessionRule(),
       redirectPath: getPageRedirectPath(),
@@ -326,10 +301,37 @@ function updateSessionStateClass() {
 }
 
 /**
- * Updates the state class and tells the blocks of the page (detail = getSessionData()).
+ * Fills store "user" with the user of the session (login or guest), or empties it without a
+ * session. The only place that writes the user of the store. Never the token.
+ */
+function syncUserStore() {
+  const login = readLoginSession();
+  const session = login || readGuestSession();
+  const stored = session?.user;
+  if (!stored) {
+    store.reset('user');
+    return;
+  }
+  store.set('user', {
+    userId: stored.userId ?? '',
+    firstName: stored.firstName ?? '',
+    lastName: stored.lastName ?? '',
+    fullName: [stored.firstName, stored.lastName].filter(Boolean).join(' '),
+    email: stored.email ?? '',
+    phone: stored.phone ?? '',
+    verified: stored.verified === true,
+    sessionId: session.sessionId ?? '',
+    isGuest: !login,
+  });
+}
+
+/**
+ * Updates the state class and the user of the store, and tells the blocks of the page
+ * (detail = getSessionData()).
  */
 function notifySessionChange() {
   updateSessionStateClass();
+  syncUserStore();
   document.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail: getSessionData() }));
 }
 
@@ -503,11 +505,14 @@ function loadSessionStyles() {
 
 /**
  * Start of the session on every page (runs once, when this file loads from head.html, before
- * scripts.js): loads sessions.css, puts the state class on <html> and runs the page Metadata
- * rule. A page without a Session row is not touched; a page that redirects is hidden.
+ * scripts.js): loads sessions.css, fills the user of the store from the saved session, puts the
+ * state class on <html> and runs the page Metadata rule. A page without a Session row is not
+ * touched; a page that redirects is hidden.
  */
 function initPageSession() {
   loadSessionStyles();
+  // the store starts empty on every page: fill its user again from the saved session
+  syncUserStore();
   pageAccessAllowed = applyPageSessionRule();
   if (!pageAccessAllowed) {
     document.body.style.visibility = 'hidden';

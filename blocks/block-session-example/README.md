@@ -26,7 +26,8 @@ cambian. Sirve para copiar la forma de hacerlo en un bloque nuevo.
 
 Lo de sesiones **no** está en este bloque: viene de `scripts/foundations/block-options.js` (filas
 `Session` y estados en la última columna, igual en cualquier bloque NovaMóvil) y de
-`scripts/foundations/session.js` (`getSessionData`, `SESSION_CHANGE_EVENT`, `showOnlyForSessionStates`). Este bloque
+`scripts/foundations/session.js` (`getSessionData`, `SESSION_CHANGE_EVENT`, `showOnlyForSessionStates`) y
+del store (`scripts/foundations/store.js`: el usuario). Este bloque
 solo lo pone en práctica.
 
 ### Características
@@ -34,15 +35,16 @@ solo lo pone en práctica.
 - **Bloque completo por sesión:** la fila `Session` (cualquier bloque la acepta): `true` = solo con
   sesión, `false` = solo sin sesión, sin la fila = siempre. Nunca redirige
 - **Panel de estado:** etiqueta del estado (verde con sesión, azul invitado, gris sin sesión) y un
-  texto por estado; con sesión saluda con el nombre (`{name}`)
+  texto por estado; con sesión saluda con el nombre usando la marca del store
+  `{store.user.firstName}` en Drive (se llena sola)
 - **Filas por sesión, igual que en cualquier bloque NovaMóvil:** el estado va en la **última
   columna** (`Item | texto | signed-in`), tenga la fila 2 o más columnas; las filas de otros estados
   se quitan antes de pintar y la página se recarga al cambiar la sesión
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
-- **Tus datos:** con la fila `User Title`, una tarjeta con los datos del usuario. Un solo llamado,
-  `getSessionData()`, trae `fields` ya armados (nombre, correo, teléfono, ID, verificado e ID de
-  sesión); el bloque solo le pone su texto a cada uno y agrega el tipo. Se ve con
+- **Tus datos:** con la fila `User Title`, una tarjeta con los datos del usuario, que vienen del
+  **store** (`store.subscribe('user', …)`, lo llena `session.js`): nombre, correo, teléfono, ID,
+  verificado e ID de sesión; el bloque solo le pone su texto a cada uno y agrega el tipo. Se ve con
   sesión **y como invitado** (el invitado guarda un perfil con la misma forma: usuario `guest`,
   nombre "Invitado"); sin sesión no se ve. Nunca muestra el token
 - **Llamada privada:** con `Private Endpoint` y sesión, llama con el token (Bearer) y muestra la
@@ -93,7 +95,7 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24 > div.block-session-example-title[role=heading]
          ├─ div.col-24 > div.block-session-example-status
          │  ├─ div.block-session-example-status-title
-         │  ├─ div.block-session-example-status-current[aria-live]   (getSessionData)
+         │  ├─ div.block-session-example-status-current[aria-live]   (getSessionData + marcas del store)
          │  │  └─ div.-status-body > div.-badge.-badge-{estado} + div.-status-text
          │  └─ div.block-session-example-actions
          │     ├─ a.-button.-button-primary.session-only.session-only-signed-out
@@ -102,7 +104,7 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24.session-only.session-only-signed-in.session-only-guest
          │  └─ div.block-session-example-user
          │     ├─ div.block-session-example-user-title[role=heading][aria-level=3]
-         │     └─ div.block-session-example-user-data[aria-live]          (getSessionData)
+         │     └─ div.block-session-example-user-data[aria-live]          (store.subscribe('user'))
          │        └─ div.-user-table.container-fluid[role=table]
          │           └─ div.-user-field.row[role=row] × cada dato
          │              ├─ div.-user-label.col-10.col-md-6.col-lg-4[role=rowheader]
@@ -143,8 +145,8 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
 
 4. **`Signed In Text`** / **`Guest Text`** / **`Signed Out Text`**
     - **Tipo:** Texto
-    - **Descripción:** Texto del panel en cada estado. `{name}` es el nombre del usuario
-      (`firstName`, o su correo)
+    - **Descripción:** Texto del panel en cada estado. Puede llevar marcas del store, como
+      `{store.user.firstName}` (el nombre del usuario): se llenan solas
     - **Por defecto:** ninguno. Sin `Guest Text`, el invitado ve solo su etiqueta
 
 5. **`Item`** (las que quieras)
@@ -258,36 +260,34 @@ Móvil:
 ### Cómo hacerlo en tu bloque (copiar y pegar)
 
 ```js
+import { getSessionData, showOnlyForSessionStates } from '../../scripts/foundations/session.js';
+import { store } from '../../scripts/foundations/store.js';
 import {
-  SESSION_CHANGE_EVENT, getSessionData, showOnlyForSessionStates,
-} from '../../scripts/foundations/session.js';
-import { readPrivateEndpoint } from '../../scripts/foundations/block-utils.js';
+  createElementWithClass, readPrivateEndpoint,
+} from '../../scripts/foundations/block-utils.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
 // 0) en Drive, sin código (cualquier bloque que llame applyBlockOptions):
 //    | Session | true |                          ← el bloque entero solo con sesión
 //    | Title   | Tus promociones | signed-in |   ← esta fila solo con sesión (última columna)
 
-// 1) todo lo de la sesión con un solo llamado
-const { state, isSignedIn, isGuest, user, fields } = getSessionData();
-// user   → { userId, firstName, lastName, fullName, email, phone, verified, sessionId } o null
-// fields → [{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: '…' }, …]
+// 1) el estado de la sesión con un solo llamado
+const { state, isSignedIn, isGuest } = getSessionData();
 
-// 2) pintar los datos: el bloque solo pone su texto a cada key
-const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono' };
-fields.forEach(({ key, value }) => list.append(`${LABELS[key] || key}: ${value}`));
+// 2) los datos del usuario: siempre del store (lo llena session.js en cada página)
+const user = store.get('user');      // { userId, firstName, fullName, email, …, isGuest }
+//    para solo mostrarlos como texto, en Drive: "Hola, {store.user.firstName}" (sin código)
 
 // 3) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
 showOnlyForSessionStates(couponCard, 'signed-in');
 
-// 4) que se vuelva a pintar al cambiar la sesión: el aviso trae lo mismo que getSessionData()
-const paint = ({ isSignedIn, isGuest, user }) => {
-  greeting.textContent = isSignedIn || isGuest
-    ? `Hola, ${user.firstName}`                      // con sesión, o "Invitado"
-    : 'Inicia sesión para ver tus cupones';
-};
-paint(getSessionData());                                                     // al cargar
-document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail)); // al cambiar
+// 4) repintar HTML con el usuario cuando cambie (ahora y en cada cambio)
+const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono' };
+store.subscribe('user', (current) => {
+  list.replaceChildren(...Object.keys(LABELS)
+    .filter((key) => current[key])
+    .map((key) => createElementWithClass('div', 'my-field', `${LABELS[key]}: ${current[key]}`)));
+});
 
 // 5) una llamada privada: la URL va en la fila Private Endpoint (Endpoint es para los públicos)
 const privateEndpoint = readPrivateEndpoint(block);
@@ -298,9 +298,10 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 
 - `block-session-example.js` – Lee la tabla y arma el estado, las tarjetas y los botones
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
-- `scripts/foundations/session.js` – `getSessionData` (estado y `fields` del usuario),
-  `SESSION_CHANGE_EVENT` (para repintar), `showOnlyForSessionStates`, `continueAsGuest`,
-  `logoutUser`
+- `scripts/foundations/session.js` – `getSessionData` (estado), `SESSION_CHANGE_EVENT` (para
+  repintar), `showOnlyForSessionStates`, `continueAsGuest`, `logoutUser`
+- `scripts/foundations/store.js` – El usuario (`store.subscribe('user', …)`) y la marca
+  `{store.user.firstName}` del saludo
 - `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
   `session.js`)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por

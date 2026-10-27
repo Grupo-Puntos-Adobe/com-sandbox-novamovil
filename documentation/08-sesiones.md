@@ -181,25 +181,19 @@ Cualquier bloque que use `applyBlockOptions` acepta la fila **`Session`**:
 ### 6.3 Una parte de un bloque (código)
 
 ```js
-import {
-  SESSION_CHANGE_EVENT, getSessionData, showOnlyForSessionStates,
-} from '../../scripts/foundations/session.js';
+import { getSessionData, showOnlyForSessionStates } from '../../scripts/foundations/session.js';
+import { store } from '../../scripts/foundations/store.js';
 
-// todo lo de la sesión con un solo llamado
-const { state, isSignedIn, isGuest, user, fields } = getSessionData();
+// el estado de la sesión con un solo llamado
+const { state, isSignedIn, isGuest } = getSessionData();
 
 // se oculta / aparece sola al cambiar la sesión (clases de sessions.css)
 showOnlyForSessionStates(couponCard, 'signed-in, guest');
 
-// contenido que depende del usuario: se pinta al cargar y otra vez con el aviso de cambio
-// (event.detail es lo mismo que getSessionData())
-const paint = ({ isSignedIn, isGuest, user }) => {
-  greeting.textContent = isSignedIn || isGuest
-    ? `Hola, ${user.firstName}`                      // con sesión, o "Invitado"
-    : 'Inicia sesión para ver tus cupones';
-};
-paint(getSessionData());                                                     // al cargar
-document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail)); // al cambiar
+// los datos del usuario están en el store (lo llena session.js en cada página)
+store.get('user.firstName');                                   // 'Cliente'
+store.subscribe('user', (user) => paintProfile(user));        // repintar HTML con el usuario
+// y para solo mostrar texto, ni código: en Drive "Hola, {store.user.firstName}"
 ```
 
 O sin JS, directo con clases:
@@ -259,7 +253,7 @@ Guía de la API: `documentation/07-integracion-endpoints.md`.
 ```js
 import { getSessionData } from '../../scripts/foundations/session.js';
 
-const { state, isSignedIn, isGuest, user, fields } = getSessionData();
+const { state, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionData();
 ```
 
 | Propiedad | Qué trae | Sin sesión |
@@ -267,11 +261,19 @@ const { state, isSignedIn, isGuest, user, fields } = getSessionData();
 | `state` | `'signed-in'`, `'guest'` o `'signed-out'` | `'signed-out'` |
 | `isSignedIn` | `true` con sesión real (el invitado no cuenta) | `false` |
 | `isGuest` | `true` como invitado | `false` |
-| `user` | `{ userId, firstName, lastName, fullName, email, phone, verified, sessionId }` (con sesión o del invitado: `guest`, "Invitado") | `null` |
-| `fields` | Los datos ya armados para pintar, sin vacíos: `[{ key: 'fullName', value: 'Cliente Nova' }, …]` (keys de `USER_FIELDS`) | `[]` |
+| `page` | `{ rule, redirectPath, isAccessAllowed }` del Metadata de la página | igual |
 
-El bloque controla qué pintar y con qué texto: solo le pone su etiqueta a cada `key`. Nunca trae
-el token. Una sesión vencida cuenta como "sin sesión".
+**Los datos del usuario están en el store**, el único lugar de donde se leen:
+
+| Para | Cómo |
+|---|---|
+| Leer un dato | `store.get('user.firstName')` · todo el usuario: `store.get('user')` |
+| Mostrarlo como texto, sin código | En Drive: `Hola, {store.user.firstName}` |
+| Repintar HTML con el usuario | `store.subscribe('user', (user) => …)` |
+
+`session.js` lo llena al iniciar sesión o entrar como invitado (`isGuest: true`) y **al abrir cada
+página** (el store empieza vacío en cada página; la sesión sigue en `sessionStorage`), y lo vacía
+al cerrar sesión o cuando vence. Nunca guarda el token en el store.
 
 | Para | Función |
 |---|---|
@@ -284,8 +286,8 @@ el token. Una sesión vencida cuenta como "sin sesión".
 | Rutas seguras | `toSafeSitePath(path)` de `block-utils.js` (solo rutas del sitio) |
 | Otros foundations (no para bloques) | `filterRowsBySessionState(block)` (`block-options.js`); `getAuthorizationHeader()` y `clearUserSession()` (interceptores). Un bloque cierra sesión con `logoutUser()` |
 
-El arranque de cada página (`sessions.css`, estado en `<html>` y la regla del Metadata) es
-interno: corre solo al cargar `session.js` desde `head.html`.
+El arranque de cada página (`sessions.css`, el usuario del store, el estado en `<html>` y la regla
+del Metadata) es interno: corre solo al cargar `session.js` desde `head.html`.
 
 Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sección `session.js`).
 

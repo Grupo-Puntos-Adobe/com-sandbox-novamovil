@@ -8,12 +8,13 @@
  *   store.reset('breadcrumb.name') one · store.reset('breadcrumb') a slice · store.reset() all
  *   store.subscribe('breadcrumb', (breadcrumb) => …)   optional: logic when a value changes
  *
- * Automatic text: any text of the page with a mark {slice.variable} ("Detalle de
- * {breadcrumb.name}"), in any block or authored text, is filled with its value and filled again
- * on every set / reset. While a mark has no value its element waits hidden
+ * Automatic text: any text of the page with a mark {store.slice.variable} ("Detalle de
+ * {store.breadcrumb.name}"), in any block or authored text, is filled with its value and filled
+ * again on every set / reset. While a mark has no value its element waits hidden
  * (data-store-pending, styles/foundations/store.css). Only text is changed, never HTML, and
  * the texts of a block are filled once the block finished loading (it reads its table first).
- * Blocks only call store.set(); to show a value as text they need nothing.
+ * Blocks only call store.set(); to show a value as text they need nothing. Marks without
+ * "store." ({id}, {count}) belong to the block that paints them: the store never touches them.
  *
  * The store starts empty on every page (each navigation loads the page again).
  * Something that is not declared in STORE is rejected with an error and nothing is stored.
@@ -22,9 +23,23 @@
 
 // the variables of the site, by slice, with their initial (empty) values
 const STORE = {
+  // the dynamic levels of the breadcrumb (set by the block that knows them, e.g. product-detail)
   breadcrumb: {
-    name: '', // {breadcrumb.name}: the current page (e.g. the product)
-    brand: '', // {breadcrumb.brand}: e.g. "Apple"
+    name: '', // {store.breadcrumb.name}: the current page (e.g. the product)
+    brand: '', // {store.breadcrumb.brand}: e.g. "Apple"
+  },
+  // the user of the session, filled ONLY by session.js (login, guest, every page start) and
+  // emptied when the session ends; never the token
+  user: {
+    userId: '',
+    firstName: '', // {store.user.firstName}
+    lastName: '',
+    fullName: '',
+    email: '',
+    phone: '',
+    verified: false,
+    sessionId: '',
+    isGuest: false, // true for "Continuar como invitado" (userId 'guest', firstName 'Invitado')
   },
 };
 
@@ -32,7 +47,9 @@ const state = structuredClone(STORE);
 const listeners = new Set();
 // text nodes of the page with marks → their authored text (with the marks)
 const boundTexts = new Map();
-const MARK = /\{([a-z][\w-]*)\.([a-z][\w-]*)\}/gi;
+// a mark of the store in a text: {store.slice.variable} (marks without "store." belong to the
+// block that paints them, like {id} or {count}, and are never touched)
+const MARK = /\{store\.([a-z][\w-]*)\.([a-z][\w-]*)\}/gi;
 const STORE_CSS_URL = new URL('../../styles/foundations/store.css', import.meta.url).href;
 
 /**

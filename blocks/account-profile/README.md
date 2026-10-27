@@ -21,35 +21,40 @@ limitations under the License.
 Este componente muestra **los datos del usuario que inició sesión** en la página **Mi cuenta**
 (`/cuenta`): sus iniciales, su nombre, si la cuenta está verificada, sus datos (correo, teléfono,
 número de cliente) y el botón **Cerrar sesión**.
-Es un bloque sencillo: no llama a ningún servicio, toma todo de la sesión con **un solo llamado** a
-`getSessionData()` (`scripts/foundations/session.js`).
+Es un bloque sencillo: no llama a ningún servicio. Toma el usuario del **store**
+(`scripts/foundations/store.js`), el único lugar donde está: `session.js` lo llena en cada página.
 
 ### Características
 
-- Lee la sesión con un solo llamado: `const { user, fields } = getSessionData();`
+- Lee el usuario del store: `store.subscribe('user', (user) => render(user))`
 - Iniciales del usuario en un círculo (avatar) y su nombre completo
 - Insignia "Cuenta verificada" solo si el usuario está verificado
 - Un renglón por dato; **el autor decide qué datos se ven**: solo se pinta el dato cuya fila de
   etiqueta tiene texto (`Name Label`, `Email Label`, `Phone Label`, `User Id Label`)
 - Botón "Cerrar sesión" (`logoutUser()`): borra la sesión y la página `cuenta` manda sola a `/login`
 - Sin sesión (por ejemplo en el panel de edición) muestra el `Empty Text`
-- Se vuelve a pintar solo si la sesión cambia en la página (`SESSION_CHANGE_EVENT`)
+- Se vuelve a pintar solo si el usuario del store cambia (por ejemplo al cerrar sesión)
 - Grid de 24 columnas: en móvil la etiqueta va arriba del valor; en tablet y desktop, a un lado
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - Accesible: el título es un encabezado de nivel 2 y los datos son una tabla (`role="table"`) con
   la etiqueta como encabezado de fila
 
-### Cómo recupera los datos de la sesión (paso a paso)
+### Cómo recupera los datos del usuario (paso a paso)
 
-**1. Un solo llamado trae todo.** En `account-profile.js`:
+**1. El usuario vive en el store.** `session.js` lo pone ahí al iniciar sesión y **al abrir cada
+página** (el store empieza vacío en cada página; la sesión sigue en `sessionStorage`). Los bloques
+nunca leen la sesión directamente: solo el store.
+
+**2. El bloque se suscribe.** En `account-profile.js`:
 
 ```js
-import { getSessionData } from '../../scripts/foundations/session.js';
+import { store } from '../../scripts/foundations/store.js';
 
-const { user, fields } = getSessionData();
+// ahora y cada vez que el usuario cambie (por ejemplo al cerrar sesión)
+store.subscribe('user', (user) => renderAccountProfile(block, settings, user));
 ```
 
-**2. Qué llega.** Con la sesión del usuario de prueba (`cliente@ejemplo.com`):
+**3. Qué llega.** Con la sesión del usuario de prueba (`cliente@ejemplo.com`):
 
 ```js
 user = {
@@ -61,22 +66,15 @@ user = {
   phone: '5512345678',
   verified: true,
   sessionId: 'SES-LOGIN-001',
+  isGuest: false,
 };
-
-fields = [
-  { key: 'fullName', value: 'Cliente Nova' },
-  { key: 'email', value: 'cliente@ejemplo.com' },
-  { key: 'phone', value: '5512345678' },
-  { key: 'userId', value: 'USR-10001' },
-  { key: 'verified', value: true },
-  { key: 'sessionId', value: 'SES-LOGIN-001' },
-];
 ```
 
-Sin sesión: `user = null` y `fields = []`. Nunca trae el token.
+Sin sesión: los mismos datos vacíos (`userId: ''`) y el bloque muestra el `Empty Text`. Nunca trae
+el token.
 
-**3. El bloque solo decide qué pintar y con qué texto.** Cada `key` tiene su fila de etiqueta en
-Drive (`FIELD_LABEL_ROWS`); si la fila no tiene texto, ese dato no se pinta:
+**4. El bloque solo decide qué pintar y con qué texto.** Cada dato tiene su fila de etiqueta en
+Drive (`FIELD_LABEL_ROWS`); si la fila no tiene texto, o el dato está vacío, no se pinta:
 
 ```js
 const FIELD_LABEL_ROWS = {
@@ -86,21 +84,16 @@ const FIELD_LABEL_ROWS = {
   userId: 'user id label',    // | User Id Label | Número de cliente  |
 };
 
-fields
-  .filter(({ key }) => settings.labels[key])          // solo los que tienen etiqueta
-  .forEach(({ key, value }) => paint(settings.labels[key], value));
+Object.keys(FIELD_LABEL_ROWS)
+  .filter((key) => settings.labels[key] && user[key])   // con etiqueta y con valor
+  .forEach((key) => paint(settings.labels[key], user[key]));
 ```
 
-`user` se usa para lo que no es un renglón: las iniciales (`firstName`, `lastName`), el nombre
-(`fullName`) y la insignia (`verified`).
+`user` también da las iniciales (`firstName`, `lastName`), el nombre (`fullName`) y la insignia
+(`verified`).
 
-**4. Si la sesión cambia**, el evento trae lo mismo que `getSessionData()`:
-
-```js
-document.addEventListener(SESSION_CHANGE_EVENT, (event) => {
-  renderAccountProfile(block, settings, event.detail);   // event.detail = getSessionData()
-});
-```
+**Para solo mostrar un dato como texto no hace falta código:** en cualquier texto de Drive se
+puede escribir `Hola, {store.user.firstName}` y el store lo llena solo.
 
 ### Estructura / Descripción de clases
 
@@ -229,10 +222,11 @@ Móvil:
 
 ### Archivos y dependencias
 
-- `account-profile.js` – Lee la tabla, pide los datos con `getSessionData()` y pinta la tarjeta
+- `account-profile.js` – Lee la tabla, toma el usuario del store (`store.subscribe('user')`) y pinta la tarjeta
 - `account-profile.css` – Estilos del bloque, todos dentro de `.account-profile`
-- `scripts/foundations/session.js` – `getSessionData` (datos), `logoutUser` (cerrar sesión) y
-  `SESSION_CHANGE_EVENT`
+- `scripts/foundations/store.js` – `store.subscribe('user', …)`: los datos del usuario
+- `scripts/foundations/session.js` – `logoutUser` (cerrar sesión); también llena el usuario del
+  store en cada página
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`
 - `scripts/foundations/block-utils.js` – `readTableCell` y `createElementWithClass`
 - `styles/foundations/grid.css` y `breakpoints.css` – Columnas y resoluciones
@@ -240,4 +234,4 @@ Móvil:
 - Documento de Drive: `content-drive/cuenta.docx` (página `/cuenta`, Metadata `Session: true` y
   `Redirect To: /login`)
 - Guías: `documentation/08-sesiones.md` (sesiones) y `scripts/foundations/README.md`
-  (`getSessionData`)
+  (`store.js`)

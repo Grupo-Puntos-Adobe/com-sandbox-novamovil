@@ -42,7 +42,7 @@
       font-size: 14px;
     }
 
-    /* a level whose {breadcrumb.…} mark still has no value (store.js) waits hidden */
+    /* a level whose {store.…} mark still has no value (store.js) waits hidden */
     &:has([data-store-pending]) {
       display: none;
     }

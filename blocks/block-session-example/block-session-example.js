@@ -9,7 +9,8 @@
  *   1. Whole block by session: the optional Session row (block-options.js) → the block is only
  *      shown to signed-in / guest / signed-out visitors. It never redirects.
  *   2. Status panel: paints the badge and the text of the current state with getSessionData()
- *      ("Hola, {name}…" with user.firstName) and repaints them on SESSION_CHANGE_EVENT.
+ *      and repaints them on SESSION_CHANGE_EVENT. The name in the authored text is a mark of the
+ *      store ("Hola, {store.user.firstName}…"): the store fills it by itself.
  *      Every part that changes with the session does the same, in one line each:
  *        paint(getSessionData());
  *        document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
@@ -21,12 +22,13 @@
  *      invitado (continueAsGuest) and Cerrar sesión (logoutUser), each one only for its state.
  *   5. Private call: with Private Endpoint and a session, post(…, REQUEST_TYPE.PRIVATE) sends
  *      the Bearer token and shows the answer of the service.
- *   6. User data (User Title row): one call, getSessionData(), gives the fields of the user
- *      (signed in or guest) ready to paint; this block only puts a label to each key
- *      (LABELS.user). Hidden without a session; the token is never in the data.
+ *   6. User data (User Title row): the user comes from the store (store.get('user'), filled by
+ *      session.js; signed in or guest) and is repainted with store.subscribe('user', …); this
+ *      block only puts a label to each value (LABELS.user). Hidden without a session; the token
+ *      is never in the store.
  *
  * Authored rows (all optional): Styles, Classname, Session, Title, Status Title,
- * Signed In Text ({name} = first name), Guest Text, Signed Out Text, Item (text, any number),
+ * Signed In Text ({store.user.firstName} = first name), Guest Text, Signed Out Text, Item,
  * Login Link (link), Guest Button Text, Sign Out Text, User Title, Private Title,
  * Private Endpoint.
  * Content rows have no default: without text that part is not painted. Any row can end with a
@@ -38,7 +40,7 @@
  *     ├─ readExampleSettings(block)        texts, items, links, endpoint
  *     └─ renderSessionExample()
  *          ├─ buildExampleStatus()         getSessionData(): badge + text, actions by session
- *          ├─ buildExampleUser()           getSessionData().fields (signed in / guest)
+ *          ├─ buildExampleUser()           store.subscribe('user'): the user (signed in / guest)
  *          ├─ buildExampleItem() × N       the Item rows left for the current state
  *          └─ buildExamplePrivate()        getSessionData().isSignedIn: private call
  *     each part repaints itself on SESSION_CHANGE_EVENT (event.detail = getSessionData())
@@ -57,6 +59,7 @@ import {
   createElementWithClass, readPrivateEndpoint, readTableCell, toSafeSitePath,
 } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
+import { store } from '../../scripts/foundations/store.js';
 import {
   SESSION_CHANGE_EVENT, SESSION_STATES, continueAsGuest, getSessionData,
   logoutUser, showOnlyForSessionStates,
@@ -72,7 +75,7 @@ const LABELS = {
   },
   everybody: 'Todos',
   audience: 'Lo ve:',
-  // user data card: a label for each key of getSessionData().fields (USER_FIELDS)
+  // user data card: a label for each value of store "user" (painted in this order)
   user: {
     table: 'Datos del usuario',
     type: 'Tipo',
@@ -93,6 +96,8 @@ const PRIVATE_REQUEST_META = {
   platform: 'DESKTOP',
 };
 const ITEM_ROW = 'item';
+// the values of store "user" shown in the user card, in this order
+const USER_ROWS = ['fullName', 'email', 'phone', 'userId', 'verified', 'sessionId'];
 
 /**
  * "Item" rows left for the current state (filterRowsBySessionState already removed the others), in
@@ -152,17 +157,15 @@ function buildStateBadge(state) {
 }
 
 /**
- * Text of a state; {name} is the first name (or the email) of the user.
+ * Text of a state, as authored; its {store.…} marks (the name) are filled by the store.
  * @param {string} text Authored text
- * @param {Object} data getSessionData() result
  * @returns {Element|null}
  */
-function buildStateText(text, { user }) {
+function buildStateText(text) {
   if (!text) {
     return null;
   }
-  const name = user?.firstName || user?.email || '';
-  return createElementWithClass('div', 'block-session-example-status-text', text.replace('{name}', name).trim());
+  return createElementWithClass('div', 'block-session-example-status-text', text);
 }
 
 /**
@@ -221,7 +224,7 @@ function buildExampleStatus(settings) {
   paintWithSession((data) => {
     const content = createElementWithClass('div', 'block-session-example-status-body');
     content.append(buildStateBadge(data.state));
-    const text = buildStateText(texts[data.state], data);
+    const text = buildStateText(texts[data.state]);
     if (text) {
       content.append(text);
     }
@@ -237,14 +240,14 @@ function buildExampleStatus(settings) {
 }
 
 /**
- * The user data as a table: the type (signed in or guest) and one row per field of
- * getSessionData().fields, with the label of this block.
- * @param {Object} data getSessionData() result
+ * The user data as a table: the type (signed in or guest) and one row per value of the user
+ * that is not empty, with the label of this block.
+ * @param {Object} user store.get('user')
  * @returns {Element} div.block-session-example-user-table[role=table]
  */
-function buildUserTable({ isGuest, fields }) {
+function buildUserTable(user) {
   const labels = LABELS.user;
-  const type = LABELS.states[isGuest ? SESSION_STATES.GUEST : SESSION_STATES.SIGNED_IN];
+  const type = LABELS.states[user.isGuest ? SESSION_STATES.GUEST : SESSION_STATES.SIGNED_IN];
   // verified is true / false: shown as Sí / No
   const toText = (value) => {
     if (typeof value === 'boolean') {
@@ -254,7 +257,9 @@ function buildUserTable({ isGuest, fields }) {
   };
   const rows = [
     { label: labels.type, value: type },
-    ...fields.map(({ key, value }) => ({ label: labels[key] || key, value: toText(value) })),
+    ...USER_ROWS
+      .filter((key) => user[key] !== '')
+      .map((key) => ({ label: labels[key], value: toText(user[key]) })),
   ];
 
   const table = createElementWithClass('div', 'block-session-example-user-table container-fluid');
@@ -290,9 +295,9 @@ function buildExampleUser(settings) {
   const data = createElementWithClass('div', 'block-session-example-user-data');
   data.setAttribute('aria-live', 'polite');
   card.append(title, data);
-  // signed in or guest: their data; without a session: nothing
-  paintWithSession((sessionData) => {
-    data.replaceChildren(...(sessionData.user ? [buildUserTable(sessionData)] : []));
+  // the user of the store, now and every time it changes (signed in or guest; empty: nothing)
+  store.subscribe('user', (user) => {
+    data.replaceChildren(...(user.userId ? [buildUserTable(user)] : []));
   });
   return card;
 }

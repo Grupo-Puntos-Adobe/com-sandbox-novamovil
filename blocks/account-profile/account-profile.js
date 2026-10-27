@@ -1,13 +1,14 @@
 /*
  * Account Profile block ("Mi cuenta"): the data of the user of the session, a verified badge
- * and a sign out button. It reads the session with ONE call:
+ * and a sign out button. The user comes from the STORE (scripts/foundations/store.js), the only
+ * place that has it (session.js fills it on every page):
  *
- *   const { user, fields } = getSessionData();      scripts/foundations/session.js
- *     user   → { firstName, lastName, fullName, email, phone, userId, verified, … } or null
- *     fields → [{ key: 'fullName', value: 'Cliente Nova' }, { key: 'email', value: … }, …]
+ *   store.subscribe('user', (user) => render(user));   now and every time the user changes
+ *     user → { userId, firstName, lastName, fullName, email, phone, verified, sessionId,
+ *              isGuest } (empty values without a session; never the token)
  *
- * The block only decides WHICH fields to paint and WITH WHICH label: each key of fields has a
- * label row in the table (FIELD_LABEL_ROWS); a key without its row is not painted.
+ * The block only decides WHICH data to paint and WITH WHICH label: each one has a label row in
+ * the table (FIELD_LABEL_ROWS); without its row, or empty in the user, it is not painted.
  *
  * Entry point: decorate(block), called by loadBlock() (scripts/aem.js) for every
  * "Account Profile" table (page /cuenta, which only opens with a session).
@@ -20,10 +21,9 @@
  *   decorate(block)
  *     ├─ applyBlockOptions(block)                Styles / Classname / Session rows
  *     ├─ readAccountSettings(block)              texts and the label of each field
- *     └─ renderAccountProfile(block, settings, getSessionData())
+ *     └─ store.subscribe('user', …) → renderAccountProfile(block, settings, user)
  *          ├─ no user → Empty Text
  *          └─ buildAccountHeader() + buildAccountData() + buildSignOutButton()
- *     again on SESSION_CHANGE_EVENT (event.detail is getSessionData() too)
  *
  * Columns come from the grid (styles/foundations/grid.css):
  *   container-fluid > row > col-24 (title, card)
@@ -32,9 +32,10 @@
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { createElementWithClass, readTableCell } from '../../scripts/foundations/block-utils.js';
-import { SESSION_CHANGE_EVENT, getSessionData, logoutUser } from '../../scripts/foundations/session.js';
+import { logoutUser } from '../../scripts/foundations/session.js';
+import { store } from '../../scripts/foundations/store.js';
 
-// table row that gives the label of each key of getSessionData().fields (painted in this order)
+// table row that gives the label of each value of store "user" (painted in this order)
 const FIELD_LABEL_ROWS = {
   fullName: 'name label',
   email: 'email label',
@@ -64,7 +65,7 @@ function readAccountSettings(block) {
 
 /**
  * Avatar with the initials, the full name and the verified badge.
- * @param {Object} user getSessionData().user
+ * @param {Object} user store.get('user')
  * @param {Object} settings readAccountSettings() result
  * @returns {Element} div.account-profile-header
  */
@@ -87,13 +88,15 @@ function buildAccountHeader(user, settings) {
 }
 
 /**
- * The fields of the session that have a label row, as a table (label + value).
- * @param {{key: string, value: *}[]} fields getSessionData().fields
+ * The data of the user that have a label row (and a value), as a table (label + value).
+ * @param {Object} user store.get('user')
  * @param {Object} settings readAccountSettings() result
  * @returns {Element|null} div.account-profile-data[role=table]
  */
-function buildAccountData(fields, settings) {
-  const rows = fields.filter(({ key }) => settings.labels[key]);
+function buildAccountData(user, settings) {
+  const rows = Object.keys(FIELD_LABEL_ROWS)
+    .filter((key) => settings.labels[key] && user[key])
+    .map((key) => ({ key, value: user[key] }));
   if (!rows.length) {
     return null;
   }
@@ -130,13 +133,12 @@ function buildSignOutButton(text) {
 }
 
 /**
- * Paints the block with the data of the session.
+ * Paints the block with the user of the store.
  * @param {Element} block
  * @param {Object} settings readAccountSettings() result
- * @param {Object} sessionData getSessionData() result
+ * @param {Object} user store.get('user')
  */
-function renderAccountProfile(block, settings, sessionData) {
-  const { user, fields } = sessionData;
+function renderAccountProfile(block, settings, user) {
   const row = createElementWithClass('div', 'row row-gutter-16 row-gutter-y-16');
   const fullWidth = (content) => {
     const col = createElementWithClass('div', 'col-24');
@@ -151,7 +153,7 @@ function renderAccountProfile(block, settings, sessionData) {
     row.append(fullWidth(title));
   }
 
-  if (!user) {
+  if (!user.userId) {
     // no session (e.g. the editing tool preview): only the Empty Text
     if (settings.emptyText) {
       row.append(fullWidth(createElementWithClass('div', 'account-profile-empty', settings.emptyText)));
@@ -159,7 +161,7 @@ function renderAccountProfile(block, settings, sessionData) {
   } else {
     const card = createElementWithClass('div', 'account-profile-card');
     card.append(buildAccountHeader(user, settings));
-    const data = buildAccountData(fields, settings);
+    const data = buildAccountData(user, settings);
     if (data) {
       card.append(data);
     }
@@ -182,9 +184,6 @@ function renderAccountProfile(block, settings, sessionData) {
 export default function decorate(block) {
   applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const settings = readAccountSettings(block);
-  renderAccountProfile(block, settings, getSessionData());
-  // the detail of the event is getSessionData() as well
-  document.addEventListener(SESSION_CHANGE_EVENT, (event) => {
-    renderAccountProfile(block, settings, event.detail);
-  });
+  // painted now and again when the user of the store changes (e.g. after "Cerrar sesión")
+  store.subscribe('user', (user) => renderAccountProfile(block, settings, user));
 }

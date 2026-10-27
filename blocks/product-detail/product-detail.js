@@ -43,7 +43,7 @@
  *          ├─ ok    → normalizeProduct() → renderProductDetail()
  *          │            ├─ buildProductGallery() · buildProductSummary() · buildPurchaseOptions()
  *          │            ├─ buildBenefits() · buildSpecs()
- *          │            └─ store.set('breadcrumb.name') (breadcrumb "{breadcrumb.name}") + title
+ *          │            └─ store.set('breadcrumb.name') ({store.breadcrumb.name}) + title
  *          ├─ no product → renderNotAvailable()
  *          └─ error → console.error + renderNotAvailable() (no alert)
  *
@@ -607,7 +607,7 @@ function renderProductDetail(block, product, settings) {
   const specs = buildSpecs(product.specs, settings.texts.specsTitle);
   block.replaceChildren(...[layout, specs].filter(Boolean));
 
-  // breadcrumb "{breadcrumb.name}" level (store, slice of the page) and the browser tab
+  // breadcrumb "{store.breadcrumb.name}" level (filled by the store) and the browser tab
   store.set('breadcrumb.name', product.fullName);
   // "Celular | NovaMóvil" → "Apple iPhone 15 Pro | NovaMóvil" (page title or og:title)
   const pageTitle = document.title || getMetadata('og:title');

@@ -8,15 +8,16 @@
  *   | Styles / Classname / Session | …    (scripts/foundations/block-options.js)
  *   | Level 1            | [Inicio](/)    |   (a link: a level above the current page)
  *   | Level 2            | Celulares      |   (plain text: the current page)
- *   | Level 3            | {breadcrumb.name} |   (optional: filled at run time, see below)
+ *   | Level 3            | {store.breadcrumb.name} | (optional: filled at run time, below)
  * Levels are shown by their number; an empty level is left out. A level can end with a session
  * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
  * levels of the current state before this block reads them.
- * Dynamic levels: a level can have a mark of the store ({breadcrumb.name}, {breadcrumb.brand}),
- * alone or with text ("Detalle de {breadcrumb.name}"). This block paints it as plain text; the
- * store (scripts/foundations/store.js, loaded by head.html) fills it with the value another
- * block sets — today product-detail with store.set('breadcrumb.name', …) — and keeps the level
- * hidden until it arrives (breadcrumb.css). Without marks the level is shown as authored.
+ * Dynamic levels: a level can have a mark of the store ({store.breadcrumb.name},
+ * {store.breadcrumb.brand}), alone or with text ("Detalle de {store.breadcrumb.name}"). This
+ * block paints it as plain text; the store (scripts/foundations/store.js, loaded by head.html)
+ * fills it with the value another block sets — today product-detail with
+ * store.set('breadcrumb.name', …) — and keeps the level hidden until it arrives
+ * (breadcrumb.css). Without marks the level is shown as authored.
  *
  * Flow:
  *   decorate(block)
@@ -89,8 +90,8 @@ function buildBreadcrumbItem(level, isCurrent) {
 }
 
 /**
- * Paints the trail. The marks of the dynamic levels ({breadcrumb.name}) are painted as text: the
- * store fills them and keeps the level hidden until its value arrives.
+ * Paints the trail. The marks of the dynamic levels ({store.breadcrumb.name}) are painted as
+ * text: the store fills them and keeps the level hidden until its value arrives.
  * @param {Element} block
  * @param {{text: string, href: string|null}[]} levels readBreadcrumbLevels() result
  */
