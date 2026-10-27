@@ -349,8 +349,17 @@ Qué muestra: al abrir la página (`store · inicio`) y en **cada** cambio (`sto
 breadcrumb.name (hora)`), una tabla con **todas** las variables de `STORE`, también las vacías,
 con su valor `antes` y `después`. Lo que cambió lleva ✏️ junto al nombre (`✏️ breadcrumb.name`):
 no va en una columna aparte porque la consola da a todas el mismo ancho. Un apartado nuevo de
-`STORE` aparece solo. Las
-variables privadas salen como `••• (privado)`: el token nunca se imprime.
+`STORE` aparece solo.
+
+- Lo que cambia **al mismo tiempo** sale en **una sola tabla**. Por ejemplo, al iniciar o cerrar
+  sesión `session.js` llena `session` y `user` uno tras otro, y los dos salen con ✏️.
+- Al iniciar o cerrar sesión la página se recarga o cambia, y la consola se limpia. Por eso la
+  última tabla se guarda en `sessionStorage` (`novamovil-store-debug`, sin el token). La primera
+  tabla de la página nueva (`store · inicio de /ruta, antes = página anterior`) compara con lo que
+  había en la página anterior: después de cerrar sesión se ve `antes: 'Cliente'` → `después: ''`.
+  Para ver también las tablas de la página anterior, activa **Preserve log** en la consola.
+
+Las variables privadas salen como `••• (privado)`: el token nunca se imprime.
 
 No la subas descomentada: la consola de la página publicada mostraría los datos del usuario.
 

@@ -275,9 +275,14 @@ initStore();
  * Debug only: shows the WHOLE store in the console now and on every change, as one table with
  * every variable declared in STORE (before → after); what changed is marked (✏️). Private
  * variables (session.token) are masked. Turn it on by uncommenting the call below.
+ * - Changes made at the same moment (session.js fills "session" and "user" one after the other)
+ *   come out together in ONE table.
+ * - The last table is kept in sessionStorage, so the first table of the next page (after a
+ *   login, a logout or any navigation, when the console is cleared) shows what there was before.
  */
 // eslint-disable-next-line no-unused-vars
 function showStoreInConsole() {
+  const DEBUG_STORAGE_KEY = 'novamovil-store-debug';
   const readRows = (all) => Object.entries(STORE).flatMap(([slice, variables]) => Object
     .keys(variables)
     .map((variable) => {
@@ -285,14 +290,27 @@ function showStoreInConsole() {
       const value = all[slice][variable];
       return [path, PRIVATE_VARIABLES.includes(path) && value ? '••• (privado)' : value];
     }));
+  // the last table of the previous page (the store itself starts empty on every page)
   let previous = null;
-  subscribe((all) => {
-    const rows = readRows(all);
+  try {
+    previous = JSON.parse(sessionStorage.getItem(DEBUG_STORAGE_KEY) || 'null');
+  } catch {
+    previous = null;
+  }
+  let isPageStart = true;
+  let isPending = false;
+
+  const print = () => {
+    isPending = false;
+    const rows = readRows(get());
     const before = previous && Object.fromEntries(previous);
     const changed = before
       ? rows.filter(([path, value]) => JSON.stringify(value) !== JSON.stringify(before[path]))
         .map(([path]) => path)
       : [];
+    if (!isPageStart && !changed.length) {
+      return;
+    }
     const time = new Date().toLocaleTimeString();
     // DevTools gives every column the same width: the ✏️ goes next to the name, not in a column
     const table = Object.fromEntries(rows.map(([path, value]) => {
@@ -302,10 +320,30 @@ function showStoreInConsole() {
       const name = changed.includes(path) ? `✏️ ${path}` : path;
       return [name, { antes: before[path], después: value }];
     }));
-    console.group(before ? `store · cambió ${changed.join(', ')} (${time})` : `store · inicio (${time})`);
+    let title = `store · cambió ${changed.join(', ')} (${time})`;
+    if (isPageStart) {
+      title = before
+        ? `store · inicio de ${window.location.pathname}, antes = página anterior (${time})`
+        : `store · inicio de ${window.location.pathname} (${time})`;
+    }
+    console.group(title);
     console.table(table);
     console.groupEnd();
     previous = rows;
+    isPageStart = false;
+    try {
+      sessionStorage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(rows));
+    } catch {
+      // storage blocked: the next page starts without "antes"
+    }
+  };
+
+  // several set / reset in a row → one table, once they all finished
+  subscribe(() => {
+    if (!isPending) {
+      isPending = true;
+      queueMicrotask(print);
+    }
   });
 }
 /* eslint-enable no-console */
