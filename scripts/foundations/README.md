@@ -346,8 +346,10 @@ Al final de `store.js` está `showStoreInConsole()`, con su llamada **comentada*
 | Quitarlo del todo | Borrar lo que está entre `debug: showStoreInConsole (start)` y `(end)`: nada más lo usa |
 
 Qué muestra: al abrir la página (`store · inicio`) y en **cada** cambio (`store · cambió
-breadcrumb.name (hora)`), una tabla con **todas** las variables de `STORE`, también las vacías. Lo
-que cambió lleva ✏️ y su valor anterior (`antes`). Un apartado nuevo de `STORE` aparece solo. Las
+breadcrumb.name (hora)`), una tabla con **todas** las variables de `STORE`, también las vacías,
+con su valor `antes` y `después`. Lo que cambió lleva ✏️ junto al nombre (`✏️ breadcrumb.name`):
+no va en una columna aparte porque la consola da a todas el mismo ancho. Un apartado nuevo de
+`STORE` aparece solo. Las
 variables privadas salen como `••• (privado)`: el token nunca se imprime.
 
 No la subas descomentada: la consola de la página publicada mostraría los datos del usuario.

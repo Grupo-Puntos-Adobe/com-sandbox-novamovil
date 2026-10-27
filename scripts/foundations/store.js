@@ -273,7 +273,7 @@ initStore();
 /* eslint-disable no-console */
 /**
  * Debug only: shows the WHOLE store in the console now and on every change, as one table with
- * every variable declared in STORE; what changed is marked (✏️) with its old value. Private
+ * every variable declared in STORE (before → after); what changed is marked (✏️). Private
  * variables (session.token) are masked. Turn it on by uncommenting the call below.
  */
 // eslint-disable-next-line no-unused-vars
@@ -294,12 +294,13 @@ function showStoreInConsole() {
         .map(([path]) => path)
       : [];
     const time = new Date().toLocaleTimeString();
+    // DevTools gives every column the same width: the ✏️ goes next to the name, not in a column
     const table = Object.fromEntries(rows.map(([path, value]) => {
       if (!before) {
-        return [path, { valor: value }];
+        return [path, { después: value }];
       }
-      const isChanged = changed.includes(path);
-      return [path, { valor: value, cambió: isChanged ? '✏️' : '', antes: isChanged ? before[path] : '' }];
+      const name = changed.includes(path) ? `✏️ ${path}` : path;
+      return [name, { antes: before[path], después: value }];
     }));
     console.group(before ? `store · cambió ${changed.join(', ')} (${time})` : `store · inicio (${time})`);
     console.table(table);
