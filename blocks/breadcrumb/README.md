@@ -101,7 +101,8 @@ las filas son opcionales y pueden ir en cualquier orden.
       cambia por el valor que pone otro bloque con `store.set('breadcrumb.name', …)`
       (`store.fill` de `scripts/foundations/store.js`). Puede ir sola o con texto
       (`Detalle de {breadcrumb.name}`); sin marca, el nivel muestra su texto tal cual. Para otro
-      nivel dinámico se agrega un valor al apartado (por ejemplo `{breadcrumb.brand}`)
+      nivel dinámico se usa otra variable declarada del apartado (`{breadcrumb.brand}`); una que
+      no está declarada en `store.js` se queda como texto
     - **Nivel por sesión (opcional):** una tercera columna con `signed-in`, `signed-out` o `guest`
       (combinables con coma). Ese nivel solo existe para ese estado; sin la columna lo ven todos.
       Varios niveles con el mismo número y distinto estado se alternan:

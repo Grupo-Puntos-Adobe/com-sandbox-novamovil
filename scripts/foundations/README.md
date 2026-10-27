@@ -17,7 +17,7 @@ bloques o no.
 | [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
 | [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
 | [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
-| [`store.js`](#5-storejs) | **Store global** estilo Redux simple: variables que cualquier bloque escribe, lee y escucha, por apartados que duran la página o la sesión (hoy: `breadcrumb`) | `product-detail` (pone `breadcrumb.name`) y `breadcrumb` (lo muestra) | nada |
+| [`store.js`](#5-storejs) | **Store global** estilo Redux simple y **estricto**: solo variables declaradas, que cualquier bloque escribe, lee y escucha, por apartados que duran la página o la sesión (hoy: `breadcrumb.name` y `breadcrumb.brand`) | `product-detail` (pone `breadcrumb.name`) y `breadcrumb` (lo muestra) | nada |
 | [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, leer los datos, reglas de las páginas y mostrar u ocultar | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `styles/foundations/sessions.css` |
 
 ```js
@@ -174,40 +174,59 @@ showToast('No pudimos cargar las categorías', getAlertOptions(readBlockConfig(b
 
 **Para qué es:** un **store global** al estilo de Redux, pero simple: variables que **cualquier
 bloque** puede escribir, **leer en cualquier momento** desde cualquier lado y **escuchar** cuando
-cambian, sin que los bloques se importen entre ellos. Hay un solo estado con **apartados** (slices),
-y cada apartado decide **cuánto dura**:
+cambian, sin que los bloques se importen entre ellos.
+
+**Es estricto:** solo existen las variables **declaradas** en `STORE_SLICES`. Un apartado, una
+variable o un tipo que no está declarado **se rechaza con un error y no se guarda nada**. Así el
+store no se llena de valores que nadie planeó: para guardar algo nuevo, primero se declara.
+
+### Las variables declaradas
+
+Están **en un solo lugar**, al inicio de `store.js`. Cada apartado (slice) dice cuánto dura y sus
+variables, con su valor inicial, que **también fija su tipo**:
+
+```js
+const STORE_SLICES = {
+  // Breadcrumb: una variable por cada nivel dinámico, se construye en la página del breadcrumb
+  breadcrumb: {
+    keep: 'page',
+    variables: {
+      name: '',   // {breadcrumb.name}: la página actual (por ejemplo el producto)
+      brand: '',  // {breadcrumb.brand}: por ejemplo "Apple"
+    },
+  },
+};
+```
 
 | `keep` | Dónde vive | Cuánto dura |
 |---|---|---|
 | `'page'` | En memoria | Mientras estás en la página: se construye ahí y se borra al navegar o recargar |
-| `'session'` | En `sessionStorage` | Sigue al cambiar de página y al recargar; se borra al cerrar la pestaña. Al abrir una página se vuelve a cargar solo |
+| `'session'` | En `sessionStorage` | Sigue al cambiar de página y al recargar; se borra al cerrar la pestaña. Al abrir una página se vuelve a cargar solo (solo las variables declaradas: lo demás que estuviera guardado se ignora) |
 
-Los apartados se declaran **en un solo lugar**, al inicio de `store.js`:
-
-```js
-const STORE_SLICES = {
-  // Breadcrumb: un valor por cada nivel dinámico, se construye en la página del breadcrumb
-  breadcrumb: { keep: 'page', initial: { name: '', brand: '' } },
-  // user: { keep: 'session', initial: null },   ← después: lo llenará session.js
-};
-```
-
-Hoy hay un apartado, **`breadcrumb`**: el detalle del celular pone `breadcrumb.name` cuando llega
-el producto, y el breadcrumb lo muestra en su nivel `{breadcrumb.name}`.
+Hoy solo existe el apartado **`breadcrumb`** (`name` y `brand`). El detalle del celular pone
+`breadcrumb.name` cuando llega el producto, y el breadcrumb lo muestra en su nivel
+`{breadcrumb.name}`.
 
 ### Funciones (todas en `store`)
 
 | Función | Recibe | Qué hace / devuelve | Para qué sirve |
 |---|---|---|---|
-| `store.set(path, value)` | `'breadcrumb.name'` y un valor, o `'breadcrumb'` y un objeto con varios valores | Guarda (si el apartado es `session`, también en `sessionStorage`) y avisa a quien escucha | El bloque que **conoce** el valor |
-| `store.get(path)` | `'breadcrumb.name'` o `'breadcrumb'` | El valor o el apartado completo (**una copia**: el estado solo cambia con `set`). Un valor que no existe → `''` | Leerlo en **cualquier momento** desde cualquier lado |
-| `store.subscribe(path, callback)` | `'breadcrumb'` (cualquier valor del apartado) o `'breadcrumb.name'` (solo ese) y una función | Llama a `callback(get(path))` **ahora y cada vez que cambie**. Devuelve una función para dejar de escuchar | El bloque que lo **muestra**: no importa si carga antes o después del que lo pone |
+| `store.set(path, value)` | `'breadcrumb.name'` y un valor, o `'breadcrumb'` y un objeto con algunas de sus variables | Revisa que **todo** esté declarado y sea del tipo correcto; si algo no, lanza un error y **no guarda nada**. Si todo está bien, guarda (si el apartado es `session`, también en `sessionStorage`) y avisa a quien escucha | El bloque que **conoce** el valor |
+| `store.get(path)` | `'breadcrumb.name'` o `'breadcrumb'` | El valor o el apartado completo (**una copia**: el estado solo cambia con `set`). Algo no declarado → error | Leerlo en **cualquier momento** desde cualquier lado |
+| `store.subscribe(path, callback)` | `'breadcrumb'` (cualquier variable del apartado) o `'breadcrumb.name'` (solo esa) y una función | Llama a `callback(get(path))` **ahora y cada vez que cambie**. Devuelve una función para dejar de escuchar | El bloque que lo **muestra**: no importa si carga antes o después del que lo pone |
+| `store.reset(slice)` | `'breadcrumb'` | Regresa el apartado a sus valores iniciales y avisa | Limpiar un apartado (por ejemplo al cerrar sesión) |
 | `store.getState()` | — | Todo el estado (una copia): `{ breadcrumb: { name, brand } }` | Ver todo lo que hay |
-| `store.fill(text)` | Un texto de Drive | Cambia **todas** las marcas `{apartado.valor}` por sus valores: `'Detalle de {breadcrumb.name}'` → `'Detalle de Apple iPhone 15 Pro'`. Sin marcas → el texto tal cual; con una marca sin valor todavía → `''` | Textos dinámicos en **cualquier** bloque |
-| `store.has(text)` | Un texto de Drive | `true` si trae alguna marca de un apartado | Saber si hay que esperar un valor |
+| `store.fill(text)` | Un texto de Drive | Cambia las marcas `{apartado.variable}` declaradas por sus valores: `'Detalle de {breadcrumb.name}'` → `'Detalle de Apple iPhone 15 Pro'`. Sin marcas → el texto tal cual; con una marca sin valor todavía → `''`. Una marca no declarada (`{breadcrumb.price}`) se queda como texto | Textos dinámicos en **cualquier** bloque |
+| `store.has(text)` | Un texto de Drive | `true` si trae alguna marca de una variable declarada | Saber si hay que esperar un valor |
 
-Un apartado que no está en `STORE_SLICES` da un error claro ("declare it in STORE_SLICES"), para no
-guardar cosas con un nombre equivocado.
+**Qué se rechaza:**
+
+| Intento | Error |
+|---|---|
+| `store.set('cart.total', 10)` | `"cart" is not a slice (declared: breadcrumb)` |
+| `store.set('breadcrumb.price', '10')` | `"breadcrumb.price" is not declared (variables of breadcrumb: name, brand)` |
+| `store.set('breadcrumb.name', 42)` | `breadcrumb.name is a string, not a number` |
+| `store.set('breadcrumb', { name: 'X', extra: 'y' })` | `"breadcrumb.extra" is not declared…` y **no guarda ni `name`** |
 
 ```js
 import { store } from '../../scripts/foundations/store.js';
@@ -225,18 +244,18 @@ store.subscribe('breadcrumb', () => {
 });
 ```
 
-**En Drive, la marca es el apartado y el valor separados por un punto:** `{breadcrumb.name}`. **Sin
-marca se ve el texto que escribió el autor**: solo lo que necesita ser dinámico la lleva.
+**En Drive, la marca es el apartado y la variable separados por un punto:** `{breadcrumb.name}`.
+**Sin marca se ve el texto que escribió el autor**: solo lo que necesita ser dinámico la lleva.
 
-### Agregar un valor o un apartado
+### Agregar una variable o un apartado (siempre declarándolo primero)
 
-- **Otro valor de un apartado** (por ejemplo otro nivel dinámico del breadcrumb): agregarlo a su
-  `initial` (`{ name: '', brand: '' }`), ponerlo con `store.set('breadcrumb.brand', …)` y escribir
-  la marca `{breadcrumb.brand}` en Drive.
-- **Otro apartado**: una línea en `STORE_SLICES` con su `keep` y su `initial`, por ejemplo
-  `plan: { keep: 'page', initial: { price: '' } }` → marca `{plan.price}`.
+- **Otra variable de un apartado** (por ejemplo otro nivel dinámico del breadcrumb): agregarla a sus
+  `variables` con su valor inicial (`model: ''`). Después ya se puede usar
+  `store.set('breadcrumb.model', …)` y la marca `{breadcrumb.model}`.
+- **Otro apartado**: agregarlo a `STORE_SLICES` con su `keep` y sus `variables`, por ejemplo
+  `plan: { keep: 'page', variables: { price: '' } }` → marca `{plan.price}`.
 
-Por ejemplo, un breadcrumb con dos niveles dinámicos:
+Por ejemplo, un breadcrumb con dos niveles dinámicos (las dos variables ya están declaradas):
 
 ```
 | Breadcrumb |                         |
@@ -252,10 +271,11 @@ siendo el que escribe el autor.
 
 ### Después: los datos del usuario en el store
 
-Para no llamar funciones en todos lados, el plan es un apartado `user` con `keep: 'session'`.
-`session.js` lo llenará al iniciar sesión y, al abrir cualquier página, revisará si hay sesión y lo
-volverá a llenar; al cerrar sesión o la pestaña se borrará. Así cualquier bloque leerá
-`store.get('user.firstName')` o usará `{user.firstName}` en Drive. **Todavía no está hecho.**
+Para no llamar funciones en todos lados, el plan es declarar un apartado `user` con
+`keep: 'session'` y sus variables (`firstName`, `email`…). `session.js` lo llenará al iniciar
+sesión y, al abrir cualquier página, revisará si hay sesión y lo volverá a llenar; al cerrar sesión
+lo limpiará con `store.reset('user')`. Así cualquier bloque leerá `store.get('user.firstName')` o
+usará `{user.firstName}` en Drive. **Todavía no está hecho.**
 
 ---
 
