@@ -43,7 +43,7 @@
  *          ├─ ok    → normalizeProduct() → renderProductDetail()
  *          │            ├─ buildProductGallery() · buildProductSummary() · buildPurchaseOptions()
  *          │            ├─ buildBenefits() · buildSpecs()
- *          │            └─ setPageContext(BREADCRUMB_NAME) (breadcrumb "{breadcrumb-name}") + title
+ *          │            └─ store.set('breadcrumb.name') (breadcrumb "{breadcrumb.name}") + title
  *          ├─ no product → renderNotAvailable()
  *          └─ error → console.error + renderNotAvailable() (no alert)
  *
@@ -72,7 +72,7 @@ import {
   createElementWithClass, formatPrice, getSafeHref, readEndpoint, readRowTextOrDefault,
   readTableCell,
 } from '../../scripts/foundations/block-utils.js';
-import { PAGE_CONTEXT, setPageContext } from '../../scripts/foundations/page-context.js';
+import { store } from '../../scripts/foundations/store.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // fixed parts of the detail request (only data.productId changes)
@@ -607,8 +607,8 @@ function renderProductDetail(block, product, settings) {
   const specs = buildSpecs(product.specs, settings.texts.specsTitle);
   block.replaceChildren(...[layout, specs].filter(Boolean));
 
-  // breadcrumb "{breadcrumb-name}" level and the browser tab
-  setPageContext(PAGE_CONTEXT.BREADCRUMB_NAME, product.fullName);
+  // breadcrumb "{breadcrumb.name}" level (store, slice of the page) and the browser tab
+  store.set('breadcrumb.name', product.fullName);
   // "Celular | NovaMóvil" → "Apple iPhone 15 Pro | NovaMóvil" (page title or og:title)
   const pageTitle = document.title || getMetadata('og:title');
   const titleSuffix = pageTitle.includes('|') ? pageTitle.slice(pageTitle.indexOf('|')) : '';

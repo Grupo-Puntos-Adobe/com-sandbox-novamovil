@@ -27,7 +27,7 @@ Archivos nuevos y archivos de la plantilla de AEM Edge Delivery que se modificar
 | `scripts/foundations/block-utils.js` | Nuevo | Ayudas compartidas de los bloques |
 | `scripts/foundations/messages.js` | Nuevo | Mensajes, idioma y moneda |
 | `scripts/foundations/toast.js` | Nuevo | Alerta flotante |
-| `scripts/foundations/page-context.js` | Nuevo | Datos compartidos entre bloques |
+| `scripts/foundations/store.js` | Nuevo | Store global (variables compartidas entre bloques, por apartados de página o de sesión) |
 | `scripts/foundations/session.js` | Nuevo | Único archivo de sesión: arranca en todas las páginas, reglas de página y mostrar u ocultar por sesión |
 | `scripts/foundations/README.md` | Nuevo | Guía de los JS portables |
 | `blocks/header/` | Modificado | Header NovaMóvil |

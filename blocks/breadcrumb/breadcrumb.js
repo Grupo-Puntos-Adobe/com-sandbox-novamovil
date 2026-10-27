@@ -8,22 +8,23 @@
  *   | Styles / Classname / Session | …    (scripts/foundations/block-options.js)
  *   | Level 1            | [Inicio](/)    |   (a link: a level above the current page)
  *   | Level 2            | Celulares      |   (plain text: the current page)
- *   | Level 3            | {breadcrumb-name} |   (optional: filled at run time, see below)
+ *   | Level 3            | {breadcrumb.name} |   (optional: filled at run time, see below)
  * Levels are shown by their number; an empty level is left out. A level can end with a session
  * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
  * levels of the current state before this block reads them.
- * Dynamic levels: a mark of PAGE_CONTEXT (scripts/foundations/page-context.js) between braces is
- * replaced by the value another block sets with setPageContext() — today {breadcrumb-name},
- * set by product-detail with the product name. A level can mix text and marks
- * ("Detalle de {breadcrumb-name}") and several levels can be dynamic, each with its own mark;
- * a level waits for its values (not painted until they arrive). Without marks the level is
- * shown as authored.
+ * Dynamic levels: a mark {breadcrumb.value} is replaced by the value of the breadcrumb slice of
+ * the store (scripts/foundations/store.js) that another block sets — today {breadcrumb.name},
+ * set by product-detail with store.set('breadcrumb.name', …). A level can mix text and marks
+ * ("Detalle de {breadcrumb.name}") and several levels can be dynamic ({breadcrumb.brand},
+ * {breadcrumb.name}); a level waits for its values (not painted until they arrive). Without
+ * marks the level is shown as authored.
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)       scripts/foundations/block-options.js
  *     ├─ readBreadcrumbLevels(block)    "Level N" rows sorted by N → [{ text, href }]
- *     └─ renderBreadcrumbTrail(block, levels)   fillPageContext(); again on PAGE_CONTEXT_EVENT
+ *     └─ renderBreadcrumbTrail(block, levels)   store.fill(); again on
+ *                                               store.subscribe('breadcrumb')
  *          └─ buildBreadcrumbItem() per level (the last one is the current page)
  *
  * Markup is all divs except the links (<a>). Classes used by breadcrumb.css:
@@ -34,9 +35,7 @@
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { getSafeHref } from '../../scripts/foundations/block-utils.js';
-import {
-  PAGE_CONTEXT_EVENT, fillPageContext, hasPageContext,
-} from '../../scripts/foundations/page-context.js';
+import { store } from '../../scripts/foundations/store.js';
 
 // accessible name of the navigation landmark (only read by screen readers)
 const LANDMARK_LABEL = 'Ruta de navegación';
@@ -93,8 +92,8 @@ function buildBreadcrumbItem(level, isCurrent) {
 }
 
 /**
- * Paints the trail; the dynamic levels take their values (fillPageContext), or are left out
- * while a value is missing.
+ * Paints the trail; the dynamic levels take their values (store.fill), or are left out while a
+ * value is missing.
  * @param {Element} block
  * @param {{text: string, href: string|null}[]} levels readBreadcrumbLevels() result
  */
@@ -102,7 +101,7 @@ function renderBreadcrumbTrail(block, levels) {
   const visibleLevels = levels
     .map((level) => ({
       ...level,
-      text: fillPageContext(level.text),
+      text: store.fill(level.text),
     }))
     .filter((level) => level.text);
   if (!visibleLevels.length) {
@@ -133,9 +132,10 @@ function renderBreadcrumbTrail(block, levels) {
 export default function decorate(block) {
   applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
   const levels = readBreadcrumbLevels(block);
-  renderBreadcrumbTrail(block, levels);
-  // any value of the page context that arrives later repaints the dynamic levels
-  if (levels.some((level) => hasPageContext(level.text))) {
-    document.addEventListener(PAGE_CONTEXT_EVENT, () => renderBreadcrumbTrail(block, levels));
+  if (levels.some((level) => store.has(level.text))) {
+    // painted now and again every time a value of the breadcrumb slice arrives or changes
+    store.subscribe('breadcrumb', () => renderBreadcrumbTrail(block, levels));
+  } else {
+    renderBreadcrumbTrail(block, levels);
   }
 }

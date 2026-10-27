@@ -17,7 +17,7 @@ bloques o no.
 | [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
 | [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
 | [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
-| [`page-context.js`](#5-page-contextjs) | Pasar **cualquier valor** entre bloques de la misma página sin que se importen, por apartados (hoy: el nombre del breadcrumb) | `product-detail` (lo pone) y `breadcrumb` (lo lee) | nada |
+| [`store.js`](#5-storejs) | **Store global** estilo Redux simple: variables que cualquier bloque escribe, lee y escucha, por apartados que duran la página o la sesión (hoy: `breadcrumb`) | `product-detail` (pone `breadcrumb.name`) y `breadcrumb` (lo muestra) | nada |
 | [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, leer los datos, reglas de las páginas y mostrar u ocultar | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `styles/foundations/sessions.css` |
 
 ```js
@@ -26,7 +26,7 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { readTableCell, readEndpoint, createElementWithClass } from '../../scripts/foundations/block-utils.js';
 import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
 import { showToast } from '../../scripts/foundations/toast.js';
-import { PAGE_CONTEXT, setPageContext, onPageContext } from '../../scripts/foundations/page-context.js';
+import { store } from '../../scripts/foundations/store.js';
 import { getSessionData, loginUser, logoutUser } from '../../scripts/foundations/session.js';
 ```
 
@@ -170,69 +170,92 @@ showToast('No pudimos cargar las categorías', getAlertOptions(readBlockConfig(b
 
 ---
 
-## 5. `page-context.js`
+## 5. `store.js`
 
-**Para qué es:** que un bloque le pase **cualquier valor** a otro bloque **de la misma página** sin
-importarse entre ellos (un nombre, un precio, un plan…). Cada valor tiene su **apartado**, una llave
-en `PAGE_CONTEXT`, y en Drive se escribe esa llave entre llaves: `{breadcrumb-name}`.
+**Para qué es:** un **store global** al estilo de Redux, pero simple: variables que **cualquier
+bloque** puede escribir, **leer en cualquier momento** desde cualquier lado y **escuchar** cuando
+cambian, sin que los bloques se importen entre ellos. Hay un solo estado con **apartados** (slices),
+y cada apartado decide **cuánto dura**:
 
-Hoy hay un apartado: **Breadcrumb**, con `BREADCRUMB_NAME`. El detalle del celular pone el nombre del
-producto cuando llega del servicio, y el breadcrumb lo muestra en su nivel `{breadcrumb-name}`.
+| `keep` | Dónde vive | Cuánto dura |
+|---|---|---|
+| `'page'` | En memoria | Mientras estás en la página: se construye ahí y se borra al navegar o recargar |
+| `'session'` | En `sessionStorage` | Sigue al cambiar de página y al recargar; se borra al cerrar la pestaña. Al abrir una página se vuelve a cargar solo |
+
+Los apartados se declaran **en un solo lugar**, al inicio de `store.js`:
 
 ```js
-export const PAGE_CONTEXT = {
-  // Breadcrumb: un valor por cada nivel dinámico
-  BREADCRUMB_NAME: 'breadcrumb-name', // en Drive {breadcrumb-name}: la página actual
+const STORE_SLICES = {
+  // Breadcrumb: un valor por cada nivel dinámico, se construye en la página del breadcrumb
+  breadcrumb: { keep: 'page', initial: { name: '', brand: '' } },
+  // user: { keep: 'session', initial: null },   ← después: lo llenará session.js
 };
 ```
 
-| Exporta | Recibe | Qué hace | Para qué sirve |
-|---|---|---|---|
-| `PAGE_CONTEXT` | — | Los apartados: una llave por cada valor que se puede pasar | Saber qué se puede transmitir; la marca de Drive es `{llave}` |
-| `setPageContext(key, value)` | La llave y el valor (`'Apple iPhone 15 Pro'`) | Lo guarda y lanza `PAGE_CONTEXT_EVENT` | El bloque que **conoce** el valor |
-| `getPageContext(key)` | La llave | El valor guardado, o `''` | Leer el valor en cualquier momento |
-| `onPageContext(key, callback)` | La llave y una función | Llama a `callback(value)` **ahora si ya hay valor y cada vez que cambie**. Devuelve una función para dejar de escuchar | El bloque que lo **necesita**: no importa si carga antes o después del que lo pone |
-| `fillPageContext(text)` | Un texto de la tabla | Cambia **todas** las marcas por sus valores: `'Detalle de {breadcrumb-name}'` → `'Detalle de Apple iPhone 15 Pro'`. Sin marcas → el texto tal cual; con una marca sin valor todavía → `''` | Pintar texto dinámico en **cualquier** bloque |
-| `hasPageContext(text)` | Un texto de la tabla | `true` si trae alguna marca de `PAGE_CONTEXT` | Saber si hay que esperar un valor |
-| `PAGE_CONTEXT_EVENT` | — | Evento en `document`; `detail = { key, value }` | Lo usa `onPageContext` por dentro; un bloque con varias marcas puede escucharlo directo |
+Hoy hay un apartado, **`breadcrumb`**: el detalle del celular pone `breadcrumb.name` cuando llega
+el producto, y el breadcrumb lo muestra en su nivel `{breadcrumb.name}`.
 
-**Sin marca se ve el texto que escribió el autor:** solo lo que necesita ser dinámico la lleva.
+### Funciones (todas en `store`)
+
+| Función | Recibe | Qué hace / devuelve | Para qué sirve |
+|---|---|---|---|
+| `store.set(path, value)` | `'breadcrumb.name'` y un valor, o `'breadcrumb'` y un objeto con varios valores | Guarda (si el apartado es `session`, también en `sessionStorage`) y avisa a quien escucha | El bloque que **conoce** el valor |
+| `store.get(path)` | `'breadcrumb.name'` o `'breadcrumb'` | El valor o el apartado completo (**una copia**: el estado solo cambia con `set`). Un valor que no existe → `''` | Leerlo en **cualquier momento** desde cualquier lado |
+| `store.subscribe(path, callback)` | `'breadcrumb'` (cualquier valor del apartado) o `'breadcrumb.name'` (solo ese) y una función | Llama a `callback(get(path))` **ahora y cada vez que cambie**. Devuelve una función para dejar de escuchar | El bloque que lo **muestra**: no importa si carga antes o después del que lo pone |
+| `store.getState()` | — | Todo el estado (una copia): `{ breadcrumb: { name, brand } }` | Ver todo lo que hay |
+| `store.fill(text)` | Un texto de Drive | Cambia **todas** las marcas `{apartado.valor}` por sus valores: `'Detalle de {breadcrumb.name}'` → `'Detalle de Apple iPhone 15 Pro'`. Sin marcas → el texto tal cual; con una marca sin valor todavía → `''` | Textos dinámicos en **cualquier** bloque |
+| `store.has(text)` | Un texto de Drive | `true` si trae alguna marca de un apartado | Saber si hay que esperar un valor |
+
+Un apartado que no está en `STORE_SLICES` da un error claro ("declare it in STORE_SLICES"), para no
+guardar cosas con un nombre equivocado.
 
 ```js
-import {
-  PAGE_CONTEXT, fillPageContext, onPageContext, setPageContext,
-} from '../../scripts/foundations/page-context.js';
+import { store } from '../../scripts/foundations/store.js';
 
 // el bloque que conoce el valor (product-detail)
-setPageContext(PAGE_CONTEXT.BREADCRUMB_NAME, product.name);
+store.set('breadcrumb.name', product.fullName);
 
-// cualquier bloque que lo muestra: 'Detalle de {breadcrumb-name}' → 'Detalle de Apple iPhone 15 Pro'
-const authored = readTableCell(block, 'title').text;
-onPageContext(PAGE_CONTEXT.BREADCRUMB_NAME, () => {
-  title.textContent = fillPageContext(authored);
+// en cualquier momento, desde cualquier bloque
+store.get('breadcrumb.name');                 // 'Apple iPhone 15 Pro'
+
+// el bloque que lo muestra: se pinta ahora y cada vez que cambie
+const authored = readTableCell(block, 'title').text;   // 'Detalle de {breadcrumb.name}'
+store.subscribe('breadcrumb', () => {
+  title.textContent = store.fill(authored);   // 'Detalle de Apple iPhone 15 Pro'
 });
 ```
 
-### Agregar un valor nuevo (otro nivel dinámico u otro apartado)
+**En Drive, la marca es el apartado y el valor separados por un punto:** `{breadcrumb.name}`. **Sin
+marca se ve el texto que escribió el autor**: solo lo que necesita ser dinámico la lleva.
 
-1. **Una línea en `PAGE_CONTEXT`**, con el apartado primero y luego qué es:
-   `BREADCRUMB_BRAND: 'breadcrumb-brand'` o `PLAN_PRICE: 'plan-price'`.
-2. **El bloque que conoce el valor** lo pone: `setPageContext(PAGE_CONTEXT.BREADCRUMB_BRAND, product.brand)`.
-3. **En Drive** se escribe la marca: `{breadcrumb-brand}`.
+### Agregar un valor o un apartado
 
-Las funciones no cambian. Por ejemplo, un breadcrumb con dos niveles dinámicos:
+- **Otro valor de un apartado** (por ejemplo otro nivel dinámico del breadcrumb): agregarlo a su
+  `initial` (`{ name: '', brand: '' }`), ponerlo con `store.set('breadcrumb.brand', …)` y escribir
+  la marca `{breadcrumb.brand}` en Drive.
+- **Otro apartado**: una línea en `STORE_SLICES` con su `keep` y su `initial`, por ejemplo
+  `plan: { keep: 'page', initial: { price: '' } }` → marca `{plan.price}`.
+
+Por ejemplo, un breadcrumb con dos niveles dinámicos:
 
 ```
 | Breadcrumb |                         |
 | Level 1    | [Inicio](/)             |
 | Level 2    | [Celulares](/celulares) |
-| Level 3    | {breadcrumb-brand}      |   ← "Apple"
-| Level 4    | {breadcrumb-name}       |   ← "iPhone 15 Pro"
+| Level 3    | {breadcrumb.brand}      |   ← "Apple"
+| Level 4    | {breadcrumb.name}       |   ← "iPhone 15 Pro"
 ```
 
 Cada nivel espera **su** valor: mientras no llega no se pinta, y los demás sí. En un mismo texto se
-pueden mezclar varias marcas (`{breadcrumb-brand} {breadcrumb-name}`). El enlace de un nivel sigue
+pueden mezclar varias marcas (`{breadcrumb.brand} {breadcrumb.name}`). El enlace de un nivel sigue
 siendo el que escribe el autor.
+
+### Después: los datos del usuario en el store
+
+Para no llamar funciones en todos lados, el plan es un apartado `user` con `keep: 'session'`.
+`session.js` lo llenará al iniciar sesión y, al abrir cualquier página, revisará si hay sesión y lo
+volverá a llenar; al cerrar sesión o la pestaña se borrará. Así cualquier bloque leerá
+`store.get('user.firstName')` o usará `{user.firstName}` en Drive. **Todavía no está hecho.**
 
 ---
 
