@@ -30,20 +30,20 @@
 const STORE = {
   // the dynamic levels of the breadcrumb (set by the block that knows them, e.g. product-detail)
   breadcrumb: {
-    name: '', // {store.breadcrumb.name}: the current page (e.g. the product)
-    brand: '', // {store.breadcrumb.brand}: e.g. "Apple"
+    name: "", // {store.breadcrumb.name}: the current page (e.g. the product)
+    brand: "", // {store.breadcrumb.brand}: e.g. "Apple"
   },
   // the user of the session, filled ONLY by session.js (login, guest, every page start) and
   // emptied when the session ends; never the token
   user: {
-    userId: '',
-    firstName: '', // {store.user.firstName}
-    lastName: '',
-    fullName: '',
-    email: '',
-    phone: '',
+    userId: "",
+    firstName: "", // {store.user.firstName}
+    lastName: "",
+    fullName: "",
+    email: "",
+    phone: "",
     verified: false,
-    sessionId: '',
+    sessionId: "",
     isGuest: false, // true for "Continuar como invitado" (userId 'guest', firstName 'Invitado')
   },
   // who is visiting, filled ONLY by session.js (every page start, login, guest, logout, expiry):
@@ -51,12 +51,12 @@ const STORE = {
   session: {
     isSession: false, // true ONLY with a real login (it has a token); a guest is not a session
     isGuest: false, // true after "Continuar como invitado"
-    token: '', // 'Bearer …' for the Authorization header of private calls; '' without a login
+    token: "", // 'Bearer …' for the Authorization header of private calls; '' without a login
   },
 };
 
 // variables that a Drive mark can never show (the mark stays hidden and a warning is logged)
-const PRIVATE_VARIABLES = ['session.token'];
+const PRIVATE_VARIABLES = ["session.token"];
 
 const state = structuredClone(STORE);
 const listeners = new Set();
@@ -67,7 +67,10 @@ const warnedMarks = new Set();
 // a mark of the store in a text: {store.slice.variable} (marks without "store." belong to the
 // block that paints them, like {id} or {count}, and are never touched)
 const MARK = /\{store\.([a-z][\w-]*)\.([a-z][\w-]*)\}/gi;
-const STORE_CSS_URL = new URL('../../styles/foundations/store.css', import.meta.url).href;
+const STORE_CSS_URL = new URL(
+  "../../styles/foundations/store.css",
+  import.meta.url,
+).href;
 
 /**
  * Slice and variable of a path, after checking that they are declared in STORE.
@@ -78,9 +81,15 @@ function readPath(path) {
   if (!path) {
     return [undefined, undefined];
   }
-  const [slice, variable, ...rest] = path.split('.');
-  if (!STORE[slice] || rest.length || (variable !== undefined && !(variable in STORE[slice]))) {
-    throw new Error(`store: "${path}" does not exist (declared: ${JSON.stringify(STORE)})`);
+  const [slice, variable, ...rest] = path.split(".");
+  if (
+    !STORE[slice] ||
+    rest.length ||
+    (variable !== undefined && !(variable in STORE[slice]))
+  ) {
+    throw new Error(
+      `store: "${path}" does not exist (declared: ${JSON.stringify(STORE)})`,
+    );
   }
   return [slice, variable];
 }
@@ -113,16 +122,18 @@ function fillMarks(text) {
       if (!warnedMarks.has(mark)) {
         warnedMarks.add(mark);
         // eslint-disable-next-line no-console
-        console.warn(`store: ${mark} is private and is never shown on the page`);
+        console.warn(
+          `store: ${mark} is private and is never shown on the page`,
+        );
       }
       missing = true;
-      return '';
+      return "";
     }
     const value = state[slice][variable];
-    missing = missing || value === '' || value === null || value === undefined;
+    missing = missing || value === "" || value === null || value === undefined;
     return String(value);
   });
-  return missing ? '' : filled;
+  return missing ? "" : filled;
 }
 
 /**
@@ -136,7 +147,7 @@ function update() {
     }
     const filled = fillMarks(template);
     node.nodeValue = filled;
-    node.parentElement?.toggleAttribute('data-store-pending', !filled);
+    node.parentElement?.toggleAttribute("data-store-pending", !filled);
   });
   listeners.forEach((listener) => listener());
 }
@@ -149,7 +160,9 @@ function update() {
 function set(path, value) {
   const [slice, variable] = readPath(path);
   if (!slice) {
-    throw new Error('store: set() needs a slice or a variable, e.g. set(\'breadcrumb.name\', …)');
+    throw new Error(
+      "store: set() needs a slice or a variable, e.g. set('breadcrumb.name', …)",
+    );
   }
   const changes = variable ? { [variable]: value } : value;
   Object.keys(changes || {}).forEach((name) => readPath(`${slice}.${name}`));
@@ -180,7 +193,8 @@ function reset(path) {
  * @returns {Function} Stops listening
  */
 function subscribe(path, callback) {
-  const [watched, onChange] = typeof path === 'function' ? [undefined, path] : [path, callback];
+  const [watched, onChange] =
+    typeof path === "function" ? [undefined, path] : [path, callback];
   readPath(watched);
   let last = JSON.stringify(get(watched));
   const listener = () => {
@@ -207,9 +221,9 @@ function isReady(node) {
   if (!element) {
     return false;
   }
-  const block = element.closest('.block');
+  const block = element.closest(".block");
   if (block) {
-    return block.dataset.blockStatus === 'loaded';
+    return block.dataset.blockStatus === "loaded";
   }
   return !element.closest('main > div > div[class]:not([class$="-wrapper"])');
 }
@@ -245,25 +259,31 @@ function bindTexts(root) {
  * Start: the CSS of the waiting marks, the texts already on the page and every new one.
  */
 function initStore() {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
   link.href = STORE_CSS_URL;
   document.head.append(link);
   bindTexts(document.body);
   new MutationObserver((mutations) => {
     mutations.forEach(({ type, target, addedNodes }) => {
       // a block that finished loading: its texts can be filled now
-      if (type === 'attributes' && target.dataset.blockStatus === 'loaded') {
+      if (type === "attributes" && target.dataset.blockStatus === "loaded") {
         bindTexts(target);
       }
       addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE || node.nodeType === Node.TEXT_NODE) {
+        if (
+          node.nodeType === Node.ELEMENT_NODE ||
+          node.nodeType === Node.TEXT_NODE
+        ) {
           bindTexts(node);
         }
       });
     });
   }).observe(document.body, {
-    childList: true, subtree: true, attributes: true, attributeFilter: ['data-block-status'],
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["data-block-status"],
   });
 }
 
@@ -282,18 +302,22 @@ initStore();
  */
 // eslint-disable-next-line no-unused-vars
 function showStoreInConsole() {
-  const DEBUG_STORAGE_KEY = 'novamovil-store-debug';
-  const readRows = (all) => Object.entries(STORE).flatMap(([slice, variables]) => Object
-    .keys(variables)
-    .map((variable) => {
-      const path = `${slice}.${variable}`;
-      const value = all[slice][variable];
-      return [path, PRIVATE_VARIABLES.includes(path) && value ? '••• (privado)' : value];
-    }));
+  const DEBUG_STORAGE_KEY = "novamovil-store-debug";
+  const readRows = (all) =>
+    Object.entries(STORE).flatMap(([slice, variables]) =>
+      Object.keys(variables).map((variable) => {
+        const path = `${slice}.${variable}`;
+        const value = all[slice][variable];
+        return [
+          path,
+          PRIVATE_VARIABLES.includes(path) && value ? "••• (privado)" : value,
+        ];
+      }),
+    );
   // the last table of the previous page (the store itself starts empty on every page)
   let previous = null;
   try {
-    previous = JSON.parse(sessionStorage.getItem(DEBUG_STORAGE_KEY) || 'null');
+    previous = JSON.parse(sessionStorage.getItem(DEBUG_STORAGE_KEY) || "null");
   } catch {
     previous = null;
   }
@@ -305,22 +329,28 @@ function showStoreInConsole() {
     const rows = readRows(get());
     const before = previous && Object.fromEntries(previous);
     const changed = before
-      ? rows.filter(([path, value]) => JSON.stringify(value) !== JSON.stringify(before[path]))
-        .map(([path]) => path)
+      ? rows
+          .filter(
+            ([path, value]) =>
+              JSON.stringify(value) !== JSON.stringify(before[path]),
+          )
+          .map(([path]) => path)
       : [];
     if (!isPageStart && !changed.length) {
       return;
     }
     const time = new Date().toLocaleTimeString();
     // DevTools gives every column the same width: the ✏️ goes next to the name, not in a column
-    const table = Object.fromEntries(rows.map(([path, value]) => {
-      if (!before) {
-        return [path, { después: value }];
-      }
-      const name = changed.includes(path) ? `✏️ ${path}` : path;
-      return [name, { antes: before[path], después: value }];
-    }));
-    let title = `store · cambió ${changed.join(', ')} (${time})`;
+    const table = Object.fromEntries(
+      rows.map(([path, value]) => {
+        if (!before) {
+          return [path, { después: value }];
+        }
+        const name = changed.includes(path) ? `✏️ ${path}` : path;
+        return [name, { antes: before[path], después: value }];
+      }),
+    );
+    let title = `store · cambió ${changed.join(", ")} (${time})`;
     if (isPageStart) {
       title = before
         ? `store · inicio de ${window.location.pathname}, antes = página anterior (${time})`
@@ -349,11 +379,14 @@ function showStoreInConsole() {
 /* eslint-enable no-console */
 
 // uncomment to see the store in the console; comment it again before pushing
-// showStoreInConsole();
+showStoreInConsole();
 // --- debug: showStoreInConsole (end) ---------------------------------------------------------
 
 export const store = {
-  get, set, reset, subscribe,
+  get,
+  set,
+  reset,
+  subscribe,
 };
 
 export default store;
