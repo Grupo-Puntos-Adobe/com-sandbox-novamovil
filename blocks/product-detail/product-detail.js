@@ -14,7 +14,7 @@
  * (icon | text), Specs Title, Empty List Title, Empty List Description, Empty List Icon,
  * Image Error Message.
  * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
- * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
+ * whole block, and a session state in the last cell of any row (login | logout | guest).
  * Defaults only for messages and configuration:
  *   - Content (labels, texts, button, benefits, Specs Title) has no default: without text in
  *     the table that part is not painted.
@@ -43,7 +43,7 @@
  *          ├─ ok    → normalizeProduct() → renderProductDetail()
  *          │            ├─ buildProductGallery() · buildProductSummary() · buildPurchaseOptions()
  *          │            ├─ buildBenefits() · buildSpecs()
- *          │            └─ setCurrentPageName() (breadcrumb "{product}") + document.title
+ *          │            └─ store.set('breadcrumb.name') ({store.breadcrumb.name}) + title
  *          ├─ no product → renderNotAvailable()
  *          └─ error → console.error + renderNotAvailable() (no alert)
  *
@@ -69,9 +69,10 @@ import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { post } from '../../scripts/api/http-client.js';
 import MESSAGES, { CURRENCY, LOCALE } from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getSafeHref, formatPrice,
+  createElementWithClass, formatPrice, getSafeHref, readEndpoint, readRowTextOrDefault,
+  readTableCell,
 } from '../../scripts/foundations/block-utils.js';
-import { setCurrentPageName } from '../../scripts/foundations/page-context.js';
+import { store } from '../../scripts/foundations/store.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
 // fixed parts of the detail request (only data.productId changes)
@@ -119,22 +120,6 @@ const toNumberOrNull = (value) => (value === null || value === '' || !Number.isF
 const formatCount = (value) => new Intl.NumberFormat(LOCALE).format(value);
 
 /**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
-
-/**
  * "Benefit N" rows (icon | text), sorted by N.
  * @param {Element} block
  * @returns {{icon: string, text: string}[]}
@@ -160,7 +145,6 @@ function readBenefitRows(block) {
  */
 function readDetailSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const endpointCell = readTableCell(block, 'endpoint');
   const catalogCell = readTableCell(block, 'catalog link');
   const months = Number.parseInt(readCellText('installments months'), 10);
   // the folder of the page: /celulares/ → /celulares
@@ -179,7 +163,7 @@ function readDetailSettings(block) {
       button: readCellText('button text'),
       specsTitle: readCellText('specs title'),
     },
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     catalogLink: getSafeHref(catalogCell.href || catalogCell.text) || pageFolder,
     installmentsMonths: Number.isFinite(months) && months > 0 ? months : null,
     benefits: readBenefitRows(block),
@@ -623,8 +607,8 @@ function renderProductDetail(block, product, settings) {
   const specs = buildSpecs(product.specs, settings.texts.specsTitle);
   block.replaceChildren(...[layout, specs].filter(Boolean));
 
-  // breadcrumb "{product}" level and the browser tab
-  setCurrentPageName(product.fullName);
+  // breadcrumb "{store.breadcrumb.name}" level (filled by the store) and the browser tab
+  store.set('breadcrumb.name', product.fullName);
   // "Celular | NovaMóvil" → "Apple iPhone 15 Pro | NovaMóvil" (page title or og:title)
   const pageTitle = document.title || getMetadata('og:title');
   const titleSuffix = pageTitle.includes('|') ? pageTitle.slice(pageTitle.indexOf('|')) : '';

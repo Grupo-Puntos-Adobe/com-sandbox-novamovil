@@ -390,12 +390,13 @@ Móvil:
 - `login.css` – Estilos del bloque, todos dentro de `.login` (tamaños, colores y resoluciones)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y estado en la
   última columna
-- `scripts/foundations/block-utils.js` – `readTableCell` y `getSafeHref`
+- `scripts/foundations/block-utils.js` – `readTableCell`, `readEndpoint` (fila `Endpoint`), `getSafeHref`,
+  `toSafeSitePath` y `createElementWithClass`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
 - `scripts/foundations/session.js` – `loginUser` (hace la petición y guarda la sesión),
-  `continueAsGuest`, `readPageSessionRule`, `goToPage`, `toSafeSitePath` y
-  `showOnlyForSessionStates`; la regla de la página (`applyPageSessionRule`, que corre en todas
-  las páginas desde `head.html`)
+  `continueAsGuest`, `getSessionData` (`page.rule` dice si es la página `login`), `goToPage` y
+  `showOnlyForSessionStates`; la regla de la página corre sola en todas las páginas desde
+  `head.html`
 - `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión (lo carga
   `session.js`)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PUBLIC`, lo usa `loginUser` (el bloque

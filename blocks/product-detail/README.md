@@ -41,7 +41,7 @@ va en una columna; desde tablet, la galería a la izquierda y la información a 
   corazón de favoritos que se marca y desmarca
 - Caja de beneficios (envío, compra segura, devoluciones) desde las filas `Benefit N`
 - Tabla **Características principales** (`specs` del servicio)
-- El breadcrumb termina con el nombre del celular (`{product}`) y la pestaña del navegador también
+- El breadcrumb termina con el nombre del celular (`{store.breadcrumb.name}`) y la pestaña del navegador también
 - Esqueleto de carga; sin id regresa a la lista de celulares (`/celulares`); si el id no existe, es
   inválido o el servicio falla, solo el aviso de lista vacía ("Este celular no existe"), sin alerta
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
@@ -137,7 +137,7 @@ div.product-detail
 ### Estructura de la tabla en Drive
 
 El autor escribe una tabla **Product Detail** en el documento `index` de la carpeta `celulares` de Drive (debajo
-del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
+del **Breadcrumb** con `Level 3` = `{store.breadcrumb.name}`). Todas las filas son opcionales.
 
 1. **`Styles`** / **`Classname`** – Estilos en línea y clases extra del bloque (ver
    `documentation/06-styles-classname.md`)
@@ -145,7 +145,7 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 > **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
 > **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
-> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> columna** (`login`, `logout`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
 >
 > Ejemplo: un beneficio extra solo para quien inició sesión (la fila `Benefit N` ya tiene 2 valores,
@@ -154,7 +154,7 @@ del **Breadcrumb** con `Level 3` = `{product}`). Todas las filas son opcionales.
 > | Product Detail | | | |
 > |---|---|---|---|
 > | Benefit 1 | 🚚 | Envío gratis en compras mayores a $999 | |
-> | Benefit 4 | 🎁 | Envío gratis en todas tus compras | signed-in |
+> | Benefit 4 | 🎁 | Envío gratis en todas tus compras | login |
 >
 > La página de detalle (`celulares/index`) es **pública**: su Metadata no lleva `Session`.
 
@@ -254,7 +254,7 @@ La tabla en Drive permite al autor configurar:
 | Caso | Qué se ve |
 |---|---|
 | Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
-| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
+| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sitio publicado sin `?id=` (`/celulares/`) | Regresa al catálogo (`Catalog Link`), sin dejar la página vacía en el historial |
 | Cargando | Esqueleto de la foto y de la información |
 | El servicio responde el celular | Detalle completo; el breadcrumb y la pestaña muestran "Apple iPhone 15 Pro" |
@@ -280,7 +280,7 @@ La tabla en Drive permite al autor configurar:
 3. **`/celulares/?id=NO_VALIDO!`:** aviso "Este celular no existe", sin llamar al servicio.
 4. **Desde una tarjeta** del catálogo o de destacados: abre el detalle de ese celular.
 5. **Opciones:** elegir color, capacidad y cantidad (de 1 al stock, máximo 10) y marcar favorito.
-6. **Por sesión:** con el ejemplo de `Benefit 4` (`signed-in`), ese beneficio solo aparece con
+6. **Por sesión:** con el ejemplo de `Benefit 4` (`login`), ese beneficio solo aparece con
    sesión (la página se recarga al iniciar sesión).
 
 ### Vista previa
@@ -303,12 +303,12 @@ Móvil:
 - `product-detail.css` – Estilos del bloque (tamaños, colores y resoluciones; las columnas vienen del
   grid)
 - `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
-  fila), `block-utils.js` (incluye `formatPrice`), `messages.js` y `page-context.js` (nombre del
+  fila), `block-utils.js` (incluye `formatPrice`), `messages.js` y `store.js` (`breadcrumb.name`, nombre del
   celular para el breadcrumb)
 - `scripts/api/http-client.js` – `post` al servicio de detalle (llamada pública; ver
   `scripts/api/README.md`)
 - `blocks/empty-list-message/` – Aviso "no disponible"
-- `blocks/breadcrumb/` – Ruta con el nivel `{product}`
+- `blocks/breadcrumb/` – Ruta con el nivel `{store.breadcrumb.name}`
 - `styles/foundations/grid.css` – Columnas y espacios
 - Colores en `styles/colors.css` (`--product-detail-*`)
 - Se llega desde: `blocks/product-catalog/` y `blocks/card-featured/` (`Product Link` =

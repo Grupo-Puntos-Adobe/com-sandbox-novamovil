@@ -19,7 +19,7 @@
  *   - Endpoint: login service (POST). Without it the submit only stops the page reload.
  *   - Redirects are NOT here: the page decides them in its Metadata (Session false +
  *     Redirect To on /login: with a session, also right after signing in, the page goes to
- *     Redirect To; see applyPageSessionRule in scripts/foundations/session.js). The block only
+ *     Redirect To; see "Pages" in scripts/foundations/session.js). The block only
  *     logs in and hides itself once signed in (unless the table has its own Session row). On
  *     the login page (Metadata Session false) a guest still sees it; on a checkout step (page
  *     without Session in its Metadata) a guest has done the step, so it hides too
@@ -63,11 +63,13 @@
  * Guide: blocks/login/README.md
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
-import { readTableCell, getSafeHref } from '../../scripts/foundations/block-utils.js';
+import {
+  createElementWithClass, getSafeHref, readEndpoint, readTableCell, toSafeSitePath,
+} from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  PAGE_SESSION_RULES, SESSION_STATES, continueAsGuest, readPageSessionRule, goToPage,
-  loginUser, showOnlyForSessionStates, toSafeSitePath,
+  PAGE_SESSION_RULES, SESSION_STATES, continueAsGuest, getSessionData, goToPage,
+  loginUser, showOnlyForSessionStates,
 } from '../../scripts/foundations/session.js';
 
 // fixed parts of the login request (only data changes)
@@ -100,22 +102,6 @@ const LABELS = {
 let loginBlockCount = 0;
 
 /**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
-}
-
-/**
  * Value cell of a row (the whole cell, to keep the links of Legal Text).
  * @param {Element} block
  * @param {string} rowName Row name, case-insensitive
@@ -139,7 +125,6 @@ function readLoginSettings(block) {
     const cell = readTableCell(block, key);
     return { text: cell.text, href: getSafeHref(cell.href) };
   };
-  const endpointCell = readTableCell(block, 'endpoint');
   return {
     texts: {
       title: readCellText('title'),
@@ -155,7 +140,7 @@ function readLoginSettings(block) {
     },
     forgotPassword: readLink('forgot password'),
     guest: readLink('guest button'),
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
     legalCell: findValueCell(block, 'legal text'),
   };
@@ -610,7 +595,7 @@ export default function decorate(block) {
   const wrapper = block.parentElement?.classList.contains('login-wrapper')
     ? block.parentElement : block;
   if (!wrapper.classList.contains('session-only')) {
-    const isLoginPage = readPageSessionRule() === PAGE_SESSION_RULES.SIGNED_OUT_ONLY;
+    const isLoginPage = getSessionData().page.rule === PAGE_SESSION_RULES.SIGNED_OUT_ONLY;
     showOnlyForSessionStates(wrapper, isLoginPage
       ? [SESSION_STATES.SIGNED_OUT, SESSION_STATES.GUEST]
       : [SESSION_STATES.SIGNED_OUT]);

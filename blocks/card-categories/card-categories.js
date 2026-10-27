@@ -8,7 +8,7 @@
  * Alert Color, Error Response Message, Empty List Title, Empty List Description,
  * Empty List Icon.
  * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
- * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
+ * whole block, and a session state in the last cell of any row (login | logout | guest).
  * Defaults only for messages and the alert:
  *   - Title has no default: without text in the table the section has no title.
  *   - Empty List Title / Description / Icon (readRowTextOrDefault): row missing → default
@@ -56,7 +56,8 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
+  buildSectionTitle, createElementWithClass, getAlertOptions, getSafeHref, readEndpoint,
+  readRowTextOrDefault, readTableCell,
 } from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
@@ -98,9 +99,8 @@ const EMPTY_LIST_ICON = '🗂️';
  */
 function readCategoriesSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const endpointCell = readTableCell(block, 'endpoint');
   return {
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     alert: getAlertOptions(readBlockConfig(block)),
     messages: {
       errorResponseMessage: readCellText('error response message') || MESSAGES.errorResponseMessage,
@@ -140,22 +140,6 @@ function normalizeCategories(rawCategories) {
       return true;
     })
     .sort((first, second) => first.order - second.order);
-}
-
-/**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
 }
 
 /**

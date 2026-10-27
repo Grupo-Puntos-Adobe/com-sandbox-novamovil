@@ -27,14 +27,16 @@ const result = await post(endpoint, body);                                // pú
 const profile = await post(endpoint, body, { interceptor: REQUEST_TYPE.PRIVATE }); // privada
 ```
 
-El token sale de `scripts/foundations/session.js` (`getAuthorizationHeader()`), después del login. **Nunca**
-se escribe un token ni una API key en el código ni en Drive.
+El token sale del store (`store.get('session.token')`, `'Bearer …'`), que llena
+`scripts/foundations/session.js` después del login y vacía al cerrar sesión o cuando vence. **Nunca**
+se escribe un token ni una API key en el código ni en Drive (una marca `{store.session.token}` nunca
+se llena).
 
 ### En Drive: `Endpoint` es público, `Private Endpoint` es privado
 
 | Fila en la tabla del bloque | Tipo de llamada | Cómo se lee en el bloque |
 |---|---|---|
-| `Endpoint` (y las de cada bloque: `Search Endpoint`, `Filters Endpoint`) | `REQUEST_TYPE.PUBLIC` | `readEndpoint(block)` o `readTableCell` |
+| `Endpoint` (y las de cada bloque: `Search Endpoint`, `Filters Endpoint`) | `REQUEST_TYPE.PUBLIC` | `readEndpoint(block)` (las filas con otro nombre, con `readTableCell`) |
 | `Private Endpoint` (también se acepta `PrivateEndpoint`) | `REQUEST_TYPE.PRIVATE` (con Bearer) | `readPrivateEndpoint(block)` |
 
 Los bloques que ya existen siguen con `Endpoint` y no cambian. Un servicio que necesita sesión va
@@ -155,8 +157,9 @@ Un nombre que no existe usa la cadena pública.
 ## 5. Dependencias y cómo llevarlo a otro proyecto
 
 - `http-client.js` → `interceptors.js`.
-- `interceptors.js` → `scripts/foundations/session.js` (`getAuthorizationHeader`, `clearUserSession`,
-  `getPageRedirectPath`, `goToPage`, `isEditingToolPreview`), solo para la llamada privada.
+- `interceptors.js` → `scripts/foundations/store.js` (`session.token`) y
+  `scripts/foundations/session.js` (`clearUserSession`, `getSessionData` para `page.redirectPath` e
+  `isEditingToolPreview`, y `goToPage`), solo para la llamada privada.
 
 Para llevarlo: copia `scripts/api/` (y `scripts/foundations/` si usas la llamada privada) y cambia
 `API_BASE_URL` en `http-client.js`. Un servicio nuevo debe contestar la consulta `OPTIONS` (CORS)

@@ -14,10 +14,15 @@
  *   getSafeHref(path)
  *     only same-site paths and http(s) URLs, else null       breadcrumb, card-*, product-*, login,
  *                                                             session.js
+ *   toSafeSitePath(path)
+ *     only paths of this site (/cuenta), else ''             login, example, session.js
  *   buildSectionTitle(block, prefix)
  *     Title row → div.{prefix}-header > section title        card-* (any block with a Title)
  *   formatPrice(value, currency)
  *     $19,999 with LOCALE / CURRENCY of messages.js          card-featured, product-*
+ *   createElementWithClass(tag, className, text)
+ *     document.createElement + class + text (never HTML)      every NovaMóvil block that builds
+ *                                                             markup
  *
  * Guide: scripts/foundations/README.md (block-utils.js).
  * Card columns come from the grid (styles/foundations/grid.css): container > row > col.
@@ -144,6 +149,16 @@ export function getSafeHref(path) {
 }
 
 /**
+ * A path of this site (/perfil?x=1), or '' for anything else (other sites, //host, javascript:).
+ * @param {string} path
+ * @returns {string}
+ */
+export function toSafeSitePath(path) {
+  const href = getSafeHref(path);
+  return href && href.startsWith('/') && !href.startsWith('//') ? href : '';
+}
+
+/**
  * Section title from the block's Title row, inside the block (so Styles / Classname wrap
  * title + content). No default: without text in the Title row there is no title.
  * Markup: div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]
@@ -187,4 +202,21 @@ export function formatPrice(value, currency) {
       style: 'currency', currency: CURRENCY, maximumFractionDigits: 0,
     }).format(value);
   }
+}
+
+/**
+ * createElement shortcut for the blocks: a tag with its classes and, optionally, its text
+ * (always as text, never HTML).
+ * @param {string} tag
+ * @param {string} className
+ * @param {string} [content]
+ * @returns {Element}
+ */
+export function createElementWithClass(tag, className, content) {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (content !== undefined) {
+    node.textContent = content;
+  }
+  return node;
 }

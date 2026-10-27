@@ -9,7 +9,7 @@
  * Promo Link ("/promociones/{id}"), Alert Duration, Alert Color, Error Response Message,
  * Empty List Title, Empty List Description, Empty List Icon.
  * Session (block-options.js, as every NovaMóvil block): Session row (true | false) for the
- * whole block, and a session state in the last cell of any row (signed-in | signed-out | guest).
+ * whole block, and a session state in the last cell of any row (login | logout | guest).
  * Defaults only for messages and the alert:
  *   - Title and Promo Link have no default: without text in the table there is no title,
  *     and a promotion without its own path has no link (the card is not clickable).
@@ -61,7 +61,8 @@ import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  readTableCell, readRowTextOrDefault, getAlertOptions, getSafeHref, buildSectionTitle,
+  buildSectionTitle, createElementWithClass, getAlertOptions, getSafeHref, readEndpoint,
+  readRowTextOrDefault, readTableCell,
 } from '../../scripts/foundations/block-utils.js';
 import { buildEmptyListMessage } from '../empty-list-message/empty-list-message.js';
 
@@ -115,9 +116,8 @@ const toTrimmedText = (value) => (typeof value === 'string' ? value.trim() : '')
  */
 function readPromotionsSettings(block) {
   const readCellText = (key) => readTableCell(block, key).text;
-  const endpointCell = readTableCell(block, 'endpoint');
   return {
-    endpoint: endpointCell.href || endpointCell.text,
+    endpoint: readEndpoint(block),
     linkTemplate: readCellText('promo link'),
     alert: getAlertOptions(readBlockConfig(block)),
     messages: {
@@ -178,22 +178,6 @@ function normalizePromotions(rawPromotions, linkTemplate) {
       return true;
     })
     .sort((first, second) => first.order - second.order);
-}
-
-/**
- * createElement shortcut; content is always set as text (never HTML).
- * @param {string} tag
- * @param {string} className
- * @param {string} [content]
- * @returns {Element}
- */
-function createElementWithClass(tag, className, content) {
-  const node = document.createElement(tag);
-  node.className = className;
-  if (content !== undefined) {
-    node.textContent = content;
-  }
-  return node;
 }
 
 /**

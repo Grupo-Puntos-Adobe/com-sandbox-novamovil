@@ -150,15 +150,15 @@ y pueden ir en cualquier orden.
 > **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
 > **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
-> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> columna** (`login`, `logout`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
 >
 > Ejemplo: otro título para quien inició sesión, sin tocar el código:
 >
 > | Card Featured | | |
 > |---|---|---|
-> | Title | Productos destacados | signed-out |
-> | Title | Recomendados para ti | signed-in |
+> | Title | Productos destacados | logout |
+> | Title | Recomendados para ti | login |
 > | Button Text | Ver producto | |
 
 3. **`Title`**
@@ -296,7 +296,7 @@ Cada producto que llega del servicio (o del JSON interno) dentro de
 | Caso | Qué se ve |
 |---|---|
 | Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
-| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
+| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sin `Endpoint` y el JSON interno tiene productos | Las tarjetas del JSON interno |
 | Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
 | El servicio está respondiendo | Esqueleto de carga (4 tarjetas grises) |
@@ -313,7 +313,7 @@ Cada producto que llega del servicio (o del JSON interno) dentro de
    uno con su enlace `/celulares/?id={id}`.
 3. **Servicio con error** (por ejemplo una URL que no existe): alerta arriba a la derecha y aviso de
    lista vacía.
-4. **Por sesión:** con dos filas `Title` (`signed-out` / `signed-in`), el título cambia al iniciar
+4. **Por sesión:** con dos filas `Title` (`logout` / `login`), el título cambia al iniciar
    sesión (la página se recarga); con `Session | true`, el bloque completo solo se ve con sesión.
 
 ### Vista previa

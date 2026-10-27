@@ -1,300 +1,481 @@
 # Foundations · JavaScript
 
 Archivos de JavaScript **portables**: no dependen de ningún bloque del proyecto y se pueden llevar
-a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` (CSS).
+a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` (CSS, ver su
+`README.md`).
 
 `scripts/aem.js`, `scripts/scripts.js` y `404.html` quedan como el template. Los bloques importan
 lo que usan. La única excepción es `session.js`: `head.html` lo carga con **una línea** (antes de
 `scripts.js`) para que la regla de sesión de la página se revise en todas las páginas, tengan
 bloques o no.
 
-| Archivo | Qué hace | Exporta |
-|---|---|---|
-| `block-options.js` | Filas opcionales `Styles`, `Classname` y `Session` (`true` / `false`) de los bloques NovaMóvil y las filas con el estado en la última columna. Solo le pregunta a `session.js` por la sesión si el bloque trae la fila `Session` o un estado en la última columna. Guía: `documentation/06-styles-classname.md` | `applyBlockOptions(block)` (default), `applyAuthorStyles(block, declarations)`, `applyAuthorClasses(block, names)` |
-| `block-utils.js` | Ayudas para leer la tabla del bloque y validar datos de servicios | `readTableCell`, `readEndpoint`, `readPrivateEndpoint`, `readRowTextOrDefault`, `getAlertOptions`, `getSafeHref`, `buildSectionTitle`, `formatPrice` |
-| `messages.js` | Mensajes genéricos con valor por defecto (alerta, lista vacía, foto que falla) y el formato de números / precios | `MESSAGES` (default), `LOCALE`, `CURRENCY` |
-| `toast.js` | Alerta flotante arriba a la derecha, apilable, que se cierra sola | `showToast(message, { duration, variant })`, `TOAST_VARIANTS` |
-| `page-context.js` | Datos que un bloque obtiene al cargar y otro bloque de la misma página necesita, sin importarse entre ellos (hoy: el nombre de la página actual) | `setCurrentPageName(name)`, `getCurrentPageName()`, `CURRENT_PAGE_NAME_EVENT` |
-| `session.js` | **Todo lo de sesión en un solo archivo**: arranque en cada página, datos, reglas de página y mostrar / pintar según la sesión (ver [session.js](#sessionjs) abajo). Lo carga `head.html`. Va con `styles/foundations/sessions.css`. Guía: `documentation/08-sesiones.md` | Ver la sección [session.js](#sessionjs) |
+## Resumen: para qué es cada archivo
 
-## Qué necesita cada uno
+| Archivo | Para qué es | Lo usan | Depende de |
+|---|---|---|---|
+| [`block-options.js`](#1-block-optionsjs) | Las filas opcionales que **cualquier bloque NovaMóvil** acepta en Drive: `Styles`, `Classname`, `Session` y el estado en la última columna | Todos los bloques NovaMóvil (1.ª línea de `decorate`) | `session.js` |
+| [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
+| [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
+| [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
+| [`store.js`](#5-storejs) | **Variables globales** del sitio (como el estado de React): solo las declaradas en `STORE`; `get`, `set`, `reset` y `subscribe`, y las marcas `{store.breadcrumb.name}` de cualquier texto se llenan solas. Lo carga `head.html` (hoy: `breadcrumb` y `user`) | `head.html`, `session.js` (pone `user`), `product-detail` (pone `breadcrumb.name`), `account-profile` y `block-session-example` (leen `user`) | `styles/foundations/store.css` |
+| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, estado, reglas de las páginas y mostrar u ocultar; pone el usuario en el store | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `store.js` (pone `user`), `styles/foundations/sessions.css` |
 
-| Archivo | Depende de |
-|---|---|
-| `block-options.js` | `session.js` |
-| `block-utils.js` | `messages.js` (`LOCALE` y `CURRENCY` para `formatPrice`) |
-| `messages.js` | nada |
-| `page-context.js` | nada |
-| `session.js` | `block-utils.js` (`getSafeHref`) y `styles/foundations/sessions.css` (no usa `aem.js`) |
-| `toast.js` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` y sus colores `--toast-*` en `styles/colors.css`, más `--z-index-toast` en `styles/styles.css` |
+```js
+// cómo se importan desde un bloque (blocks/<bloque>/<bloque>.js)
+import applyBlockOptions from '../../scripts/foundations/block-options.js';
+import { readTableCell, readEndpoint, createElementWithClass } from '../../scripts/foundations/block-utils.js';
+import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
+import { showToast } from '../../scripts/foundations/toast.js';
+import { store } from '../../scripts/foundations/store.js';
+import { getSessionData, loginUser, logoutUser } from '../../scripts/foundations/session.js';
+```
 
-## Quién usa cada uno
+---
 
-| Archivo | Lo usan |
-|---|---|
-| `block-options.js` | `hero-novamovil`, `card-categories`, `card-featured`, `card-promotions`, `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example` (1.ª línea de `decorate`) |
-| `block-utils.js` | Los mismos bloques (menos `hero-novamovil`) |
-| `messages.js` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `empty-list-message` |
-| `toast.js` | `card-categories`, `card-featured`, `card-promotions`, `product-catalog` |
-| `page-context.js` | `product-detail` (pone el nombre) y `breadcrumb` (lo lee para `{product}`) |
-| `session.js` | `head.html` (arranque en todas las páginas), `block-options.js`, `login`, `block-session-example` y `scripts/api/interceptors.js` (llamada privada) |
+## 1. `block-options.js`
 
-## block-options.js
-
-Filas opcionales de autor. Guía completa:
+**Para qué es:** que el autor pueda, desde la tabla de Drive y sin tocar código, darle espacio y
+clases a un bloque, decidir quién lo ve y tener filas distintas por sesión. Cada bloque NovaMóvil lo
+llama en la **primera línea** de su `decorate()`; los bloques del template no lo usan. Guía completa:
 `documentation/06-styles-classname.md`.
+
+### Funciones
+
+| Función | Recibe | Qué hace | Para qué sirve |
+|---|---|---|---|
+| `applyBlockOptions(block)` (default) | El bloque | 1) Si la página está redirigiendo, vacía el bloque. 2) Aplica las filas por sesión (`filterRowsBySessionState`). 3) Lee, aplica y **quita** las filas `Styles`, `Classname` y `Session` | La única que llaman los bloques: después de ella, el bloque lee su tabla sin ver esas filas |
+| `filterRowsBySessionState(block)` (interna) | El bloque | Las filas cuya **última celda** es solo estados (`login`, `logout`, `guest`) quedan solo para ese estado y se les quita esa celda; cada fila que queda guarda sus estados en `row.dataset.session` (`"signed-in guest"`). El estado sale del store (`session`); al cambiar, la página se recarga una vez | Filas distintas por sesión en cualquier bloque |
+| `showOnlyWhenSession(element, visibleWhen)` (interna) | El wrapper y `true` / `false` | Escucha `store.subscribe('session.isSession', …)` y le pone o quita `session-hidden` (`sessions.css`) | La fila `Session` del bloque |
+| `applyAuthorStyles(block, declarations)` | El bloque y el texto de `Styles` (`margin-top: 60; padding-left: 20`) | Pone cada declaración en línea; un número sin unidad pasa a `px`; ignora lo inválido o inseguro (`url()`, `<`, `{`…) | La usa `applyBlockOptions`; sirve sola si un bloque quiere aplicar estilos de otra fila |
+| `applyAuthorClasses(block, names)` | El bloque y el texto de `Classname` (`dark compact`) | Agrega cada nombre válido como clase (separados por espacio, coma o `;`) | La usa `applyBlockOptions`; igual que la anterior, sirve sola |
+
+### Las filas que lee
 
 | Fila / celda | Qué hace |
 |---|---|
-| `Styles` | Estilos en línea sobre el bloque (números sin unidad → `px`; valores inseguros se ignoran) |
+| `Styles` | Estilos en línea sobre el bloque (y `display: flow-root` en su wrapper para que los márgenes no se colapsen) |
 | `Classname` | Clases extra sobre el bloque |
-| `Session` | `true` = el bloque completo solo con sesión; `false` = solo sin sesión; vacía = siempre |
-| Estado en la **última columna** de cualquier fila | `signed-in`, `signed-out`, `guest` (combinables): la fila solo existe para ese estado |
+| `Session` | `true` = el bloque y su wrapper solo con sesión; `false` = solo sin sesión (el invitado cuenta como "sin sesión"); vacía = siempre. Lee `store.get('session.isSession')` |
+| Estado en la **última columna** de cualquier fila | `login`, `logout`, `guest` (combinables con coma): la fila solo existe para ese estado. Lee `store.get('session')` |
 
-No arranca nada al importarse: la regla del Metadata (`Session` / `Redirect To`) la revisa
-`session.js` desde `head.html`. Si la página está redirigiendo (`isPageAccessAllowed()` en `false`), el
-bloque se vacía. Un bloque nuevo solo necesita:
+Lo que el autor escribe en la última columna y lo que significa:
+
+| En Drive | Quién la ve | Estado interno |
+|---|---|---|
+| `login` | Quien inició sesión (`isSession: true`) | `signed-in` |
+| `logout` | Quien no tiene sesión ni es invitado | `signed-out` |
+| `guest` | El invitado (`isGuest: true`) | `guest` |
+| `login, guest` | Cualquiera de los dos | — |
+
+No importan las mayúsculas. Los nombres de antes (`signed-in`, `signed-out`) **se siguen
+aceptando**, para que las páginas publicadas no se rompan; en Drive nuevo se usan los de arriba.
+
+No le pregunta a `session.js` por la sesión: la lee del **store** (apartado `session`, que llena
+`session.js`). Lo único que usa de `session.js` es la regla del Metadata
+(`getSessionData().page.isAccessAllowed`) e `isNavigationPending()` para que la recarga no cancele
+una navegación.
 
 ```js
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 
 export default function decorate(block) {
   applyBlockOptions(block); // FIRST line: Styles / Classname / Session rows and session rows
-  // …
+  // … el resto del bloque lee su tabla como siempre
 }
 ```
-
-## block-utils.js
-
-Ayudas **sin red** para leer la tabla de un bloque y validar lo que llega de un servicio. Depende
-solo de `messages.js` (`LOCALE` y `CURRENCY`).
-
-### Leer la tabla
-
-| Función | Devuelve | Úsala para |
-|---|---|---|
-| `readTableCell(block, rowName)` | `{ text, href, found }` de la fila, **tal cual** (el enlace sin resolver contra la página) | Cualquier fila; `found` dice si la fila existe |
-| `readEndpoint(block)` | URL de la fila `Endpoint` (texto o enlace), o `''` | Servicio **público** → `get` / `post` (`REQUEST_TYPE.PUBLIC`) |
-| `readPrivateEndpoint(block)` | URL de la fila `Private Endpoint` (o `PrivateEndpoint`), o `''` | Servicio **privado** → `post(…, { interceptor: REQUEST_TYPE.PRIVATE })` |
-| `readRowTextOrDefault(block, rowName, defaultText)` | Fila que falta → `defaultText`; fila vacía → `''`; con valor → el valor | Mensajes con valor por defecto (`Empty List Title`…) |
-| `getAlertOptions(config)` | `{ duration, variant }` desde `Alert Duration` (segundos, por defecto 5) y `Alert Color` (`error` por defecto) | Las opciones de `showToast` |
-
-El nombre de la fila **no distingue mayúsculas** (`endpoint` = `Endpoint`). Las filas por sesión
-(estado en la última columna) ya llegan resueltas: `block-options.js` las aplica antes.
-
-```js
-import {
-  readTableCell, readEndpoint, readPrivateEndpoint, readRowTextOrDefault,
-} from '../../scripts/foundations/block-utils.js';
-
-const title = readTableCell(block, 'title').text;                    // '' sin la fila
-const endpoint = readEndpoint(block);                                // público
-const privateEndpoint = readPrivateEndpoint(block);                  // privado (con Bearer)
-const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle);
-```
-
-### Validar y pintar
-
-| Función | Qué hace |
-|---|---|
-| `getSafeHref(path)` | Solo rutas del sitio y `http(s)`: `/celulares` → `/celulares`; `https://otro.com/x` → la URL; `javascript:…`, `data:…`, vacío → `null` |
-| `buildSectionTitle(block, prefix)` | Fila `Title` → `div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]` **dentro** del bloque (así `Styles` lo rodea); sin texto → `null` |
-| `formatPrice(value, currency)` | `$19,999` en `LOCALE`, sin decimales; un código de moneda inválido usa `CURRENCY` |
-
-### Quién usa cada una
-
-| Función | Bloques |
-|---|---|
-| `readTableCell` | `card-*`, `product-catalog`, `product-detail`, `login`, `block-session-example` |
-| `readEndpoint` | Disponible para bloques nuevos (los actuales leen su `Endpoint` con `readTableCell`) |
-| `readPrivateEndpoint` | `block-session-example` (y los bloques privados que vengan) |
-| `readRowTextOrDefault` | `card-*`, `product-catalog`, `product-detail` |
-| `getAlertOptions` | `card-*`, `product-catalog` |
-| `getSafeHref` | `breadcrumb`, `card-*`, `product-catalog`, `product-detail`, `login` y `session.js` |
-| `buildSectionTitle` | `card-*` |
-| `formatPrice` | `card-featured`, `product-catalog`, `product-detail` |
-
-## messages.js
-
-Solo **mensajes** con valor por defecto (el contenido viene de las tablas, sin defaults). Un bloque
-los usa cuando su tabla no tiene la fila:
-
-| Clave | Fila de Drive |
-|---|---|
-| `errorResponseMessage` | `Error Response Message` (también si la fila está vacía) |
-| `emptyListTitle` / `emptyListDescription` | `Empty List Title` / `Empty List Description` |
-| `imageErrorMessage` | `Image Error Message` |
-
-Además: `LOCALE` (`es-MX`) y `CURRENCY` (`MXN`) para números y precios.
-
-## toast.js
-
-`showToast(message, { duration, variant })`: alerta flotante arriba a la derecha, apilable, que se
-cierra sola (`variant`: `error`, `warning`, `success`, `info` o un color hex). Carga
-`styles/foundations/toast.css` la primera vez.
-
-## page-context.js
-
-Datos que un bloque obtiene al cargar y otro necesita, sin importarse entre ellos:
-`setCurrentPageName(name)` / `getCurrentPageName()` y el evento `CURRENT_PAGE_NAME_EVENT` (hoy: el
-nombre del celular del detalle para el nivel `{product}` del breadcrumb).
-
-## Llevarlos a otro proyecto
-
-1. Copia `scripts/foundations/` y `styles/foundations/`.
-2. Importa desde los bloques con la ruta de la carpeta:
-
-   ```js
-   import applyBlockOptions from '../../scripts/foundations/block-options.js';
-   import { readTableCell, formatPrice } from '../../scripts/foundations/block-utils.js';
-   import MESSAGES, { LOCALE, CURRENCY } from '../../scripts/foundations/messages.js';
-   import { showToast } from '../../scripts/foundations/toast.js';
-   import { loginUser, getSessionState, renderBySessionState } from '../../scripts/foundations/session.js';
-   ```
-
-3. Ajusta lo propio del sitio:
-   - **`messages.js`:** los textos, el idioma (`LOCALE`) y la moneda (`CURRENCY`);
-   - **la alerta:** sus colores (`--toast-*`) y la capa `--z-index-toast`;
-   - **`session.js`:** sus ajustes (ver [Ajustes](#ajustes)).
-
-Para las sesiones, agrega a `head.html`, antes de `scripts.js`, una línea:
-`<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`. No hay que
-tocar `scripts.js` ni `aem.js`.
-
-La API (`scripts/api/`: `http-client.js` e `interceptors.js`) no está aquí porque lleva la URL base
-y los interceptores de este proyecto; su referencia está en `scripts/api/README.md`. Su llamada
-privada usa `session.js`.
 
 ---
 
-## session.js
+## 2. `block-utils.js`
 
-Todo lo de sesión en **un solo archivo**: quién visita, qué páginas puede abrir y qué ve. Lo que es
-propio del sitio llega desde Drive (Metadata y filas de las tablas) o desde sus [ajustes](#ajustes).
-Guía completa para autores y desarrolladores: `documentation/08-sesiones.md`.
+**Para qué es:** las ayudas que repetirían todos los bloques: leer una fila de la tabla, leer el
+endpoint, validar enlaces que vienen de un servicio, armar el título, formatear precios y crear
+elementos. **No hace llamadas de red.**
 
-### Cómo arranca
+### Leer la tabla
 
-`head.html` lo carga en **todas las páginas**, antes de `scripts.js`, y al cargar corre solo
-`initPageSession()` (una vez por página):
+| Función | Recibe | Devuelve | Para qué sirve |
+|---|---|---|---|
+| `readTableCell(block, rowName)` | El bloque y el nombre de la fila (sin distinguir mayúsculas) | `{ text, href, found }`: el texto, el enlace tal cual y si la fila existe | Leer **cualquier** fila (`Title`, `Button Text`, `Product Link`…) |
+| `readEndpoint(block)` | El bloque | La URL de la fila `Endpoint` (el enlace o el texto), o `''` | El servicio **público** del bloque → `get` / `post` |
+| `readPrivateEndpoint(block)` | El bloque | La URL de la fila `Private Endpoint` (también `PrivateEndpoint`), o `''` | El servicio **privado** (con token) → `post(…, { interceptor: REQUEST_TYPE.PRIVATE })` |
+| `readRowTextOrDefault(block, rowName, defaultText)` | El bloque, la fila y el texto por defecto | Sin la fila → `defaultText`; fila vacía → `''`; con texto → el texto | Mensajes que tienen valor por defecto (`Empty List Title`…) pero que el autor puede dejar vacíos a propósito |
+| `getAlertOptions(config)` | `readBlockConfig(block)` | `{ duration, variant }` desde `Alert Duration` (segundos, 5 por defecto) y `Alert Color` (`error` por defecto) | Las opciones de `showToast` |
 
-1. Agrega `styles/foundations/sessions.css`.
-2. Pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
-   el panel de edición).
-3. Llama `applyPageSessionRule()`: sin la fila `Session` en el Metadata no hace nada; con `true` / `false`
-   revisa la regla y, si no acepta al visitante, oculta la página y redirige.
+### Validar
 
-Después, en cada bloque del proyecto, `applyBlockOptions` usa `isPageAccessAllowed()` y, **solo si el
-bloque los trae**, aplica las filas por sesión (`filterRowsBySessionState`) y la fila `Session`. Los bloques
-y los interceptores importan este mismo módulo: el arranque no se repite.
+| Función | Recibe | Devuelve | Para qué sirve |
+|---|---|---|---|
+| `getSafeHref(path)` | Una ruta o URL (de Drive o de un servicio) | Rutas del sitio y `http(s)`: `/celulares` → `/celulares`; `https://otro.com/x` → la URL; `javascript:`, `data:`, vacío → `null` | Poner un `href` sin riesgo |
+| `toSafeSitePath(path)` | Una ruta | Solo rutas **de este sitio** (`/cuenta?x=1`); `''` para `https://otro.com`, `//otro.com`, `javascript:`… | Enlaces que nunca deben sacar al visitante del sitio (`Redirect To`, invitado, `Login Link`) |
 
-| Función | Qué hace |
-|---|---|
-| `initPageSession()` | El arranque de arriba; corre sola al cargar el archivo. Devuelve `false` si la página redirige |
-| `isPageAccessAllowed()` | `false` mientras la página redirige (los bloques no pintan nada) |
+### Pintar
 
-### Los tres estados
-
-| Estado | Cuándo |
-|---|---|
-| `signed-in` | Hay sesión vigente (el login respondió 200 y no venció `expiresIn`) |
-| `guest` | Eligió "Continuar como invitado" (no tiene token) |
-| `signed-out` | Ninguno de los dos |
-
-### Parte 1 · Datos de la sesión
-
-| Función | Qué hace |
-|---|---|
-| `loginUser(endpoint, requestBody)` | **Inicia sesión**: hace el `POST` (llamada pública) y, con un 200, guarda la sesión en `sessionStorage`. Devuelve la sesión; si falla lanza el `ApiError` (el JSON del servicio en `error.cause`). Cualquier bloque que inicie sesión solo manda estos dos |
-| `logoutUser()` | **Cierra sesión**: por ahora solo borra la sesión y el modo invitado de `sessionStorage`. Es `async` para que después pueda llamar un servicio sin cambiar a quien la usa |
-| `clearUserSession()` | Solo borra lo guardado (la usan `logoutUser`, la sesión vencida y el 401 de la llamada privada) |
-| `saveUserSession(data)` | Guarda la sesión de un login 200 (`user`, `accessToken`, `tokenType`, `expiresIn`, `sessionId`) y quita el modo invitado. Devuelve la sesión o `null` sin `accessToken` |
-| `continueAsGuest()` | Activa el modo invitado |
-| `getUserSession()` | `{ user, accessToken, tokenType, expiresAt, sessionId }` o `null` (si venció, la borra) |
-| `hasActiveSession()` | `true` mientras hay sesión |
-| `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
-| `getAuthorizationHeader()` | `'Bearer …'` para el header `Authorization`, o `''` |
-| `SESSION_CHANGE_EVENT` | Evento en `document` después de cualquier cambio; `detail = { state, session }` |
-
-La sesión vive en `sessionStorage` (se borra al cerrar la pestaña) y se cierra sola al vencer. El
-`refreshToken` no se guarda. Nunca se escribe la sesión en `console`.
-
-#### Revisar la sesión desde cualquier bloque
-
-Cualquier bloque (con o sin `block-options`) puede preguntar si hay una sesión activa:
-
-| Quiero saber… | Función | Devuelve |
-|---|---|---|
-| ¿Hay sesión activa? | `hasActiveSession()` | `true` / `false` (el invitado da `false`) |
-| ¿Quién visita, contando al invitado? | `getSessionState()` | `'signed-in'`, `'guest'` o `'signed-out'` |
-| Los datos del usuario | `getUserSession()` | `{ user, accessToken, … }` o `null` |
-| Cuándo cambia | `SESSION_CHANGE_EVENT` | Evento en `document` (`detail = { state, session }`) |
-
-```js
-import { hasActiveSession, getUserSession, SESSION_CHANGE_EVENT } from '../../scripts/foundations/session.js';
-
-if (hasActiveSession()) {
-  const { user } = getUserSession(); // e.g. user.firstName
-}
-document.addEventListener(SESSION_CHANGE_EVENT, () => { /* check again */ });
-```
-
-- Una sesión vencida cuenta como "sin sesión": se borra sola e `hasActiveSession()` da `false`.
-- Importar `session.js` en un bloque no vuelve a correr el arranque: ya corrió desde `head.html`.
-- Para pintar algo distinto por estado y que se repinte solo, usar `renderBySessionState` (Parte 3).
-
-### Parte 2 · Páginas y redirecciones (Metadata de la página)
-
-| Metadata | Sin sesión | Con sesión |
-|---|---|---|
-| `Session` = `true` | Va a `Redirect To` | Se ve |
-| `Session` = `false` | Se ve | Va a `Redirect To` (por ejemplo `login`) |
-| sin `Session` o vacía | Se ve | Se ve |
-
-`Redirect To` sin la fila o vacía → home `/`. Nada se agrega a la URL. El invitado no cuenta como
-sesión.
-
-| Función | Qué hace |
-|---|---|
-| `applyPageSessionRule()` | Aplica la regla de la página; la llama `initPageSession()` una vez. Se repite al cambiar la sesión |
-| `requireActiveSession({ allowGuest, redirectTo })` | La regla `true` para un bloque que deba redirigir por sí mismo |
-| `requireNoActiveSession({ redirectTo })` | La regla `false` |
-| `readPageSessionRule()` | `'true'`, `'false'` o `''` (la fila `Session` de la página) |
-| `getPageRedirectPath({ redirectTo })` | La ruta de `Redirect To`, o `/` |
-| `goToPage(path, { replace })` | Ir a otra página sin que la recarga de las filas por sesión la cancele |
-| `toSafeSitePath(path)` | Solo rutas del sitio (`/cuenta`); `''` para `//otro.com`, `javascript:`… |
-| `isEditingToolPreview()` | `true` en el panel de edición: ahí nunca redirige y se ve todo |
-
-### Parte 3 · Mostrar y pintar según la sesión
-
-| Función | Qué hace |
-|---|---|
-| `filterRowsBySessionState(block)` | Filas de 2 o más columnas cuya **última celda** es solo estados (`signed-in`, `signed-out`, `guest`, combinables con coma): quedan solo para esos estados y se les quita esa celda. Si la página tiene filas así, se recarga al cambiar la sesión |
-| `showOnlyForSessionStates(element, states)` | Pone las clases de `sessions.css` (`session-only session-only-signed-in`…); sin estados, visible para todos |
-| `parseSessionStateList(text)` | `'Signed-in, guest'` → `['signed-in', 'guest']` |
-| `renderBySessionState(target, views)` | Pinta la vista del estado actual (`{ 'signed-in': (session) => …, 'signed-out': () => … }`) y la vuelve a pintar al cambiar; sin vista de `guest` usa la de `signed-out`. Devuelve una función para dejar de escuchar |
-
-### Ejemplo en un bloque
+| Función | Recibe | Devuelve | Para qué sirve |
+|---|---|---|---|
+| `createElementWithClass(tag, className, text)` | La etiqueta, sus clases y, opcional, su texto | El elemento, con el texto **como texto** (nunca HTML) | Crear el markup de un bloque. Está **una sola vez aquí**: los bloques la importan en lugar de copiarla |
+| `buildSectionTitle(block, prefix)` | El bloque y el prefijo de sus clases | `div.{prefix}-header > div.{prefix}-heading[role=heading][aria-level=2]` con el texto de la fila `Title`, o `null` sin texto | El título de las secciones de tarjetas, **dentro** del bloque (así `Styles` lo rodea) |
+| `formatPrice(value, currency)` | Un número y un código de moneda | `$19,999` en `LOCALE`, sin decimales; un código inválido usa `CURRENCY` | Los precios de las tarjetas y el detalle |
 
 ```js
 import {
-  SESSION_STATES, getSessionState, renderBySessionState, showOnlyForSessionStates,
-} from '../../scripts/foundations/session.js';
+  createElementWithClass, readEndpoint, readRowTextOrDefault, readTableCell,
+} from '../../scripts/foundations/block-utils.js';
+import MESSAGES from '../../scripts/foundations/messages.js';
 
-// algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
-showOnlyForSessionStates(couponCard, [SESSION_STATES.SIGNED_IN]);
-
-// datos del usuario que se vuelven a pintar al cambiar la sesión
-renderBySessionState(greeting, {
-  [SESSION_STATES.SIGNED_IN]: (session) => `Hola, ${session.user.firstName}`,
-  [SESSION_STATES.SIGNED_OUT]: () => 'Inicia sesión para ver tus cupones',
-});
-
-if (getSessionState() === SESSION_STATES.GUEST) { /* … */ }
+const title = readTableCell(block, 'title').text;            // '' sin la fila
+const endpoint = readEndpoint(block);                        // servicio público
+const emptyTitle = readRowTextOrDefault(block, 'empty list title', MESSAGES.emptyListTitle);
+const card = createElementWithClass('div', 'card-featured-item', title);
 ```
 
-Llamadas privadas con el token: `post(url, body, { interceptor: REQUEST_TYPE.PRIVATE })`
-(`scripts/api/`). Ejemplo de todo junto: `blocks/block-session-example/`.
+| Función | La usan |
+|---|---|
+| `readTableCell` | `card-*`, `product-*`, `login`, `block-session-example`, `account-profile` |
+| `readEndpoint` | `card-*`, `product-detail`, `login` (`product-catalog` lee `Filters Endpoint` y `Search Endpoint` con `readTableCell`) |
+| `readPrivateEndpoint` | `block-session-example` (y los bloques privados que vengan) |
+| `readRowTextOrDefault` | `card-*`, `product-catalog`, `product-detail` |
+| `getAlertOptions` | `card-*`, `product-catalog` |
+| `getSafeHref` | `breadcrumb`, `card-*`, `product-*`, `login` y `toSafeSitePath` |
+| `toSafeSitePath` | `login`, `block-session-example` y `session.js` (`Redirect To`) |
+| `createElementWithClass` | `card-*`, `product-*`, `login`, `block-session-example`, `account-profile` |
+| `buildSectionTitle` | `card-*` |
+| `formatPrice` | `card-featured`, `product-catalog`, `product-detail` |
+
+---
+
+## 3. `messages.js`
+
+**Para qué es:** tener en un solo lugar los **mensajes genéricos** (los que no son contenido) y el
+idioma / la moneda. Un bloque usa estos mensajes **solo cuando su tabla no trae la fila**. El
+contenido (títulos, botones, enlaces…) no tiene valor por defecto: viene de la tabla o no se pinta.
+
+| Exporta | Qué es | Para qué sirve |
+|---|---|---|
+| `MESSAGES` (default) | Objeto con los mensajes | Valor por defecto de las filas de mensajes (tabla de abajo) |
+| `LOCALE` | `'es-MX'` | Idioma de números y precios (`Intl.NumberFormat`) |
+| `CURRENCY` | `'MXN'` | Moneda cuando un precio del servicio no trae una (o trae un código inválido) |
+
+| Clave de `MESSAGES` | Fila de Drive | Cuándo se ve |
+|---|---|---|
+| `errorResponseMessage` | `Error Response Message` (también si la fila está vacía) | Un servicio falla o no contesta |
+| `emptyListTitle` / `emptyListDescription` | `Empty List Title` / `Empty List Description` | La lista llegó vacía |
+| `imageErrorMessage` | `Image Error Message` | Una foto falta o no carga |
+
+---
+
+## 4. `toast.js`
+
+**Para qué es:** mostrar una **alerta flotante** arriba a la derecha (debajo del header), apilable,
+con botón de cerrar, que se cierra sola. Carga `styles/foundations/toast.css` la primera vez.
+
+| Exporta | Recibe | Qué hace | Para qué sirve |
+|---|---|---|---|
+| `showToast(message, { duration, variant })` | El texto; `duration` en ms (5000 por defecto); `variant`: `error` (por defecto), `warning`, `success`, `info` o un color hex | Crea la alerta (`role="alert"` para error y aviso, `role="status"` para las demás), la apila y la quita al terminar el tiempo (se pausa con el mouse o el foco encima) | Avisar que un servicio falló (`card-*`, `product-catalog`) |
+| `TOAST_VARIANTS` | — | `['error', 'warning', 'success', 'info']` | Saber qué variantes existen |
+
+Internas (no se importan): `restack()` acomoda las alertas visibles una debajo de otra y
+`removeToast(toast)` quita una y vuelve a acomodar las demás.
+
+```js
+import { showToast } from '../../scripts/foundations/toast.js';
+import { getAlertOptions } from '../../scripts/foundations/block-utils.js';
+
+showToast('No pudimos cargar las categorías', getAlertOptions(readBlockConfig(block)));
+```
+
+---
+
+## 5. `store.js`
+
+**Para qué es:** variables **globales** para todo el sitio, como el estado de React. Cualquier
+bloque las guarda y cualquier texto de la página las muestra. `head.html` lo carga en **todas las
+páginas**, así que siempre está escuchando.
+
+### 1. Las variables (lo único que puede entrar)
+
+```js
+const STORE = {
+  // los niveles dinámicos del breadcrumb (los pone el bloque que los conoce, p. ej. product-detail)
+  breadcrumb: {
+    name: '',   // {store.breadcrumb.name}
+    brand: '',  // {store.breadcrumb.brand}
+  },
+  // el usuario de la sesión: SOLO lo llena session.js; nunca el token
+  user: {
+    userId: '', firstName: '', lastName: '', fullName: '',
+    email: '', phone: '', verified: false, sessionId: '',
+    isGuest: false,   // true para el invitado ("Invitado", userId "guest")
+  },
+  // quién visita: SOLO lo llena session.js
+  session: {
+    isSession: false, // true SOLO con login real (tiene token); el invitado no es sesión
+    isGuest: false,   // true después de "Continuar como invitado"
+    token: '',        // 'Bearer …' para las llamadas privadas; '' sin login (privada)
+  },
+};
+
+// variables que una marca de Drive nunca puede mostrar
+const PRIVATE_VARIABLES = ['session.token'];
+```
+
+| Quien visita | `isSession` | `isGuest` | `token` |
+|---|---|---|---|
+| Con login | `true` | `false` | `'Bearer …'` |
+| Invitado | `false` | `true` | `''` |
+| Nadie | `false` | `false` | `''` |
+
+Solo existe lo que está aquí: lo demás **se rechaza** con un error y no se guarda. Para algo nuevo,
+primero se agrega a este objeto. Estos valores también son los que vuelven al **reiniciar**.
+
+### 2. Cuatro funciones, todas con la misma forma
+
+| Función | Una variable | Un bloque | Todo |
+|---|---|---|---|
+| `store.get()` | `store.get('breadcrumb.name')` | `store.get('breadcrumb')` | `store.get()` |
+| `store.set()` | `store.set('breadcrumb.name', 'iPhone')` | `store.set('breadcrumb', { name, brand })` | — |
+| `store.reset()` | `store.reset('breadcrumb.name')` | `store.reset('breadcrumb')` | `store.reset()` |
+| `store.subscribe()` | `store.subscribe('breadcrumb.name', fn)` | `store.subscribe('breadcrumb', fn)` | `store.subscribe(fn)` |
+
+```js
+import { store } from '../../scripts/foundations/store.js';
+
+store.set('breadcrumb.name', product.fullName);   // guardar (product-detail)
+store.get('breadcrumb.name');                     // leer: 'Apple iPhone 15 Pro'
+store.reset('breadcrumb');                        // dejar el bloque vacío de una vez
+store.reset();                                    // dejar todo vacío
+```
+
+### 3. Mostrar un valor: no hace falta código
+
+Cualquier texto de la página con una marca **`{store.apartado.variable}`**, en cualquier bloque o
+texto de Drive, **se llena solo** y se vuelve a llenar en cada `set` o `reset`:
+
+```
+| Level 3      | {store.breadcrumb.name}            |   → "Apple iPhone 15 Pro"
+| Title        | Detalle de {store.breadcrumb.name} |   → "Detalle de Apple iPhone 15 Pro"
+| Signed In Text | Hola, {store.user.firstName}     |   → "Hola, Cliente"
+```
+
+**Dos tipos de marca en Drive** (para saber de dónde viene cada valor):
+
+| Marca | De dónde viene | Quién la llena |
+|---|---|---|
+| `{store.apartado.variable}` | Del **store** (variables globales) | El store, solo, en cualquier bloque o texto |
+| `{variable}` (sin `store.`) | Del **bloque** (datos de su servicio o de su JS) | El JS del bloque: `/celulares/?id={id}`, `{count} productos encontrados` |
+
+El store **solo toca** las marcas que empiezan con `store.`; las del bloque nunca las mira.
+
+- Mientras una marca no tiene valor, su elemento **espera oculto** (`data-store-pending`,
+  `styles/foundations/store.css`). El breadcrumb también oculta ese nivel con su `›`.
+- Solo cambia **texto**, nunca HTML.
+- Los textos de un bloque se llenan **cuando el bloque terminó de cargar**, para que el bloque lea
+  su tabla de Drive tal cual.
+- Una marca del store que no está declarada (`{store.breadcrumb.price}`) se queda como texto.
+- Una marca de una variable **privada** (`{store.session.token}`) **nunca se llena**: su elemento
+  se queda oculto y sale un aviso en la consola. El token solo se lee desde JS.
+
+Por eso el breadcrumb no tiene código del store: pinta sus niveles como texto y el store los llena.
+
+### 4. `subscribe`: solo para lógica
+
+Para **mostrar** un valor basta la marca. `subscribe` es para **hacer algo** cuando cambia: mostrar u
+ocultar, cambiar una imagen, habilitar un botón… Llama a la función **ahora y cada vez que cambie**,
+y devuelve una función para dejar de escuchar.
+
+```js
+// ejemplo (cart no existe todavía: habría que declararlo en STORE)
+store.subscribe('cart.count', (count) => {
+  badge.textContent = count;
+  badge.hidden = count === 0;
+});
+```
+
+### 5. Cuánto duran
+
+Mientras estás en la página. Cada navegación carga la página de nuevo, así que el store **empieza
+vacío** y se vuelve a llenar:
+
+- `breadcrumb`: lo llena el bloque que conoce el dato (el detalle del celular pone
+  `breadcrumb.name`).
+- `user` y `session`: los llena **`session.js` al abrir cada página**, desde la sesión guardada en
+  `sessionStorage`. También los actualiza al iniciar sesión o entrar como invitado, y los limpia
+  al cerrar sesión o cuando vence (el token queda vacío). Los bloques solo los leen.
+
+### 6. El usuario: solo desde el store
+
+```js
+store.get('user');             // { userId, firstName, fullName, email, …, isGuest }
+store.get('user.firstName');   // 'Cliente'   ('' sin sesión)
+// en Drive: "Hola, {store.user.firstName}"   → se llena solo
+
+// un bloque que pinta HTML con el usuario (Mi cuenta)
+store.subscribe('user', (user) => render(user));   // ahora y cada vez que cambie
+```
+
+Sin sesión, `user` tiene sus valores vacíos (`userId: ''`). **Nunca** trae el token: el token está
+en `session.token` y solo lo usa la llamada privada (`scripts/api/interceptors.js`).
+
+### 7. La sesión: `session`
+
+```js
+store.get('session.isSession');   // ¿inició sesión? (el invitado no cuenta)
+store.get('session.isGuest');     // ¿es invitado?
+store.get('session.token');       // 'Bearer …' — solo para la llamada privada; nunca se pinta ni se imprime
+
+// algo que depende de si hay sesión, ahora y cada vez que cambie
+store.subscribe('session.isSession', (isSession) => { button.hidden = !isSession; });
+```
+
+Lo usan `block-options.js` (fila `Session` y última columna) y la llamada privada. **Nunca** se
+imprime el store completo ni `session` en la consola.
+
+### 8. Ver el store en la consola (solo para depurar)
+
+Al final de `store.js` está `showStoreInConsole()`, con su llamada **comentada**:
+
+```js
+// uncomment to see the store in the console; comment it again before pushing
+// showStoreInConsole();
+```
+
+| Para | Qué hacer |
+|---|---|
+| Verlo | Descomentar `showStoreInConsole();`: en **todas** las páginas la consola muestra el store |
+| Dejar de verlo | Volver a comentar la línea (así se sube al repo) |
+| Quitarlo del todo | Borrar lo que está entre `debug: showStoreInConsole (start)` y `(end)`: nada más lo usa |
+
+Qué muestra: al abrir la página (`store · inicio`) y en **cada** cambio (`store · cambió
+breadcrumb.name (hora)`), una tabla con **todas** las variables de `STORE`, también las vacías,
+con su valor `antes` y `después`. Lo que cambió lleva ✏️ junto al nombre (`✏️ breadcrumb.name`):
+no va en una columna aparte porque la consola da a todas el mismo ancho. Un apartado nuevo de
+`STORE` aparece solo.
+
+- Lo que cambia **al mismo tiempo** sale en **una sola tabla**. Por ejemplo, al iniciar o cerrar
+  sesión `session.js` llena `session` y `user` uno tras otro, y los dos salen con ✏️.
+- Al iniciar o cerrar sesión la página se recarga o cambia, y la consola se limpia. Por eso la
+  última tabla se guarda en `sessionStorage` (`novamovil-store-debug`, sin el token). La primera
+  tabla de la página nueva (`store · inicio de /ruta, antes = página anterior`) compara con lo que
+  había en la página anterior: después de cerrar sesión se ve `antes: 'Cliente'` → `después: ''`.
+  Para ver también las tablas de la página anterior, activa **Preserve log** en la consola.
+
+Las variables privadas salen como `••• (privado)`: el token nunca se imprime.
+
+No la subas descomentada: la consola de la página publicada mostraría los datos del usuario.
+
+---
+
+## 6. `session.js`
+
+**Para qué es:** todo lo de sesión en **un solo archivo**: iniciar y cerrar sesión, el modo
+invitado, el estado de quien visita, las reglas de cada página (Metadata `Session` /
+`Redirect To`) y mostrar u ocultar elementos según quién visita. **Los datos del usuario los pone en
+el store** (`store.get('user')`, ver `store.js`), que es el único lugar de donde los leen los
+bloques. No depende de `aem.js`. Guía para
+autores y desarrolladores: `documentation/08-sesiones.md`.
+
+### Cómo arranca
+
+`head.html` lo carga en **todas las páginas**, antes de `scripts.js`. Al cargar, una sola vez y
+solo:
+
+1. agrega `styles/foundations/sessions.css`;
+2. **llena `session` y `user` del store** desde la sesión guardada (el store empieza vacío en cada
+   página);
+3. pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
+   el panel de edición);
+4. revisa la regla del Metadata de la página y, si el visitante no puede estar ahí, oculta la
+   página y lo manda a `Redirect To`.
+
+| Metadata | Sin sesión (o invitado) | Con sesión |
+|---|---|---|
+| `Session` = `true` | Va a `Redirect To` | Se ve |
+| `Session` = `false` | Se ve | Va a `Redirect To` (por ejemplo la página `login`) |
+| sin `Session` o vacía | Se ve | Se ve |
+
+`Redirect To` sin la fila o vacía → home `/`. Nada se agrega a la URL. En el panel de edición nunca
+redirige. La regla se vuelve a revisar si la sesión cambia en la página.
+
+### Funciones para los bloques
+
+| Función | Recibe | Qué hace / devuelve | Para qué sirve |
+|---|---|---|---|
+| `getSessionData()` | — | El estado de la sesión y de la página en un solo llamado (tabla de abajo) | Saber si hay sesión, si es invitado y la regla de la página. **Los datos del usuario están en el store** |
+| `loginUser(endpoint, requestBody)` | La URL del servicio de login y el cuerpo que pide (`{ meta, security, data: { emailOrPhone, password } }`) | `POST` (llamada pública); con un 200 guarda la sesión en `sessionStorage`, llena el usuario del store, avisa a la página y devuelve `getSessionData()`. Si falla lanza el `ApiError` (el JSON del servicio en `error.cause`) | **Iniciar sesión** desde cualquier bloque |
+| `logoutUser()` | — | Por ahora borra la sesión y el modo invitado de `sessionStorage`, vacía el usuario del store y avisa a la página. Es `async`, lista para llamar un servicio de logout | **Cerrar sesión** |
+| `continueAsGuest()` | — | Guarda un usuario `guest` ("Invitado") con los mismos campos que uno real y su propio `sessionId`, sin token, y lo pone en el store (`isGuest: true`) | El botón "Continuar como invitado" |
+| `goToPage(path, { replace })` | Una ruta del sitio | Va a esa página; una recarga pedida por las filas por sesión no la cancela | Navegar después de iniciar sesión o entrar como invitado |
+| `showOnlyForSessionStates(element, states)` | Un elemento y los estados (`'signed-in, guest'` o `['signed-in']`) | Le pone las clases de `sessions.css`; sin estados, se ve para todos | Mostrar u ocultar una parte de un bloque, al instante |
+
+| Constante | Valor | Para qué sirve |
+|---|---|---|
+| `SESSION_CHANGE_EVENT` | `'session:change'` | Evento en `document` después de **cualquier** cambio (iniciar o cerrar sesión, invitado, vencimiento); `detail` = `getSessionData()`. Sirve para volver a pintar sin recargar |
+| `SESSION_STATES` | `{ SIGNED_IN: 'signed-in', GUEST: 'guest', SIGNED_OUT: 'signed-out' }` | Comparar estados sin escribir el texto a mano |
+| `PAGE_SESSION_RULES` | `{ REQUIRED: 'true', SIGNED_OUT_ONLY: 'false' }` | Comparar `getSessionData().page.rule` |
+
+### Qué trae `getSessionData()`
+
+```js
+const { state, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionData();
+```
+
+| Propiedad | Qué trae | Sin sesión |
+|---|---|---|
+| `state` | `'signed-in'`, `'guest'` o `'signed-out'` | `'signed-out'` |
+| `isSignedIn` | `true` con una sesión real (el invitado **no** cuenta) | `false` |
+| `isGuest` | `true` después de "Continuar como invitado" | `false` |
+| `page.rule` | `'true'`, `'false'` o `''` (la fila `Session` del Metadata) | igual |
+| `page.redirectPath` | La ruta de `Redirect To`, o `/` | igual |
+| `page.isAccessAllowed` | `false` mientras la página está redirigiendo | igual |
+| `isEditingToolPreview` | `true` en el panel de edición (no redirige, se ve todo) | igual |
+
+Los datos del usuario **no** están aquí: están en el store (`store.get('user')`). **Nunca** se da
+el token. Una sesión vencida cuenta como "sin sesión" (se borra sola).
+
+### Ejemplo: estado de la sesión y datos del usuario
+
+```js
+import { SESSION_CHANGE_EVENT, getSessionData } from '../../scripts/foundations/session.js';
+import { store } from '../../scripts/foundations/store.js';
+
+// ¿hay sesión? → session.js
+const { isSignedIn } = getSessionData();
+
+// los datos del usuario → el store (o la marca {store.user.firstName} en Drive, sin código)
+const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono' };
+store.subscribe('user', (user) => {
+  list.replaceChildren(...Object.keys(LABELS)
+    .filter((key) => user[key])
+    .map((key) => createElementWithClass('div', 'my-block-field', `${LABELS[key]}: ${user[key]}`)));
+});
+
+// repintar algo que depende del estado (no del usuario)
+document.addEventListener(SESSION_CHANGE_EVENT, (event) => paintButtons(event.detail));
+```
+
+Ejemplos reales: `blocks/account-profile/` (sencillo: Mi cuenta) y `blocks/block-session-example/`
+(todo junto).
+
+### Para otros archivos de foundations (no para bloques)
+
+| Función | La usa | Qué hace |
+|---|---|---|
+| `isNavigationPending()` | `block-options.js` | `true` mientras `goToPage()` está saliendo de la página: la recarga de las filas por sesión espera |
+| `clearUserSession()` | `scripts/api/interceptors.js` | Solo borra lo guardado, sin llamar a un servicio (en un 401 el token ya no sirve). Un bloque cierra sesión con `logoutUser()` |
+
+### Funciones internas (no se importan)
+
+| Función | Qué hace |
+|---|---|
+| `initPageSession()` | El arranque de cada página (CSS, usuario del store, estado, regla); corre sola al cargar el archivo |
+| `syncSessionStore()` | Llena `session` (`isSession`, `isGuest`, `token`) y `user` del store desde la sesión guardada (login o invitado), o los vacía sin sesión. Es el **único** que escribe esos dos apartados |
+| `applyPageSessionRule()` / `canStayOnPage(rule)` | Aplican la regla `Session` del Metadata y redirigen si hace falta |
+| `readPageSessionRule()` / `getPageRedirectPath()` / `readPageMetadataValue(name)` | Leen el Metadata (`page.rule`, `page.redirectPath`) |
+| `readLoginSession()` / `readGuestSession()` / `readSessionState()` | Leen lo guardado en `sessionStorage` (la sesión vencida se borra) |
+| `storeLoginSession(data)` | Guarda la respuesta 200 del login (la usa `loginUser`) |
+| `notifySessionChange()` / `updateSessionStateClass()` | Lanzan `SESSION_CHANGE_EVENT` y cambian la clase de `<html>` |
+| `parseSessionStateList(text)` | `'signed-in, guest'` → `['signed-in', 'guest']` (para `showOnlyForSessionStates`) |
+| `loadSessionStyles()` / `useStorage()` / `readStoredJson()` / `isEditingToolPreview()` | Cargar `sessions.css`, `sessionStorage` sin errores y detectar el panel de edición |
 
 ### Ajustes
 
@@ -304,12 +485,31 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 |---|---|---|
 | `SESSION_STORAGE_KEY` / `GUEST_STORAGE_KEY` | `novamovil-session` / `novamovil-guest` | Llaves en `sessionStorage` |
 | `DEFAULT_REDIRECT_PATH` | `/` | A dónde va una página sin `Redirect To` |
+| `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', … }` | El usuario que se guarda al continuar como invitado |
 | `EDITOR_PREVIEW_HOSTS` | `preview-aemcoder.adobe.io` | Dónde no se redirige y se ve todo |
-| `SESSION_CHANGE_EVENT` | `session:change` | Nombre del evento |
 
 ### Seguridad
 
 - **Ocultar no es proteger:** el HTML y el JavaScript son públicos. Los datos privados solo deben
   llegar del servicio con el token.
-- El token nunca va en el código ni en Drive: sale de `getAuthorizationHeader()` después del login.
-- Las rutas de Drive (`Redirect To`) solo aceptan rutas del sitio.
+- El token nunca va en el código ni en Drive: después del login está en `store.get('session.token')`
+  (una marca `{store.session.token}` nunca se llena) y lo usa solo la llamada privada.
+- Las rutas de Drive (`Redirect To`) solo aceptan rutas del sitio (`toSafeSitePath`).
+- Nunca se escribe la sesión en `console`.
+
+---
+
+## Llevarlos a otro proyecto
+
+1. Copia `scripts/foundations/` y `styles/foundations/`.
+2. Para las sesiones, agrega a `head.html`, antes de `scripts.js`, una línea:
+   `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`. No hay que
+   tocar `scripts.js` ni `aem.js`.
+3. Ajusta lo propio del sitio:
+   - **`messages.js`:** los textos, el idioma (`LOCALE`) y la moneda (`CURRENCY`);
+   - **la alerta:** sus colores (`--toast-*`) y la capa `--z-index-toast`;
+   - **`session.js`:** sus [ajustes](#ajustes).
+
+La API (`scripts/api/`: `http-client.js` e `interceptors.js`) no está aquí porque lleva la URL base
+y los interceptores de este proyecto; su referencia está en `scripts/api/README.md`. Su llamada
+privada usa `session.js`.

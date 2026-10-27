@@ -109,16 +109,16 @@ opcionales y pueden ir en cualquier orden.
 > **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
 > **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
 > sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
-> columna** (`signed-in`, `signed-out`, `guest`, combinables con coma) para existir solo para ese
+> columna** (`login`, `logout`, `guest`, combinables con coma) para existir solo para ese
 > estado. Ver `documentation/08-sesiones.md`.
 >
 > Ejemplo: otro título y otro aviso de lista vacía para quien inició sesión, sin tocar el código:
 >
 > | Card Promotions | | |
 > |---|---|---|
-> | Title | Promociones | signed-out |
-> | Title | Tus promociones | signed-in |
-> | Empty List Title | Inicia sesión para ver tus promociones | signed-out |
+> | Title | Promociones | logout |
+> | Title | Tus promociones | login |
+> | Empty List Title | Inicia sesión para ver tus promociones | logout |
 
 3. **`Title`**
     - **Tipo:** Texto
@@ -228,7 +228,7 @@ Cada promoción que llega del servicio (o del JSON interno) dentro de
 | Caso | Qué se ve |
 |---|---|
 | Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
-| Una fila con `signed-in`, `signed-out` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
+| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
 | Sin `Endpoint` y el JSON interno tiene promociones | Las tarjetas del JSON interno |
 | Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
 | El servicio está respondiendo | Esqueleto de carga (3 tarjetas grises) |

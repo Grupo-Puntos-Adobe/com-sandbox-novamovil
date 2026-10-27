@@ -8,19 +8,22 @@
  *   | Styles / Classname / Session | …    (scripts/foundations/block-options.js)
  *   | Level 1            | [Inicio](/)    |   (a link: a level above the current page)
  *   | Level 2            | Celulares      |   (plain text: the current page)
- *   | Level 3            | {product}      |   (optional: filled at run time, see below)
+ *   | Level 3            | {store.breadcrumb.name} | (optional: filled at run time, below)
  * Levels are shown by their number; an empty level is left out. A level can end with a session
- * state in a 3rd cell (| Level 2 | Mi cuenta | signed-in |): block-options.js keeps only the
+ * state in a 3rd cell (| Level 2 | Mi cuenta | login |): block-options.js keeps only the
  * levels of the current state before this block reads them.
- * "{product}" is replaced by the name another block sets with setCurrentPageName()
- * (scripts/foundations/page-context.js, e.g. product-detail with the product name); until
- * then that level is not painted.
+ * Dynamic levels: a level can have a mark of the store ({store.breadcrumb.name},
+ * {store.breadcrumb.brand}), alone or with text ("Detalle de {store.breadcrumb.name}"). This
+ * block paints it as plain text; the store (scripts/foundations/store.js, loaded by head.html)
+ * fills it with the value another block sets — today product-detail with
+ * store.set('breadcrumb.name', …) — and keeps the level hidden until it arrives
+ * (breadcrumb.css). Without marks the level is shown as authored.
  *
  * Flow:
  *   decorate(block)
  *     ├─ applyBlockOptions(block)       scripts/foundations/block-options.js
  *     ├─ readBreadcrumbLevels(block)    "Level N" rows sorted by N → [{ text, href }]
- *     └─ renderBreadcrumbTrail(levels, getCurrentPageName())   again on CURRENT_PAGE_NAME_EVENT
+ *     └─ renderBreadcrumbTrail(block, levels)   marks painted as text (the store fills them)
  *          └─ buildBreadcrumbItem() per level (the last one is the current page)
  *
  * Markup is all divs except the links (<a>). Classes used by breadcrumb.css:
@@ -31,13 +34,10 @@
  */
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 import { getSafeHref } from '../../scripts/foundations/block-utils.js';
-import { CURRENT_PAGE_NAME_EVENT, getCurrentPageName } from '../../scripts/foundations/page-context.js';
 
 // accessible name of the navigation landmark (only read by screen readers)
 const LANDMARK_LABEL = 'Ruta de navegación';
 const LEVEL_ROW = /^level ?(\d+)$/;
-// level filled with the page name set at run time (setCurrentPageName)
-const PAGE_NAME_PLACEHOLDER = '{product}';
 
 /**
  * "Level N" rows sorted by N; each one with its text and, when it is a link, its href.
@@ -90,19 +90,13 @@ function buildBreadcrumbItem(level, isCurrent) {
 }
 
 /**
- * Paints the trail; the "{product}" levels take the page name, or are left out while it is ''.
+ * Paints the trail. The marks of the dynamic levels ({store.breadcrumb.name}) are painted as
+ * text: the store fills them and keeps the level hidden until its value arrives.
  * @param {Element} block
  * @param {{text: string, href: string|null}[]} levels readBreadcrumbLevels() result
- * @param {string} pageName getCurrentPageName()
  */
-function renderBreadcrumbTrail(block, levels, pageName) {
-  const visibleLevels = levels
-    .map((level) => ({
-      ...level,
-      text: level.text.replace(PAGE_NAME_PLACEHOLDER, pageName).trim(),
-    }))
-    .filter((level) => level.text);
-  if (!visibleLevels.length) {
+function renderBreadcrumbTrail(block, levels) {
+  if (!levels.length) {
     block.replaceChildren();
     return;
   }
@@ -110,8 +104,8 @@ function renderBreadcrumbTrail(block, levels, pageName) {
   const list = document.createElement('div');
   list.className = 'breadcrumb-list';
   list.setAttribute('role', 'list');
-  const lastIndex = visibleLevels.length - 1;
-  list.append(...visibleLevels.map(
+  const lastIndex = levels.length - 1;
+  list.append(...levels.map(
     (level, index) => buildBreadcrumbItem(level, index === lastIndex),
   ));
 
@@ -129,11 +123,5 @@ function renderBreadcrumbTrail(block, levels, pageName) {
  */
 export default function decorate(block) {
   applyBlockOptions(block); // Styles / Classname / Session rows and session rows, before reading
-  const levels = readBreadcrumbLevels(block);
-  renderBreadcrumbTrail(block, levels, getCurrentPageName());
-  if (levels.some((level) => level.text.includes(PAGE_NAME_PLACEHOLDER))) {
-    document.addEventListener(CURRENT_PAGE_NAME_EVENT, (event) => {
-      renderBreadcrumbTrail(block, levels, event.detail.name);
-    });
-  }
+  renderBreadcrumbTrail(block, readBreadcrumbLevels(block));
 }

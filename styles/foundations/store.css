@@ -1,0 +1,9 @@
+/*
+ * Store (scripts/foundations/store.js): an element whose text has a mark {slice.variable}
+ * without its value yet waits hidden; the store fills it and shows it as soon as the value
+ * arrives. Loaded by store.js on every page.
+ */
+
+[data-store-pending] {
+  display: none !important;
+}

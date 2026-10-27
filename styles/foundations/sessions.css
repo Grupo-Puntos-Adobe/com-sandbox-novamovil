@@ -16,8 +16,11 @@
  *   <div class="session-only session-only-signed-out">                only without session
  *   <div class="session-only session-only-guest">                     only guests
  *   <div class="session-only session-only-signed-in session-only-guest">  session or guest
- * From JS: showOnlyForSessionStates(element, 'signed-in, guest'). In Drive: the Session row of a
- * block (true → session-only-signed-in; false → session-only-signed-out + session-only-guest).
+ * From JS: showOnlyForSessionStates(element, 'signed-in, guest').
+ *
+ * The Session row of a block in Drive (block-options.js, from store session.isSession) puts
+ * session-hidden on the block wrapper while it must not be seen (shown in the editing tool
+ * preview).
  *
  * It only hides what does not match (display: none); what matches keeps its own display.
  */
@@ -30,5 +33,10 @@
 .session-state-signed-in .session-only:not(.session-only-signed-in),
 .session-state-guest .session-only:not(.session-only-guest),
 .session-state-signed-out .session-only:not(.session-only-signed-out) {
+  display: none !important;
+}
+
+/* Session row of a block (block-options.js) */
+:root:not(.session-state-editor) .session-hidden {
   display: none !important;
 }

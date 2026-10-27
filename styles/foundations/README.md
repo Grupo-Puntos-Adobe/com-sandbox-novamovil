@@ -1,18 +1,21 @@
 # Foundations · Breakpoints, Grid, sesiones y alerta
 
 Bases de CSS **portables**: copias la carpeta `foundations/` a cualquier proyecto y funcionan
-igual. Contiene:
+igual. Son el par de `scripts/foundations/` (JavaScript, ver su `README.md`).
 
-| Archivo | Qué hace |
-|---|---|
-| `breakpoints.css` | Las 3 resoluciones del sitio (**mobile, tablet, desktop**) con nombre, para usarlas en cualquier CSS sin repetir números |
-| `grid.css` | Sistema de grid: `container`, `row` y columnas de 24 partes por resolución (`sm`, `md`, `lg`). Usa los nombres de `breakpoints.css` (ver sección 8) |
-| `sessions.css` | Clases para **mostrar u ocultar según la sesión** (`session-only`, `session-only-signed-in`, `session-only-guest`, `session-only-signed-out`). Solo visibilidad: sin colores ni tamaños. Va con `scripts/foundations/session.js`, que pone el estado en `<html>` (`session-state-*`). Lo carga `scripts/foundations/session.js` al arrancar en cada página (no va como `<link>` en `head.html`). Ver sección 9 |
-| `toast.css` | Estilos de la alerta flotante. Lo carga `scripts/foundations/toast.js` la primera vez que se muestra una alerta (no va en `head.html`); sus colores (`--toast-*`) están en `styles/colors.css`. Ver sección 10 |
+## Resumen: para qué es cada archivo
+
+| Archivo | Para qué es | Qué te da | Necesita |
+|---|---|---|---|
+| [`breakpoints.css`](#1-las-3-resoluciones) | Tener las **3 resoluciones** del sitio con nombre, para no repetir números en cada CSS | 6 nombres para `@container style(…)`: `--mobile`, `--tablet`, `--desktop`, `--mobile-tablet`, `--tablet-desktop`, `--mobile-desktop` | Nada (solo CSS) |
+| [`grid.css`](#8-grid-gridcss) | Acomodar el contenido en **columnas de 24 partes** que cambian por resolución | `container`, `container-fluid`, `row` (con alineación y gutters) y `col-*` (`sm`, `md`, `lg`), con offset y orden | `breakpoints.css` antes |
+| [`sessions.css`](#9-sesiones-sessionscss) | **Mostrar u ocultar** cualquier elemento según quién visita (con sesión, invitado, sin sesión) | `session-only` + `session-only-signed-in` / `-guest` / `-signed-out`. Solo visibilidad: sin colores ni tamaños | `scripts/foundations/session.js` (pone `session-state-*` en `<html>` y carga este CSS) |
+| [`toast.css`](#10-alerta-toastcss) | Los estilos de la **alerta flotante** | `toast-novamovil` y sus variantes (`-error`, `-warning`, `-success`, `-info`) | `scripts/foundations/toast.js` (lo carga) y las variables `--toast-*`, `--z-index-toast`, `--nav-height` |
+| `store.css` | Que un texto con una marca del store (`{store.breadcrumb.name}`) **espere oculto** hasta tener su valor | `[data-store-pending]` (lo pone `store.js`, nunca a mano) | `scripts/foundations/store.js` (lo carga) |
 
 `breakpoints.css` y `grid.css` son solo CSS: no necesitan JavaScript, Sass, PostCSS ni paso de
 build. `sessions.css` y `toast.css` son el CSS de `scripts/foundations/` (sesiones y alerta) y los
-carga su JavaScript. Los JavaScript portables están en `scripts/foundations/` (ver su `README.md`).
+carga su JavaScript.
 
 ### Cómo se carga cada uno
 
@@ -22,6 +25,7 @@ carga su JavaScript. Los JavaScript portables están en `scripts/foundations/` (
 | `grid.css` | `head.html` (y `404.html`) | Siempre, justo después de `breakpoints.css` |
 | `sessions.css` | `scripts/foundations/session.js` (`initPageSession`) | En todas las páginas, antes de `scripts.js` |
 | `toast.css` | `scripts/foundations/toast.js` (`loadCSS`) | La primera vez que se muestra una alerta |
+| `store.css` | `scripts/foundations/store.js` | En todas las páginas: oculta el elemento cuya marca `{apartado.variable}` todavía no tiene valor (`[data-store-pending]`) |
 
 ---
 
@@ -226,6 +230,28 @@ quieres otra fila, lleva su propio `container-fluid`.
 Cada tamaño aplica desde su resolución hacia arriba, hasta que otro lo cambie. Nombres:
 `{row|col}-{sm|md|lg}-{propiedad}-{valor}`; sin resolución aplica a todas.
 
+### Todas las clases
+
+Cada clase existe sin prefijo (todas las resoluciones) y con `sm`, `md` o `lg` (desde esa
+resolución): `col-6`, `col-md-12`, `row-lg-gutter-24`…
+
+| Clase | Va en | Qué hace |
+|---|---|---|
+| `container` / `container-fluid` | El contenedor | Todo el ancho con padding lateral / sin padding |
+| `row` | La fila | Acomoda las columnas y baja las que no caben |
+| `row-nowrap` / `row-wrap` | La fila | No bajar / sí bajar las columnas que no caben |
+| `row-start` / `row-center` / `row-end` | La fila | Columnas a la izquierda / al centro / a la derecha |
+| `row-space-between` / `row-space-around` / `row-space-evenly` | La fila | Reparte el espacio sobrante entre las columnas |
+| `row-top` / `row-middle` / `row-bottom` / `row-stretch` | La fila | Alineación vertical de las columnas |
+| `row-gutter-{0,8,16,24,32,40,48}` | La fila | Espacio horizontal entre columnas (px) |
+| `row-gutter-y-{0,8,16,24,32,40,48}` | La fila | Espacio vertical entre las líneas de columnas (px) |
+| `col` | La columna | Se reparte el espacio en partes iguales con las demás `col` |
+| `col-auto` | La columna | Del ancho de su contenido |
+| `col-1` … `col-24` | La columna | N de 24 partes (`col-12` mitad, `col-8` tercio, `col-6` cuarto) |
+| `col-0` | La columna | La oculta |
+| `col-offset-0` … `col-offset-23` | La columna | Deja N partes vacías a su izquierda |
+| `col-order-0` … `col-order-24` | La columna | Cambia su orden en la fila |
+
 ### Ejemplos
 
 ```html
@@ -391,12 +417,18 @@ Normalmente nadie las escribe a mano:
 
 | Desde | Cómo |
 |---|---|
-| Drive, un bloque completo | Fila `Session` del bloque: `true` → `session-only-signed-in`; `false` → `session-only-signed-out session-only-guest` (lo hace `block-options.js` en el bloque y su `-wrapper`) |
+| Drive, un bloque completo | Fila `Session` del bloque: `block-options.js` lee `store` `session.isSession` y pone `session-hidden` en el `-wrapper` mientras no le toca (`true` → se ve solo con sesión; `false` → solo sin sesión, también el invitado). Cambia al instante con el store; en el panel de edición se ve todo |
 | JavaScript de un bloque | `showOnlyForSessionStates(element, 'signed-in, guest')` de `scripts/foundations/session.js` |
 | HTML o CSS propio | Escribir las clases directamente |
 
-> Las **filas** por sesión (estado en la última columna de una tabla) no usan estas clases: esas
-> filas se quitan antes de que el bloque lea su tabla (`filterRowsBySessionState`).
+> Las **filas** por sesión (`login`, `logout`, `guest` en la última columna de una tabla) no usan
+> estas clases: esas filas se quitan antes de que el bloque lea su tabla (`filterRowsBySessionState`
+> de `block-options.js`, con el estado del store).
+
+```css
+/* fila Session de un bloque (block-options.js); en el panel de edición se ve */
+:root:not(.session-state-editor) .session-hidden { display: none !important; }
+```
 
 ### Seguridad
 

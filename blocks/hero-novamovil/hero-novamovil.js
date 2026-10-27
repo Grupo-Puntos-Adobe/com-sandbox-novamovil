@@ -14,7 +14,7 @@
  *   | Stat 1             | 4.9M+ | Usuarios activos   |   (value | label)
  *   | Image              | picture                    |
  * The page always shows them in the design order, whatever the order of the rows.
- * Any row can end with a session state in its last cell (| Title | Hola | signed-in |; a Stat
+ * Any row can end with a session state in its last cell (| Title | Hola | login |; a Stat
  * needs a 4th cell): block-options.js keeps only the rows of the current state first.
  *
  * Flow:
