@@ -5,21 +5,22 @@
  * in scripts/scripts.js, on every page.
  *
  * Content: the "nav" document (or the page's `nav` metadata), 3 sections:
- *   1. brand (logo + wordmark)   2. section links   3. tools (Mi cuenta / Carrito links)
+ *   1. brand (logo + name)   2. menu links   3. tools (Mi cuenta / Carrito links)
  *
  * Flow:
  *   decorate(block)
- *     ├─ loadFragment(navPath)        blocks/fragment/fragment.js → nav document sections
- *     ├─ .nav-brand    → buildBrandLink(section, 'nav-brand')   (brand functions in this file)
- *     ├─ .nav-tools    → reads authored cuenta/carrito hrefs (else TOOL_DEFAULTS), then:
- *     │                   buildSearchBox()  → toggleSearchBox()
- *     │                   buildHeaderToolLink() × 2 (user, cart + badge)
- *     │                   hamburger      → toggleMobileMenu()
- *     └─ listeners: Escape → closeOnEscapeKey(); section link click → toggleMobileMenu(nav, false)
+ *     ├─ loadNavSections()              nav document → nav.nav-bar with its 3 sections
+ *     ├─ 1. brand  → createBrandLink()  logo + name as one home link
+ *     ├─ 2. menu   → decorateMenu()     class hooks on the menu list, items and links
+ *     ├─ 3. tools  → readToolLinks()    authored Mi cuenta / Carrito (else DEFAULT_TOOL_LINKS)
+ *     │              createSearchBox()   magnifier + expanding field  → setSearchOpen()
+ *     │              createToolLink() ×2 Mi cuenta, Carrito (+ badge)
+ *     │              createHamburger()   mobile menu button           → setMobileMenuOpen()
+ *     └─ listeners: Escape → closeOnEscape(); menu link click → closes the mobile menu
  *
  * No resolution logic here: header.css decides what each resolution shows with the names of
  * styles/foundations/breakpoints.css (hamburger on mobile/tablet, horizontal menu on desktop,
- * page scroll locked while the mobile menu is open). JS only toggles aria-expanded.
+ * page scroll locked while the mobile menu is open). JS only opens and closes things.
  *
  * Classes used by header.css (no tag selectors): nav-bar (+ is-open), nav-brand-*, nav-sections,
  * nav-menu, nav-menu-item (+ has-link), nav-menu-link, nav-tools, nav-tool(-user|-cart),
@@ -32,167 +33,191 @@
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 
-/* --------------------------------------------------------------------------
- * Brand (logo + wordmark as one home link). The same code lives in
- * blocks/footer/footer.js: if you change the brand, change it in both blocks.
- * -------------------------------------------------------------------------- */
+// ---------------------------------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------------------------------
 
-// brand used when the authored document has no logo image / no brand text
-const BRAND_NAME = 'NovaMóvil';
-const BRAND_ACCENT = 'Móvil';
+// brand used when the nav document has no logo image / no brand text
+const DEFAULT_BRAND_NAME = 'NovaMóvil';
+// part of the name painted in the accent colour when the author did not use italics
+const BRAND_ACCENT_TEXT = 'Móvil';
+// the 3 sections of the nav document, in order: each one gets the class nav-<name>
+const NAV_SECTION_NAMES = ['brand', 'sections', 'tools'];
+// tool links when the nav document does not have them (key = authored link text)
+const DEFAULT_TOOL_LINKS = {
+  cuenta: '/cuenta',
+  carrito: '/carrito',
+};
+// items shown on the cart badge (fixed until there is a cart service)
+const CART_ITEM_COUNT = '2';
+const HAS_LETTERS = /\p{L}/u;
+
+// ---------------------------------------------------------------------------------------------
+// 1. Brand (logo + name as one home link). blocks/footer/footer.js has its own copy of this
+//    logic: if you change how the brand is read, change the footer too.
+// ---------------------------------------------------------------------------------------------
 
 /**
- * Builds the wordmark. Keeps the authored markup (incl. <em>); if the author
- * did not emphasise anything, the trailing "Móvil" gets the accent colour.
- * @param {string} authoredName Authored wordmark markup, or empty for the default
- * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
- * @returns {Element} the `${prefix}-name` span
+ * The authored brand name as HTML, once the logo is removed: the WHOLE paragraph of the brand
+ * link with its inner links unwrapped, so a name that Drive split in several links
+ * (<a>Nova</a><em><a>Móvil</a></em>) stays whole: Nova<em>Móvil</em>. Without that paragraph:
+ * the link, or the first paragraph with letters. '' when there is no text.
+ * @param {Element} brandSection The brand section of the nav document
+ * @param {Element|null} brandLink First link of the section
+ * @returns {string}
  */
-function buildBrandWordmark(authoredName, prefix) {
-  const name = document.createElement('span');
-  name.className = `${prefix}-name`;
-  name.innerHTML = authoredName || BRAND_NAME;
-  if (!name.querySelector('em') && name.textContent.trim().endsWith(BRAND_ACCENT)) {
-    const text = name.textContent.trim();
-    const em = document.createElement('em');
-    em.textContent = BRAND_ACCENT;
-    name.replaceChildren(text.slice(0, -BRAND_ACCENT.length), em);
+function readBrandNameHtml(brandSection, brandLink) {
+  const linkParagraph = brandLink?.closest('p');
+  const nameSource = [
+    linkParagraph && brandSection.contains(linkParagraph) ? linkParagraph : null,
+    brandLink,
+    ...brandSection.querySelectorAll('p'),
+  ].find((element) => element && HAS_LETTERS.test(element.textContent));
+  if (!nameSource) {
+    return '';
   }
-  // class hooks so the block CSS never styles tags: `${prefix}-accent`
-  name.querySelectorAll('em').forEach((em) => em.classList.add(`${prefix}-accent`));
+  const name = nameSource.cloneNode(true);
+  name.querySelectorAll('a').forEach((link) => link.replaceWith(...link.childNodes));
+  return name.innerHTML.trim();
+}
+
+/**
+ * The brand name span. Keeps the authored italics (<em>) as the accent; without italics, a
+ * trailing "Móvil" gets the accent.
+ * @param {string} nameHtml Authored name (readBrandNameHtml), or '' for DEFAULT_BRAND_NAME
+ * @returns {Element} span.nav-brand-name (accent: em.nav-brand-accent)
+ */
+function createBrandName(nameHtml) {
+  const name = document.createElement('span');
+  name.className = 'nav-brand-name';
+  name.innerHTML = nameHtml || DEFAULT_BRAND_NAME;
+  const text = name.textContent.trim();
+  if (!name.querySelector('em') && text.endsWith(BRAND_ACCENT_TEXT)) {
+    const accent = document.createElement('em');
+    accent.textContent = BRAND_ACCENT_TEXT;
+    name.replaceChildren(text.slice(0, -BRAND_ACCENT_TEXT.length), accent);
+  }
+  name.querySelectorAll('em').forEach((accent) => accent.classList.add('nav-brand-accent'));
   return name;
 }
 
 /**
- * Authored wordmark markup, once the logo is removed. It is the WHOLE paragraph of the brand
- * link with its links unwrapped, so a name that Drive split in several links
- * (<a>Nova</a><em><a>Móvil</a></em>) stays whole: Nova<em>Móvil</em>. Without such a paragraph:
- * the link, or the first paragraph that has letters. '' when there is no text.
- * @param {Element} brandSource Element holding the authored logo/wordmark
- * @param {Element|null} authoredLink First link of brandSource
- * @returns {string}
+ * The brand as one home link:
+ * - logo: the authored image; else the authored :logo: icon; else the default icon (painted by
+ *   header.css from the colour tokens)
+ * - name: the authored text; else DEFAULT_BRAND_NAME (no name when an image stands alone)
+ * - href: the authored link; else /
+ * @param {Element} brandSection The brand section of the nav document (its content is used)
+ * @returns {Element} a.nav-brand-link
  */
-function readAuthoredWordmark(brandSource, authoredLink) {
-  const paragraph = authoredLink?.closest('p');
-  const textSource = [paragraph && brandSource.contains(paragraph) ? paragraph : null,
-    authoredLink, ...brandSource.querySelectorAll('p')]
-    .find((element) => element && /\p{L}/u.test(element.textContent));
-  if (!textSource) {
-    return '';
-  }
-  const wordmark = textSource.cloneNode(true);
-  wordmark.querySelectorAll('a').forEach((link) => link.replaceWith(...link.childNodes));
-  return wordmark.innerHTML.trim();
-}
-
-/**
- * Builds the brand as a single home link from the authored markup.
- * - logo: the authored image; else the authored :logo: icon; else the default icon
- * - wordmark: the authored text (readAuthoredWordmark); else "NovaMóvil" (omitted when an
- *   image stands alone)
- * The default logo is painted by CSS from the colour tokens, so its <img> is dropped.
- * @param {Element} brandSource Element holding the authored logo/wordmark (consumed)
- * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
- * @returns {Element} the `${prefix}-link` anchor
- */
-function buildBrandLink(brandSource, prefix) {
-  const authoredLink = brandSource.querySelector('a');
-  const picture = brandSource.querySelector('picture');
-  const icon = brandSource.querySelector('.icon');
+function createBrandLink(brandSection) {
+  const brandLink = brandSection.querySelector('a');
+  const picture = brandSection.querySelector('picture');
+  const icon = brandSection.querySelector('.icon');
   [picture, icon].forEach((element) => element?.remove());
-
-  const authoredName = readAuthoredWordmark(brandSource, authoredLink);
+  const nameHtml = readBrandNameHtml(brandSection, brandLink);
 
   const link = document.createElement('a');
-  link.className = `${prefix}-link`;
-  link.href = authoredLink ? authoredLink.getAttribute('href') : '/';
+  link.className = 'nav-brand-link';
+  link.href = brandLink ? brandLink.getAttribute('href') : '/';
 
   if (picture) {
-    picture.classList.add(`${prefix}-logo`);
-    const img = picture.querySelector('img');
-    if (img) {
-      img.classList.add(`${prefix}-image`);
-    }
-    if (img && !img.alt) {
-      img.alt = authoredName ? '' : BRAND_NAME;
+    picture.classList.add('nav-brand-logo');
+    const image = picture.querySelector('img');
+    if (image) {
+      image.classList.add('nav-brand-image');
+      if (!image.alt) {
+        image.alt = nameHtml ? '' : DEFAULT_BRAND_NAME;
+      }
     }
     link.append(picture);
   } else {
     const logo = icon || document.createElement('span');
-    logo.className = `icon icon-logo ${prefix}-logo`;
+    logo.className = 'icon icon-logo nav-brand-logo';
     logo.replaceChildren();
     link.append(logo);
   }
 
-  if (authoredName || !picture) {
-    link.append(buildBrandWordmark(authoredName, prefix));
+  if (nameHtml || !picture) {
+    link.append(createBrandName(nameHtml));
   }
   return link;
 }
 
-// tool links (author can override the labels/urls in the nav document tools section)
-const TOOL_DEFAULTS = {
-  cuenta: '/cuenta',
-  carrito: '/carrito',
-};
+// ---------------------------------------------------------------------------------------------
+// 2. Menu
+// ---------------------------------------------------------------------------------------------
 
 /**
- * Escape closes the open search first, then the mobile menu (focus returns to the hamburger).
- * @param {KeyboardEvent} event
+ * Class hooks on the menu (header.css never styles tags): nav-menu, nav-menu-item (+ has-link
+ * when the item is linked; an item may still be plain text) and nav-menu-link.
+ * @param {Element} menuSection The menu section of the nav document
  */
-function closeOnEscapeKey(event) {
-  if (event.code !== 'Escape') {
-    return;
-  }
-  const nav = document.getElementById('nav');
-  if (!nav) {
-    return;
-  }
-  // close the search field if open
-  const search = nav.querySelector('.nav-search.is-open');
-  if (search) {
-    // eslint-disable-next-line no-use-before-define
-    toggleSearchBox(search, false);
-    return;
-  }
-  // close the mobile menu if open (on desktop the CSS ignores this state)
-  if (nav.getAttribute('aria-expanded') === 'true') {
-    // eslint-disable-next-line no-use-before-define
-    toggleMobileMenu(nav, false);
-    nav.querySelector('.nav-hamburger-button').focus();
-  }
+function decorateMenu(menuSection) {
+  menuSection.querySelectorAll('ul').forEach((list) => list.classList.add('nav-menu'));
+  menuSection.querySelectorAll('li').forEach((item) => {
+    item.classList.add('nav-menu-item');
+    if (item.querySelector('a')) {
+      item.classList.add('has-link');
+    }
+  });
+  menuSection.querySelectorAll('a').forEach((link) => link.classList.add('nav-menu-link'));
 }
 
 /**
- * Toggles the entire nav (mobile menu)
- * @param {Element} nav The container element
- * @param {*} forceExpanded Optional param to force nav expand behavior when not null
+ * Opens or closes the mobile menu (on desktop header.css ignores this state).
+ * @param {Element} nav nav.nav-bar
+ * @param {boolean} isOpen
  */
-function toggleMobileMenu(nav, forceExpanded = null) {
-  const expanded = forceExpanded !== null ? !forceExpanded : nav.getAttribute('aria-expanded') === 'true';
+function setMobileMenuOpen(nav, isOpen) {
+  nav.setAttribute('aria-expanded', String(isOpen));
+  nav.classList.toggle('is-open', isOpen);
+  document.body.classList.toggle('has-header-menu-open', isOpen);
   const button = nav.querySelector('.nav-hamburger-button');
-  nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-  // the CSS styles the state classes; aria-expanded stays for assistive technology
-  nav.classList.toggle('is-open', !expanded);
-  document.body.classList.toggle('has-header-menu-open', !expanded);
   if (button) {
-    button.setAttribute('aria-label', expanded ? 'Abrir menú' : 'Cerrar menú');
+    button.setAttribute('aria-expanded', String(isOpen));
+    button.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
   }
 }
 
 /**
- * Toggles the expanding search field
- * @param {Element} search The .nav-search wrapper
- * @param {*} forceOpen Optional param to force open/close when not null
+ * True while the mobile menu is open.
+ * @param {Element} nav nav.nav-bar
+ * @returns {boolean}
  */
-function toggleSearchBox(search, forceOpen = null) {
-  const isOpen = forceOpen !== null ? forceOpen : !search.classList.contains('is-open');
+function isMobileMenuOpen(nav) {
+  return nav.getAttribute('aria-expanded') === 'true';
+}
+
+/**
+ * The hamburger button that opens and closes the mobile menu.
+ * @param {Element} nav nav.nav-bar
+ * @returns {Element} div.nav-hamburger
+ */
+function createHamburger(nav) {
+  const hamburger = document.createElement('div');
+  hamburger.classList.add('nav-hamburger');
+  hamburger.innerHTML = `<button class="nav-hamburger-button" type="button" aria-controls="nav" aria-label="Abrir menú" aria-expanded="false">
+      <span class="nav-hamburger-icon"></span>
+    </button>`;
+  hamburger.addEventListener('click', () => setMobileMenuOpen(nav, !isMobileMenuOpen(nav)));
+  return hamburger;
+}
+
+// ---------------------------------------------------------------------------------------------
+// 3. Tools: search, Mi cuenta, Carrito
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Opens (and focuses) or closes (and empties) the search field.
+ * @param {Element} search div.nav-search
+ * @param {boolean} isOpen
+ */
+function setSearchOpen(search, isOpen) {
   search.classList.toggle('is-open', isOpen);
-  const toggle = search.querySelector('.nav-search-toggle');
+  search.querySelector('.nav-search-toggle').setAttribute('aria-expanded', String(isOpen));
   const input = search.querySelector('.nav-search-input');
-  toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   if (isOpen) {
-    // wait for the expand transition before focusing so it reads naturally
     input.focus();
   } else {
     input.value = '';
@@ -200,10 +225,11 @@ function toggleSearchBox(search, forceOpen = null) {
 }
 
 /**
- * Builds the search field (magnifier toggle + expanding input + clear button)
- * @returns {Element} the .nav-search wrapper
+ * The search: magnifier button + expanding field (/search?q=…) + close button. An empty search
+ * is not sent.
+ * @returns {Element} div.nav-search
  */
-function buildSearchBox() {
+function createSearchBox() {
   const search = document.createElement('div');
   search.className = 'nav-search';
   search.innerHTML = `
@@ -218,18 +244,19 @@ function buildSearchBox() {
       <span class="nav-icon icon icon-search"></span>
     </button>`;
 
-  const toggle = search.querySelector('.nav-search-toggle');
-  const clear = search.querySelector('.nav-search-clear');
+  const toggleButton = search.querySelector('.nav-search-toggle');
+  const closeButton = search.querySelector('.nav-search-clear');
   const form = search.querySelector('.nav-search-field');
 
-  toggle.addEventListener('click', () => toggleSearchBox(search));
-  clear.addEventListener('click', () => {
-    toggleSearchBox(search, false);
-    toggle.focus();
+  toggleButton.addEventListener('click', () => {
+    setSearchOpen(search, !search.classList.contains('is-open'));
+  });
+  closeButton.addEventListener('click', () => {
+    setSearchOpen(search, false);
+    toggleButton.focus();
   });
   form.addEventListener('submit', (event) => {
-    const value = form.querySelector('.nav-search-input').value.trim();
-    if (!value) {
+    if (!form.querySelector('.nav-search-input').value.trim()) {
       event.preventDefault();
     }
   });
@@ -237,7 +264,25 @@ function buildSearchBox() {
 }
 
 /**
- * Builds an icon tool link (user, cart) with optional badge
+ * The hrefs authored in the tools section, by link text in lower case
+ * ({ cuenta: '/cuenta', carrito: '/carrito' }). The section is emptied: its links are rebuilt.
+ * @param {Element|null} toolsSection The tools section of the nav document
+ * @returns {Object<string, string>}
+ */
+function readToolLinks(toolsSection) {
+  const toolLinks = {};
+  if (!toolsSection) {
+    return toolLinks;
+  }
+  toolsSection.querySelectorAll('a').forEach((link) => {
+    toolLinks[link.textContent.trim().toLowerCase()] = link.getAttribute('href');
+  });
+  toolsSection.innerHTML = '';
+  return toolLinks;
+}
+
+/**
+ * An icon link of the tools (Mi cuenta, Carrito), with an optional counter.
  * @param {Object} tool
  * @param {string} tool.href
  * @param {string} tool.label Accessible name (the link only shows an icon)
@@ -245,7 +290,7 @@ function buildSearchBox() {
  * @param {string} [tool.badge] Counter shown on the icon (e.g. cart items)
  * @returns {Element} a.nav-tool
  */
-function buildHeaderToolLink({
+function createToolLink({
   href, label, icon, badge,
 }) {
   const link = document.createElement('a');
@@ -254,114 +299,111 @@ function buildHeaderToolLink({
   link.setAttribute('aria-label', label);
   link.innerHTML = `<span class="nav-icon icon icon-${icon}"></span>`;
   if (badge) {
-    const count = document.createElement('span');
-    count.className = 'nav-tool-badge';
-    count.textContent = badge;
-    link.append(count);
+    const counter = document.createElement('span');
+    counter.className = 'nav-tool-badge';
+    counter.textContent = badge;
+    link.append(counter);
   }
   return link;
 }
 
+// ---------------------------------------------------------------------------------------------
+// Keyboard and loading
+// ---------------------------------------------------------------------------------------------
+
 /**
- * loads and decorates the header, mainly the nav
- * @param {Element} block The header block element
+ * Escape closes the open search first; else the open mobile menu (focus back on the hamburger).
+ * @param {KeyboardEvent} event
  */
-export default async function decorate(block) {
-  // load nav as fragment
+function closeOnEscape(event) {
+  const nav = document.getElementById('nav');
+  if (event.code !== 'Escape' || !nav) {
+    return;
+  }
+  const openSearch = nav.querySelector('.nav-search.is-open');
+  if (openSearch) {
+    setSearchOpen(openSearch, false);
+    return;
+  }
+  if (isMobileMenuOpen(nav)) {
+    setMobileMenuOpen(nav, false);
+    nav.querySelector('.nav-hamburger-button').focus();
+  }
+}
+
+/**
+ * Loads the nav document (page metadata `nav`, else /nav) into nav#nav.nav-bar and marks its
+ * sections: nav-brand, nav-sections, nav-tools (NAV_SECTION_NAMES).
+ * @returns {Promise<Element>} nav.nav-bar
+ */
+async function loadNavSections() {
   const navMeta = getMetadata('nav');
   const navPath = navMeta ? new URL(navMeta, window.location).pathname : '/nav';
   const fragment = await loadFragment(navPath);
 
-  // decorate nav DOM; every header style is scoped under .header-novamovil
-  block.classList.add('header-novamovil');
-  block.textContent = '';
   const nav = document.createElement('nav');
   nav.id = 'nav';
   nav.className = 'nav-bar';
-  if (fragment) {
-    while (fragment.firstElementChild) {
-      nav.append(fragment.firstElementChild);
-    }
+  while (fragment?.firstElementChild) {
+    nav.append(fragment.firstElementChild);
   }
-
-  const classes = ['brand', 'sections', 'tools'];
-  classes.forEach((name, index) => {
-    const section = nav.children[index];
-    if (section) {
-      section.classList.add(`nav-${name}`);
-    }
+  NAV_SECTION_NAMES.forEach((name, index) => {
+    nav.children[index]?.classList.add(`nav-${name}`);
   });
+  return nav;
+}
 
-  // brand: logo + wordmark as one link, ensure it points home
-  const brandSource = nav.querySelector('.nav-brand');
-  if (brandSource) {
-    brandSource.replaceChildren(buildBrandLink(brandSource, 'nav-brand'));
+/**
+ * Loads and decorates the header.
+ * @param {Element} block The header block element
+ */
+export default async function decorate(block) {
+  const nav = await loadNavSections();
+  // every header style is scoped under .header-novamovil
+  block.classList.add('header-novamovil');
+  block.textContent = '';
+
+  // 1. brand
+  const brandSection = nav.querySelector('.nav-brand');
+  if (brandSection) {
+    brandSection.replaceChildren(createBrandLink(brandSection));
   }
 
-  // sections: primary navigation links, with class hooks (the CSS never styles tags)
-  const navSections = nav.querySelector('.nav-sections');
-  if (navSections) {
-    navSections.querySelectorAll('ul').forEach((ul) => ul.classList.add('nav-menu'));
-    navSections.querySelectorAll('li').forEach((menuItem) => {
-      menuItem.classList.add('nav-menu-item');
-      // items may be plain text while the author has not linked them yet
-      if (menuItem.querySelector('a')) {
-        menuItem.classList.add('has-link');
-      }
+  // 2. menu (following a link closes the mobile menu)
+  const menuSection = nav.querySelector('.nav-sections');
+  if (menuSection) {
+    decorateMenu(menuSection);
+    menuSection.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => setMobileMenuOpen(nav, false));
     });
-    navSections.querySelectorAll('a').forEach((link) => link.classList.add('nav-menu-link'));
   }
 
-  // read author-provided tool links (cuenta/carrito) from the tools section, else defaults
-  const navTools = nav.querySelector('.nav-tools');
-  const toolLinks = {};
-  if (navTools) {
-    navTools.querySelectorAll('a').forEach((link) => {
-      const key = link.textContent.trim().toLowerCase();
-      toolLinks[key] = link.getAttribute('href');
-    });
-    navTools.innerHTML = '';
+  // 3. tools: search, Mi cuenta, Carrito and the hamburger
+  const authoredToolsSection = nav.querySelector('.nav-tools');
+  const toolLinks = readToolLinks(authoredToolsSection);
+  const toolsSection = authoredToolsSection || document.createElement('div');
+  toolsSection.className = 'nav-tools';
+  toolsSection.append(
+    createSearchBox(),
+    createToolLink({
+      href: toolLinks.cuenta || DEFAULT_TOOL_LINKS.cuenta,
+      label: 'Mi cuenta',
+      icon: 'user',
+    }),
+    createToolLink({
+      href: toolLinks.carrito || DEFAULT_TOOL_LINKS.carrito,
+      label: 'Carrito',
+      icon: 'cart',
+      badge: CART_ITEM_COUNT,
+    }),
+  );
+  if (!authoredToolsSection) {
+    nav.append(toolsSection);
   }
-  const tools = navTools || document.createElement('div');
-  tools.className = 'nav-tools';
-
-  // build the interactive tools: search, user, cart
-  tools.append(buildSearchBox());
-  tools.append(buildHeaderToolLink({
-    href: toolLinks.cuenta || TOOL_DEFAULTS.cuenta,
-    label: 'Mi cuenta',
-    icon: 'user',
-  }));
-  tools.append(buildHeaderToolLink({
-    href: toolLinks.carrito || TOOL_DEFAULTS.carrito,
-    label: 'Carrito',
-    icon: 'cart',
-    badge: '2',
-  }));
-  if (!navTools) {
-    nav.append(tools);
-  }
-
-  // hamburger for mobile
-  const hamburger = document.createElement('div');
-  hamburger.classList.add('nav-hamburger');
-  hamburger.innerHTML = `<button class="nav-hamburger-button" type="button" aria-controls="nav" aria-label="Abrir menú" aria-expanded="false">
-      <span class="nav-hamburger-icon"></span>
-    </button>`;
-  hamburger.addEventListener('click', () => toggleMobileMenu(nav));
-  tools.append(hamburger);
+  toolsSection.append(createHamburger(nav));
   nav.setAttribute('aria-expanded', 'false');
 
-  window.addEventListener('keydown', closeOnEscapeKey);
-
-  // close the mobile menu when a section link is followed
-  if (navSections) {
-    navSections.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => {
-        toggleMobileMenu(nav, false);
-      });
-    });
-  }
+  window.addEventListener('keydown', closeOnEscape);
 
   const navWrapper = document.createElement('div');
   navWrapper.className = 'nav-wrapper';
