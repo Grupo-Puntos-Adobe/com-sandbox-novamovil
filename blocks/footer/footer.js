@@ -59,9 +59,32 @@ function buildBrandWordmark(authoredName, prefix) {
 }
 
 /**
+ * Authored wordmark markup, once the logo is removed. It is the WHOLE paragraph of the brand
+ * link with its links unwrapped, so a name that Drive split in several links
+ * (<a>Nova</a><em><a>Móvil</a></em>) stays whole: Nova<em>Móvil</em>. Without such a paragraph:
+ * the link, or the first paragraph that has letters. '' when there is no text.
+ * @param {Element} brandSource Element holding the authored logo/wordmark
+ * @param {Element|null} authoredLink First link of brandSource
+ * @returns {string}
+ */
+function readAuthoredWordmark(brandSource, authoredLink) {
+  const paragraph = authoredLink?.closest('p');
+  const textSource = [paragraph && brandSource.contains(paragraph) ? paragraph : null,
+    authoredLink, ...brandSource.querySelectorAll('p')]
+    .find((element) => element && /\p{L}/u.test(element.textContent));
+  if (!textSource) {
+    return '';
+  }
+  const wordmark = textSource.cloneNode(true);
+  wordmark.querySelectorAll('a').forEach((link) => link.replaceWith(...link.childNodes));
+  return wordmark.innerHTML.trim();
+}
+
+/**
  * Builds the brand as a single home link from the authored markup.
  * - logo: the authored image; else the authored :logo: icon; else the default icon
- * - wordmark: the authored text; else "NovaMóvil" (omitted when an image stands alone)
+ * - wordmark: the authored text (readAuthoredWordmark); else "NovaMóvil" (omitted when an
+ *   image stands alone)
  * The default logo is painted by CSS from the colour tokens, so its <img> is dropped.
  * @param {Element} brandSource Element holding the authored logo/wordmark (consumed)
  * @param {string} prefix Class prefix of the calling block (e.g. 'nav-brand')
@@ -73,10 +96,7 @@ function buildBrandLink(brandSource, prefix) {
   const icon = brandSource.querySelector('.icon');
   [picture, icon].forEach((element) => element?.remove());
 
-  // authored wordmark: first link/paragraph that still has letters once the logo is removed
-  const textSource = [authoredLink, ...brandSource.querySelectorAll('p')]
-    .find((element) => element && /\p{L}/u.test(element.textContent));
-  const authoredName = textSource ? textSource.innerHTML.trim() : '';
+  const authoredName = readAuthoredWordmark(brandSource, authoredLink);
 
   const link = document.createElement('a');
   link.className = `${prefix}-link`;
