@@ -53,8 +53,8 @@ const CART_ITEM_COUNT = '2';
 const HAS_LETTERS = /\p{L}/u;
 
 // ---------------------------------------------------------------------------------------------
-// 1. Brand (logo + name as one home link). blocks/footer/footer.js has its own copy of this
-//    logic: if you change how the brand is read, change the footer too.
+// 1. Brand (logo + name as one home link). blocks/footer/footer.js has the same functions:
+//    if you change how the brand is read, change the footer too.
 // ---------------------------------------------------------------------------------------------
 
 /**
