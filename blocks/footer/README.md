@@ -100,7 +100,8 @@ secciones se leen por orden:
     - **Tipo:** Enlace con el logo y el nombre (por ejemplo `:logo: NovaMóvil` enlazado a `/`) y uno o
       varios párrafos
     - **Descripción:** Logo y nombre de la marca; los párrafos siguientes son la frase. Puede ser una
-      imagen en lugar de `:logo:`
+      imagen en lugar de `:logo:`. El nombre es **todo el párrafo** del enlace: si en Drive quedó en
+      dos enlaces (`Nova` y *`Móvil`* por separado), se une igual en "Nova*Móvil*"
     - **Por defecto:** sin logo, el logo por defecto; sin nombre, "NovaMóvil"; sin enlace, `/`
 
 2. **Columnas de enlaces**

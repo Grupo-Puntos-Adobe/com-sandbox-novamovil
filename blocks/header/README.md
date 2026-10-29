@@ -116,7 +116,9 @@ se leen por orden:
 1. **Marca**
     - **Tipo:** Enlace con el logo y el nombre (por ejemplo `:logo: Nova*Móvil*` enlazado a `/`)
     - **Descripción:** Logo y nombre de la marca; la parte en *cursiva* sale en el color de acento.
-      Puede ser una imagen en lugar de `:logo:`
+      Puede ser una imagen en lugar de `:logo:`. Se toma **todo el párrafo** de la marca: si en Drive
+      el nombre quedó en dos enlaces (`Nova` y *`Móvil`* enlazados por separado), se une igual en
+      "Nova*Móvil*" y lleva al `href` del primer enlace
     - **Por defecto:** sin logo, el logo por defecto; sin nombre, "NovaMóvil"; sin enlace, `/`
 
 2. **Menú**
