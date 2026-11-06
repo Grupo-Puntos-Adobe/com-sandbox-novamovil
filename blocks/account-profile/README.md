@@ -58,6 +58,7 @@ store.subscribe('user', (user) => renderAccountProfile(block, settings, user));
 
 ```js
 user = {
+  type: 'user',          // 'user' (login) | 'guest' (invitado) | '' (nadie)
   userId: 'USR-10001',
   firstName: 'Cliente',
   lastName: 'Nova',
@@ -66,12 +67,11 @@ user = {
   phone: '5512345678',
   verified: true,
   sessionId: 'SES-LOGIN-001',
-  isGuest: false,
 };
 ```
 
-Sin sesión: los mismos datos vacíos (`userId: ''`) y el bloque muestra el `Empty Text`. Nunca trae
-el token.
+Sin sesión: los mismos datos vacíos (`type: ''`, `userId: ''`) y el bloque muestra el
+`Empty Text`. Nunca trae el token.
 
 **4. El bloque solo decide qué pintar y con qué texto.** Cada dato tiene su fila de etiqueta en
 Drive (`FIELD_LABEL_ROWS`); si la fila no tiene texto, o el dato está vacío, no se pinta:

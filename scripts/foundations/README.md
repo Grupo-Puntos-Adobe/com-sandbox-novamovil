@@ -13,12 +13,12 @@ bloques o no.
 
 | Archivo | Para qué es | Lo usan | Depende de |
 |---|---|---|---|
-| [`block-options.js`](#1-block-optionsjs) | Las filas opcionales que **cualquier bloque NovaMóvil** acepta en Drive: `Styles`, `Classname`, `Session` y el estado en la última columna | Todos los bloques NovaMóvil (1.ª línea de `decorate`) | `session.js` |
+| [`block-options.js`](#1-block-optionsjs) | Las filas opcionales que **cualquier bloque NovaMóvil** acepta en Drive: `Styles`, `Classname`, `Session` y el tipo de usuario en la última columna | Todos los bloques NovaMóvil (1.ª línea de `decorate`) | `session.js` |
 | [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
 | [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
 | [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
 | [`store.js`](#5-storejs) | **Variables globales** del sitio (como el estado de React): solo las declaradas en `STORE`; `get`, `set`, `reset` y `subscribe`, y las marcas `{store.breadcrumb.name}` de cualquier texto se llenan solas. Lo carga `head.html` (hoy: `breadcrumb` y `user`) | `head.html`, `session.js` (pone `user`), `product-detail` (pone `breadcrumb.name`), `account-profile` y `block-session-example` (leen `user`) | `styles/foundations/store.css` |
-| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, estado, reglas de las páginas y mostrar u ocultar; pone el usuario en el store | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `store.js` (pone `user`), `styles/foundations/sessions.css` |
+| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, tipo de usuario, reglas de las páginas y mostrar u ocultar; pone el usuario en el store | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `store.js` (pone `user`), `styles/foundations/sessions.css` |
 
 ```js
 // cómo se importan desde un bloque (blocks/<bloque>/<bloque>.js)
@@ -35,7 +35,7 @@ import { getSessionData, loginUser, logoutUser } from '../../scripts/foundations
 ## 1. `block-options.js`
 
 **Para qué es:** que el autor pueda, desde la tabla de Drive y sin tocar código, darle espacio y
-clases a un bloque, decidir quién lo ve y tener filas distintas por sesión. Cada bloque NovaMóvil lo
+clases a un bloque, decidir quién lo ve y tener filas distintas por tipo de usuario. Cada bloque NovaMóvil lo
 llama en la **primera línea** de su `decorate()`; los bloques del template no lo usan. Guía completa:
 `documentation/06-styles-classname.md`.
 
@@ -43,8 +43,8 @@ llama en la **primera línea** de su `decorate()`; los bloques del template no l
 
 | Función | Recibe | Qué hace | Para qué sirve |
 |---|---|---|---|
-| `applyBlockOptions(block)` (default) | El bloque | 1) Si la página está redirigiendo, vacía el bloque. 2) Aplica las filas por sesión (`filterRowsBySessionState`). 3) Lee, aplica y **quita** las filas `Styles`, `Classname` y `Session` | La única que llaman los bloques: después de ella, el bloque lee su tabla sin ver esas filas |
-| `filterRowsBySessionState(block)` (interna) | El bloque | Las filas cuya **última celda** es solo estados (`login`, `logout`, `guest`) quedan solo para ese estado y se les quita esa celda; cada fila que queda guarda sus estados en `row.dataset.session` (`"signed-in guest"`). El estado sale del store (`session`); al cambiar, la página se recarga una vez | Filas distintas por sesión en cualquier bloque |
+| `applyBlockOptions(block)` (default) | El bloque | 1) Si la página está redirigiendo, vacía el bloque. 2) Aplica las filas por tipo de usuario (`filterRowsByUserType`). 3) Lee, aplica y **quita** las filas `Styles`, `Classname` y `Session` | La única que llaman los bloques: después de ella, el bloque lee su tabla sin ver esas filas |
+| `filterRowsByUserType(block)` (interna) | El bloque | Las filas cuya **última celda** es solo `login`, `guest` o `logout` quedan solo para esos tipos (`user`, `guest`, `none`) y se les quita esa celda; cada fila que queda guarda sus tipos en `row.dataset.session` (`"user guest"`). El tipo sale del store (`user.type`, vacío = `none`); al cambiar, la página se recarga una vez | Filas distintas por tipo de usuario en cualquier bloque |
 | `showOnlyWhenSession(element, visibleWhen)` (interna) | El wrapper y `true` / `false` | Escucha `store.subscribe('session.isSession', …)` y le pone o quita `session-hidden` (`sessions.css`) | La fila `Session` del bloque |
 | `applyAuthorStyles(block, declarations)` | El bloque y el texto de `Styles` (`margin-top: 60; padding-left: 20`) | Pone cada declaración en línea; un número sin unidad pasa a `px`; ignora lo inválido o inseguro (`url()`, `<`, `{`…) | La usa `applyBlockOptions`; sirve sola si un bloque quiere aplicar estilos de otra fila |
 | `applyAuthorClasses(block, names)` | El bloque y el texto de `Classname` (`dark compact`) | Agrega cada nombre válido como clase (separados por espacio, coma o `;`) | La usa `applyBlockOptions`; igual que la anterior, sirve sola |
@@ -56,30 +56,35 @@ llama en la **primera línea** de su `decorate()`; los bloques del template no l
 | `Styles` | Estilos en línea sobre el bloque (y `display: flow-root` en su wrapper para que los márgenes no se colapsen) |
 | `Classname` | Clases extra sobre el bloque |
 | `Session` | `true` = el bloque y su wrapper solo con sesión; `false` = solo sin sesión (el invitado cuenta como "sin sesión"); vacía = siempre. Lee `store.get('session.isSession')` |
-| Estado en la **última columna** de cualquier fila | `login`, `logout`, `guest` (combinables con coma): la fila solo existe para ese estado. Lee `store.get('session')` |
+| Tipo en la **última columna** de cualquier fila | `login`, `guest`, `logout` (combinables con coma): la fila solo existe para esos tipos. Lee `store.get('user.type')` |
 
-Lo que el autor escribe en la última columna y lo que significa:
+Cada palabra de Drive es un tipo de `USER_TYPES`: `login` = `user`, `guest` = `guest`, `logout` =
+`none` (`user.type` vacío). Todas las combinaciones:
 
-| En Drive | Quién la ve | Estado interno |
+| Última columna | La fila la ve | `row.dataset.session` |
 |---|---|---|
-| `login` | Quien inició sesión (`isSession: true`) | `signed-in` |
-| `logout` | Quien no tiene sesión ni es invitado | `signed-out` |
-| `guest` | El invitado (`isGuest: true`) | `guest` |
-| `login, guest` | Cualquiera de los dos | — |
+| `login` | Solo usuario con login | `"user"` |
+| `guest` | Solo invitado | `"guest"` |
+| `logout` | Solo sin sesión (ni login ni invitado) | `"none"` |
+| `login, guest` | Usuario o invitado | `"user guest"` |
+| `login, logout` | Usuario o sin sesión (el invitado no) | `"user none"` |
+| `guest, logout` | Invitado o sin sesión (el usuario no) | `"guest none"` |
+| `login, guest, logout` | Todos | `"user guest none"` |
+| vacía | Todos | — |
 
-No importan las mayúsculas. Los nombres de antes (`signed-in`, `signed-out`) **se siguen
-aceptando**, para que las páginas publicadas no se rompan; en Drive nuevo se usan los de arriba.
+Se separan con coma, espacio o `;`, y no importan las mayúsculas. `signed-in` y `signed-out` **ya
+no se aceptan**: una celda con ellos es texto normal y la fila la ven todos.
 
-No le pregunta a `session.js` por la sesión: la lee del **store** (apartado `session`, que llena
-`session.js`). Lo único que usa de `session.js` es la regla del Metadata
-(`getSessionData().page.isAccessAllowed`) e `isNavigationPending()` para que la recarga no cancele
-una navegación.
+No le pregunta a `session.js` por la sesión: la lee del **store** (`user.type` y
+`session.isSession`, que llena `session.js`). Lo único que usa de `session.js` es `USER_TYPES`, la
+regla del Metadata (`getSessionData().page.isAccessAllowed`) e `isNavigationPending()` para que la
+recarga (`store.subscribe('user.type', …)`) no cancele una navegación de `goToPage`.
 
 ```js
 import applyBlockOptions from '../../scripts/foundations/block-options.js';
 
 export default function decorate(block) {
-  applyBlockOptions(block); // FIRST line: Styles / Classname / Session rows and session rows
+  applyBlockOptions(block); // FIRST line: Styles / Classname / Session rows and rows by user type
   // … el resto del bloque lee su tabla como siempre
 }
 ```
@@ -201,16 +206,15 @@ const STORE = {
     name: '',   // {store.breadcrumb.name}
     brand: '',  // {store.breadcrumb.brand}
   },
-  // el usuario de la sesión: SOLO lo llena session.js; nunca el token
+  // ¿qué tipo de usuario es? SOLO lo llena session.js; nunca el token
   user: {
+    type: '',         // 'user' (login) | 'guest' (invitado) | '' (nadie: user vacío)
     userId: '', firstName: '', lastName: '', fullName: '',
     email: '', phone: '', verified: false, sessionId: '',
-    isGuest: false,   // true para el invitado ("Invitado", userId "guest")
   },
-  // quién visita: SOLO lo llena session.js
+  // ¿hay sesión? SOLO lo llena session.js
   session: {
     isSession: false, // true SOLO con login real (tiene token); el invitado no es sesión
-    isGuest: false,   // true después de "Continuar como invitado"
     token: '',        // 'Bearer …' para las llamadas privadas; '' sin login (privada)
   },
 };
@@ -219,11 +223,11 @@ const STORE = {
 const PRIVATE_VARIABLES = ['session.token'];
 ```
 
-| Quien visita | `isSession` | `isGuest` | `token` |
+| Quien visita | `user.type` | `session.isSession` | `session.token` |
 |---|---|---|---|
-| Con login | `true` | `false` | `'Bearer …'` |
-| Invitado | `false` | `true` | `''` |
-| Nadie | `false` | `false` | `''` |
+| Con login | `'user'` | `true` | `'Bearer …'` |
+| Invitado | `'guest'` | `false` | `''` |
+| Nadie | `''` | `false` | `''` |
 
 Solo existe lo que está aquí: lo demás **se rechaza** con un error y no se guarda. Para algo nuevo,
 primero se agrega a este objeto. Estos valores también son los que vuelven al **reiniciar**.
@@ -305,7 +309,8 @@ vacío** y se vuelve a llenar:
 ### 6. El usuario: solo desde el store
 
 ```js
-store.get('user');             // { userId, firstName, fullName, email, …, isGuest }
+store.get('user');             // { type, userId, firstName, fullName, email, … }
+store.get('user.type');        // 'user' | 'guest' | ''   (qué tipo de usuario es)
 store.get('user.firstName');   // 'Cliente'   ('' sin sesión)
 // en Drive: "Hola, {store.user.firstName}"   → se llena solo
 
@@ -313,30 +318,31 @@ store.get('user.firstName');   // 'Cliente'   ('' sin sesión)
 store.subscribe('user', (user) => render(user));   // ahora y cada vez que cambie
 ```
 
-Sin sesión, `user` tiene sus valores vacíos (`userId: ''`). **Nunca** trae el token: el token está
-en `session.token` y solo lo usa la llamada privada (`scripts/api/interceptors.js`).
+Sin sesión, `user` tiene sus valores vacíos (`type: ''`, `userId: ''`). **Nunca** trae el token:
+el token está en `session.token` y solo lo usa la llamada privada (`scripts/api/interceptors.js`).
 
 ### 7. La sesión: `session`
 
 ```js
-store.get('session.isSession');   // ¿inició sesión? (el invitado no cuenta)
-store.get('session.isGuest');     // ¿es invitado?
+store.get('session.isSession');   // ¿hay sesión? (solo con login; el invitado no cuenta)
 store.get('session.token');       // 'Bearer …' — solo para la llamada privada; nunca se pinta ni se imprime
+// ¿es invitado? → store.get('user.type') === 'guest'
 
 // algo que depende de si hay sesión, ahora y cada vez que cambie
 store.subscribe('session.isSession', (isSession) => { button.hidden = !isSession; });
 ```
 
-Lo usan `block-options.js` (fila `Session` y última columna) y la llamada privada. **Nunca** se
-imprime el store completo ni `session` en la consola.
+Lo usan `block-options.js` (fila `Session`; la última columna usa `user.type`) y la llamada
+privada. **Nunca** se imprime el store completo ni `session` en la consola.
 
 ### 8. Ver el store en la consola (solo para depurar)
 
-Al final de `store.js` está `showStoreInConsole()`, con su llamada **comentada**:
+Al final de `store.js` está `showStoreInConsole()`. Se activa o desactiva comentando su llamada
+(en la rama `feature/session` está descomentada, para probar):
 
 ```js
 // uncomment to see the store in the console; comment it again before pushing
-// showStoreInConsole();
+showStoreInConsole();
 ```
 
 | Para | Qué hacer |
@@ -368,7 +374,7 @@ No la subas descomentada: la consola de la página publicada mostraría los dato
 ## 6. `session.js`
 
 **Para qué es:** todo lo de sesión en **un solo archivo**: iniciar y cerrar sesión, el modo
-invitado, el estado de quien visita, las reglas de cada página (Metadata `Session` /
+invitado, el tipo de quien visita, las reglas de cada página (Metadata `Session` /
 `Redirect To`) y mostrar u ocultar elementos según quién visita. **Los datos del usuario los pone en
 el store** (`store.get('user')`, ver `store.js`), que es el único lugar de donde los leen los
 bloques. No depende de `aem.js`. Guía para
@@ -380,11 +386,12 @@ autores y desarrolladores: `documentation/08-sesiones.md`.
 solo:
 
 1. agrega `styles/foundations/sessions.css`;
-2. **llena `session` y `user` del store** desde la sesión guardada (el store empieza vacío en cada
+2. borra la sesión guardada si venció o no es válida;
+3. **llena `session` y `user` del store** desde la sesión guardada (el store empieza vacío en cada
    página);
-3. pone el estado en `<html>` (`session-state-signed-in`, `-guest`, `-signed-out`, o `-editor` en
-   el panel de edición);
-4. revisa la regla del Metadata de la página y, si el visitante no puede estar ahí, oculta la
+4. pone el tipo en `<html>` (`session-state-user`, `-guest`, `-none`, o `-editor` en el panel de
+   edición);
+5. revisa la regla del Metadata de la página y, si el visitante no puede estar ahí, oculta la
    página y lo manda a `Redirect To`.
 
 | Metadata | Sin sesión (o invitado) | Con sesión |
@@ -400,30 +407,30 @@ redirige. La regla se vuelve a revisar si la sesión cambia en la página.
 
 | Función | Recibe | Qué hace / devuelve | Para qué sirve |
 |---|---|---|---|
-| `getSessionData()` | — | El estado de la sesión y de la página en un solo llamado (tabla de abajo) | Saber si hay sesión, si es invitado y la regla de la página. **Los datos del usuario están en el store** |
+| `getSessionData()` | — | El tipo de usuario y la página en un solo llamado (tabla de abajo) | Saber si hay sesión, si es invitado y la regla de la página. **Los datos del usuario están en el store** |
 | `loginUser(endpoint, requestBody)` | La URL del servicio de login y el cuerpo que pide (`{ meta, security, data: { emailOrPhone, password } }`) | `POST` (llamada pública); con un 200 guarda la sesión en `sessionStorage`, llena el usuario del store, avisa a la página y devuelve `getSessionData()`. Si falla lanza el `ApiError` (el JSON del servicio en `error.cause`) | **Iniciar sesión** desde cualquier bloque |
-| `logoutUser()` | — | Por ahora borra la sesión y el modo invitado de `sessionStorage`, vacía el usuario del store y avisa a la página. Es `async`, lista para llamar un servicio de logout | **Cerrar sesión** |
-| `continueAsGuest()` | — | Guarda un usuario `guest` ("Invitado") con los mismos campos que uno real y su propio `sessionId`, sin token, y lo pone en el store (`isGuest: true`) | El botón "Continuar como invitado" |
-| `goToPage(path, { replace })` | Una ruta del sitio | Va a esa página; una recarga pedida por las filas por sesión no la cancela | Navegar después de iniciar sesión o entrar como invitado |
-| `showOnlyForSessionStates(element, states)` | Un elemento y los estados (`'signed-in, guest'` o `['signed-in']`) | Le pone las clases de `sessions.css`; sin estados, se ve para todos | Mostrar u ocultar una parte de un bloque, al instante |
+| `logoutUser()` | — | Por ahora borra la sesión guardada (login o invitado) de `sessionStorage`, vacía el usuario del store y avisa a la página. Es `async`, lista para llamar un servicio de logout | **Cerrar sesión** |
+| `continueAsGuest()` | — | Guarda un usuario `guest` ("Invitado") con los mismos campos que uno real y su propio `sessionId`, sin token, y lo pone en el store (`user.type: 'guest'`) | El botón "Continuar como invitado" |
+| `goToPage(path, { replace })` | Una ruta del sitio | Va a esa página; una recarga pedida por las filas por tipo de usuario no la cancela | Navegar después de iniciar sesión o entrar como invitado |
+| `showOnlyForUserTypes(element, types)` | Un elemento y un **array** de tipos (`[USER_TYPES.USER, USER_TYPES.GUEST]`) | Le pone las clases de `sessions.css` (`session-only session-only-user session-only-guest`); array vacío, se ve para todos | Mostrar u ocultar una parte de un bloque, al instante |
 
 | Constante | Valor | Para qué sirve |
 |---|---|---|
 | `SESSION_CHANGE_EVENT` | `'session:change'` | Evento en `document` después de **cualquier** cambio (iniciar o cerrar sesión, invitado, vencimiento); `detail` = `getSessionData()`. Sirve para volver a pintar sin recargar |
-| `SESSION_STATES` | `{ SIGNED_IN: 'signed-in', GUEST: 'guest', SIGNED_OUT: 'signed-out' }` | Comparar estados sin escribir el texto a mano |
+| `USER_TYPES` | `{ USER: 'user', GUEST: 'guest', NONE: 'none' }` | Comparar tipos sin escribir el texto a mano (`none` = nadie) |
 | `PAGE_SESSION_RULES` | `{ REQUIRED: 'true', SIGNED_OUT_ONLY: 'false' }` | Comparar `getSessionData().page.rule` |
 
 ### Qué trae `getSessionData()`
 
 ```js
-const { state, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionData();
+const { type, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionData();
 ```
 
 | Propiedad | Qué trae | Sin sesión |
 |---|---|---|
-| `state` | `'signed-in'`, `'guest'` o `'signed-out'` | `'signed-out'` |
-| `isSignedIn` | `true` con una sesión real (el invitado **no** cuenta) | `false` |
-| `isGuest` | `true` después de "Continuar como invitado" | `false` |
+| `type` | `'user'`, `'guest'` o `'none'` | `'none'` |
+| `isSignedIn` | `true` con una sesión real (`type` `'user'`; el invitado **no** cuenta) | `false` |
+| `isGuest` | `true` después de "Continuar como invitado" (`type` `'guest'`) | `false` |
 | `page.rule` | `'true'`, `'false'` o `''` (la fila `Session` del Metadata) | igual |
 | `page.redirectPath` | La ruta de `Redirect To`, o `/` | igual |
 | `page.isAccessAllowed` | `false` mientras la página está redirigiendo | igual |
@@ -432,7 +439,7 @@ const { state, isSignedIn, isGuest, page, isEditingToolPreview } = getSessionDat
 Los datos del usuario **no** están aquí: están en el store (`store.get('user')`). **Nunca** se da
 el token. Una sesión vencida cuenta como "sin sesión" (se borra sola).
 
-### Ejemplo: estado de la sesión y datos del usuario
+### Ejemplo: tipo de usuario y datos del usuario
 
 ```js
 import { SESSION_CHANGE_EVENT, getSessionData } from '../../scripts/foundations/session.js';
@@ -449,7 +456,7 @@ store.subscribe('user', (user) => {
     .map((key) => createElementWithClass('div', 'my-block-field', `${LABELS[key]}: ${user[key]}`)));
 });
 
-// repintar algo que depende del estado (no del usuario)
+// repintar algo que depende del tipo (no del usuario)
 document.addEventListener(SESSION_CHANGE_EVENT, (event) => paintButtons(event.detail));
 ```
 
@@ -460,22 +467,32 @@ Ejemplos reales: `blocks/account-profile/` (sencillo: Mi cuenta) y `blocks/block
 
 | Función | La usa | Qué hace |
 |---|---|---|
-| `isNavigationPending()` | `block-options.js` | `true` mientras `goToPage()` está saliendo de la página: la recarga de las filas por sesión espera |
+| `isNavigationPending()` | `block-options.js` | `true` mientras `goToPage()` está saliendo de la página: la recarga de las filas por tipo de usuario espera |
 | `clearUserSession()` | `scripts/api/interceptors.js` | Solo borra lo guardado, sin llamar a un servicio (en un 401 el token ya no sirve). Un bloque cierra sesión con `logoutUser()` |
 
 ### Funciones internas (no se importan)
 
+El archivo está en 9 partes: 1 Ajustes, 2 Leer la sesión guardada, 3 Metadata de la página, 4 Leer
+la sesión (`getSessionData`), 5 Avisar a la página, 6 Acciones, 7 Navegación y regla del Metadata,
+8 Mostrar por tipo, 9 Arranque.
+
 | Función | Qué hace |
 |---|---|
-| `initPageSession()` | El arranque de cada página (CSS, usuario del store, estado, regla); corre sola al cargar el archivo |
-| `syncSessionStore()` | Llena `session` (`isSession`, `isGuest`, `token`) y `user` del store desde la sesión guardada (login o invitado), o los vacía sin sesión. Es el **único** que escribe esos dos apartados |
-| `applyPageSessionRule()` / `canStayOnPage(rule)` | Aplican la regla `Session` del Metadata y redirigen si hace falta |
-| `readPageSessionRule()` / `getPageRedirectPath()` / `readPageMetadataValue(name)` | Leen el Metadata (`page.rule`, `page.redirectPath`) |
-| `readLoginSession()` / `readGuestSession()` / `readSessionState()` | Leen la llave `novamovil-session`: login solo con `type: 'user'` y token (la vencida se borra); invitado solo con `type: 'guest'` |
-| `storeLoginSession(data)` | Guarda la respuesta 200 del login (la usa `loginUser`) |
-| `notifySessionChange()` / `updateSessionStateClass()` | Lanzan `SESSION_CHANGE_EVENT` y cambian la clase de `<html>` |
-| `parseSessionStateList(text)` | `'signed-in, guest'` → `['signed-in', 'guest']` (para `showOnlyForSessionStates`) |
-| `loadSessionStyles()` / `useStorage()` / `readStoredJson()` / `isEditingToolPreview()` | Cargar `sessions.css`, `sessionStorage` sin errores y detectar el panel de edición |
+| `useStorage(action, value)` | `sessionStorage` sin errores (`'get'`, `'set'`, `'remove'` de la única llave) |
+| `isExpired(saved)` | `true` si el login guardado ya venció (`expiresAt`) |
+| `readSavedSession()` | La sesión guardada si es válida: `type: 'user'` con token no vencido, o `type: 'guest'`; si no, `null` |
+| `readUserType()` | El tipo de quien visita: `'user'`, `'guest'` o `'none'` |
+| `readPageMetadataValue(name)` / `readPageSessionRule()` / `getPageRedirectPath()` | Leen el Metadata (`page.rule`, `page.redirectPath`) |
+| `isEditingToolPreview()` | `true` en el panel de edición |
+| `updateUserTypeClass(type)` | Pone `session-state-<tipo>` (o `-editor`) en `<html>` |
+| `syncSessionStore(session)` | Llena `session` (`isSession`, `token`, solo con login) y `user` (con su `type`) del store, o vacía `user` sin sesión. Es el **único** que escribe esos dos apartados |
+| `scheduleSessionExpiry(session)` | Cierra la sesión cuando vence el token del login |
+| `applySavedSession()` | Clase de `<html>`, store y vencimiento desde la sesión guardada |
+| `notifySessionChange()` | `applySavedSession()` y lanza `SESSION_CHANGE_EVENT` |
+| `saveLoginSession(data)` | Guarda la respuesta 200 del login como `type: 'user'` (la usa `loginUser`) |
+| `canStayOnPage(rule)` / `applyPageSessionRule()` | Aplican la regla `Session` del Metadata y redirigen si hace falta |
+| `loadSessionStyles()` | Agrega `sessions.css` una vez |
+| `initPageSession()` | El arranque de cada página (CSS, borra la sesión vencida o inválida, clase, store, regla); corre sola al cargar el archivo |
 
 ### Qué se guarda en `sessionStorage`
 
@@ -489,11 +506,10 @@ Una sola llave, `novamovil-session`. El campo `type` dice qué es:
 { type: 'guest', user: { userId: 'guest', firstName: 'Invitado', … }, sessionId: 'guest-…' }
 ```
 
-- **Solo `type: 'user'` con token es una sesión.** Un invitado nunca cuenta como sesión, aunque por
-  error traiga un token.
+- **Solo `type: 'user'` con un token que no venció es una sesión.** Un invitado nunca cuenta como
+  sesión, aunque por error traiga un token.
 - Iniciar sesión o entrar como invitado **sobrescribe** la llave; cerrar sesión o que venza la **borra**.
-- Una sesión de versiones anteriores (con token y sin `type`) se sigue leyendo como `user`. La llave
-  vieja `novamovil-guest` se borra al abrir la página: ese invitado vuelve a "sin sesión".
+- Al abrir la página, una sesión guardada vencida o inválida (por ejemplo sin `type`) se borra.
 
 ### Ajustes
 
@@ -502,8 +518,7 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 | Ajuste | Valor hoy | Para qué |
 |---|---|---|
 | `SESSION_STORAGE_KEY` | `novamovil-session` | La **única** llave de la sesión en `sessionStorage` (login o invitado) |
-| `SESSION_TYPES` | `{ USER: 'user', GUEST: 'guest' }` | El `type` guardado en esa llave |
-| `LEGACY_GUEST_STORAGE_KEY` | `novamovil-guest` | Llave de versiones anteriores: se borra al abrir la página |
+| `USER_TYPES` (exportado) | `{ USER: 'user', GUEST: 'guest', NONE: 'none' }` | Los tipos de usuario; el `type` guardado en esa llave es `user` o `guest` |
 | `DEFAULT_REDIRECT_PATH` | `/` | A dónde va una página sin `Redirect To` |
 | `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', … }` | El usuario que se guarda al continuar como invitado |
 | `EDITOR_PREVIEW_HOSTS` | `preview-aemcoder.adobe.io` | Dónde no se redirige y se ve todo |

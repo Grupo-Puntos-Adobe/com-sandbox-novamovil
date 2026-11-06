@@ -5,8 +5,8 @@ Esta guía explica **qué hace** `scripts/foundations/block-options.js`, **en qu
 
 Es el **punto de entrada** de las opciones de autor de los bloques NovaMóvil. La sesión **no**
 arranca aquí: la regla de la página la revisa `scripts/foundations/session.js`, que `head.html`
-carga en todas las páginas. `block-options.js` solo le pregunta a `session.js` por la sesión
-cuando un bloque trae la fila `Session` o un estado en la última columna.
+carga en todas las páginas. `block-options.js` lee la sesión del store (`session.isSession`, `user.type`)
+cuando un bloque trae la fila `Session` o un tipo de usuario en la última columna.
 `scripts/aem.js`, `scripts/scripts.js` y `404.html` quedan como el template original.
 
 ---
@@ -34,7 +34,7 @@ Drive, para controlar su espacio, su apariencia y quién lo ve, sin tocar códig
 | `Styles` | Fila | Estilos en línea sobre el bloque |
 | `Classname` | Fila | Clases extra sobre el bloque |
 | `Session` | Fila | `true` = el **bloque completo** solo se ve con sesión; `false` = solo sin sesión; sin la fila o vacía = siempre |
-| Estado en la **última columna** | Cualquier fila | `login`, `logout` o `guest` (combinables con coma): **esa fila** solo existe para ese estado |
+| Tipo de usuario en la **última columna** | Cualquier fila | `login`, `guest` o `logout` (combinables con coma): **esa fila** solo existe para esos tipos (sección 5.6) |
 | Regla de la **página** | Metadata de la página | `Session` `true` / `false` + `Redirect To`. **No es de `block-options`**: la revisa `session.js` en todas las páginas, tengan bloques o no |
 
 > `Endpoint` no es una opción de `block-options`: la lee cada bloque. Regla del proyecto: `Endpoint`
@@ -59,7 +59,7 @@ Resultado en la página (con `Styles` y `Classname`):
   que **rodean todo el componente**: un `margin-top` queda arriba del título y un `margin-bottom`
   debajo de las tarjetas.
 - `Session` oculta el **bloque y su wrapper** (`-wrapper`), para no dejar espacio vacío.
-- Todas estas filas (y la celda del estado) **desaparecen**: el resto del bloque nunca las ve.
+- Todas estas filas (y la celda del tipo) **desaparecen**: el resto del bloque nunca las ve.
 
 ## 2. Qué bloques la tienen
 
@@ -70,7 +70,7 @@ Resultado en la página (con `Styles` y `Classname`):
 | `hero-novamovil`, `card-categories`, `card-featured`, `card-promotions` | ✅ Sí |
 | `breadcrumb`, `product-catalog`, `product-detail`, `login`, `block-session-example`, `account-profile` | ✅ Sí |
 | Bloques nuevos que creemos | ✅ Sí, agregando **una línea** (ver sección 7) |
-| `cards`, `columns`, `hero`, `fragment`, `widget` (template) | ❌ No. Una fila `Styles` o un estado en la última columna se ven como contenido normal |
+| `cards`, `columns`, `hero`, `fragment`, `widget` (template) | ❌ No. Una fila `Styles` o un tipo en la última columna se ven como contenido normal |
 | `header`, `footer` | ❌ No |
 
 Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloque decide llamarla.
@@ -83,9 +83,9 @@ Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloq
 | Archivo | Origen | Qué tiene |
 |---|---|---|
 | `scripts/foundations/block-options.js` | 🆕 nuevo | **La función compartida** `applyBlockOptions` y sus ayudantes |
-| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`initPageSession`), regla de la página (`applyPageSessionRule`), `getSessionData` (lo que se pregunta de la sesión, también `page.isAccessAllowed`), llena `session` y `user` del store y `showOnlyForSessionStates` |
-| `scripts/foundations/store.js` | 🆕 nuevo | El store global: `block-options.js` lee de aquí la sesión (`session.isSession`, `session.isGuest`) |
-| `styles/foundations/sessions.css` | 🆕 nuevo | Clases que muestran u ocultan por sesión (también `session-hidden` de la fila `Session`); lo carga `session.js` |
+| `scripts/foundations/session.js` | 🆕 nuevo | El único archivo de sesión: arranque en cada página (`initPageSession`), regla de la página (`applyPageSessionRule`), `getSessionData` (lo que se pregunta de la sesión, también `page.isAccessAllowed`), llena `session` y `user` del store, `USER_TYPES` y `showOnlyForUserTypes` |
+| `scripts/foundations/store.js` | 🆕 nuevo | El store global: `block-options.js` lee de aquí `session.isSession` (¿hay sesión?) y `user.type` (¿qué tipo de usuario?) |
+| `styles/foundations/sessions.css` | 🆕 nuevo | Clases que muestran u ocultan por tipo de usuario (también `session-hidden` de la fila `Session`); lo carga `session.js` |
 | `scripts/foundations/block-utils.js` | 🆕 nuevo | `buildSectionTitle`: mete el título **dentro** del bloque para que los estilos lo rodeen |
 | `blocks/<bloque NovaMóvil>/<bloque>.js` | 🆕 nuevo | `import` + llamada en la 1.ª línea de `decorate` |
 | `content-drive/*.docx` | 🆕 nuevo | Cada tabla trae las filas `Styles` y `Classname` vacías, listas para usar |
@@ -100,7 +100,7 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 
 ```
 0. 🆕 head.html → scripts/foundations/session.js   ← en TODAS las páginas, antes de scripts.js:
-      └─ initPageSession() → sessions.css, estado en <html> y applyPageSessionRule() (Metadata Session /
+      └─ initPageSession() → sessions.css, tipo en <html> y applyPageSessionRule() (Metadata Session /
                               Redirect To; si no acepta al visitante: oculta la página y redirige)
 1. 📦 scripts/scripts.js → decorateMain(main)
       ├─ decorateSections   → crea las secciones (div.section)
@@ -113,8 +113,8 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 3. 🆕 decorate(block) del bloque
       ├─ 🆕 applyBlockOptions(block)   ← PRIMERA línea:
       │     ├─ página redirigiendo (getSessionData().page.isAccessAllowed) → vacía el bloque
-      │     ├─ filterRowsBySessionState(block) → filas con login / logout / guest en la última columna
-      │     │                                    (estado: store session)
+      │     ├─ filterRowsByUserType(block) → filas con login / guest / logout en la última columna
+      │     │                                (tipo: store user.type)
       │     └─ lee, aplica y QUITA Styles / Classname / Session (store session.isSession)
       ├─    readTableCell(…)           ← ya no ve esas filas
       ├─    buildSectionTitle(block, …) ← título dentro del bloque
@@ -122,7 +122,7 @@ AEM Edge Delivery carga cada página así. Lo nuestro está marcado con 🆕:
 ```
 
 Por qué **primera línea**: si se llamara después, el bloque podría confundir la fila `Styles` (o
-una fila de otro estado) con contenido.
+una fila de otro tipo de usuario) con contenido.
 
 Por qué la regla de la página **no** está aquí: así corre en todas las páginas, tengan bloques o
 no, y antes de `scripts.js`, de modo que la página que debe redirigir no llega a verse.
@@ -134,18 +134,17 @@ Archivo: `scripts/foundations/block-options.js`.
 ### 5.1 Sesión: desde el store
 
 ```js
-import { SESSION_STATES, getSessionData, isNavigationPending } from './session.js';
+import { USER_TYPES, getSessionData, isNavigationPending } from './session.js';
 import { store } from './store.js';
 ```
 
 - `block-options.js` no arranca nada: `session.js` ya corrió desde `head.html` y llenó el store.
 - `getSessionData().page.isAccessAllowed`: si la página está redirigiendo, el bloque se vacía y no
   hace nada más (es la regla del Metadata, se queda en `session.js`).
-- La sesión de los bloques se lee del **store** (`session`), no de `session.js`:
-  - fila `Session` → `store.subscribe('session.isSession', …)`;
-  - última columna → `store.get('session')` (`isSession` → `signed-in`, `isGuest` → `guest`, si no
-    → `signed-out`).
-- `isNavigationPending()` solo sirve para que la recarga de las filas por sesión no cancele una
+- La sesión de los bloques se lee del **store**, no de `session.js`:
+  - fila `Session` → `store.subscribe('session.isSession', …)` (¿hay sesión?);
+  - última columna → `store.get('user.type')` (`'user'`, `'guest'`, o vacío = `none`).
+- `isNavigationPending()` solo sirve para que la recarga de las filas por tipo no cancele una
   navegación de `goToPage()`.
 - La fila `Session` solo se aplica si el bloque la trae con `true` o `false`.
 
@@ -156,14 +155,13 @@ const STYLE_KEYS = ['styles', 'style'];
 const SESSION_KEYS = ['session'];
 const BLOCK_SESSION_VALUES = { true: true, false: false };  // se ve cuando session.isSession es esto
 const SESSION_HIDDEN_CLASS = 'session-hidden';                // sessions.css (el editor lo muestra)
-// lo que el autor escribe en la última columna → el estado interno (los nombres de antes también)
-const DRIVE_SESSION_WORDS = {
-  login: SESSION_STATES.SIGNED_IN,
-  logout: SESSION_STATES.SIGNED_OUT,
-  guest: SESSION_STATES.GUEST,
-  'signed-in': SESSION_STATES.SIGNED_IN,
-  'signed-out': SESSION_STATES.SIGNED_OUT,
+// lo que el autor escribe en la última columna → el tipo de usuario (solo estas tres palabras)
+const DRIVE_USER_TYPE_WORDS = {
+  login: USER_TYPES.USER,
+  guest: USER_TYPES.GUEST,
+  logout: USER_TYPES.NONE,
 };
+const DRIVE_WORD_SEPARATOR = /[\s,;]+/;                       // coma, espacio o ";"
 const CLASS_KEYS = ['classname', 'classnames', 'class name', 'class names', 'class'];
 const PROPERTY = /^-{0,2}[a-z][a-z0-9-]*$/i;       // nombre de propiedad CSS válido (o --variable)
 const CLASS_NAME = /^-?[_a-z][_a-z0-9-]*$/i;        // nombre de clase válido
@@ -234,7 +232,7 @@ export default function applyBlockOptions(block) {
     block.replaceChildren();
     return;
   }
-  filterRowsBySessionState(block);        // filas con el estado en la última columna
+  filterRowsByUserType(block);            // filas con el tipo de usuario en la última columna
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     if (!keyCell || !valueCell || extraCells.some((cell) => cell.textContent.trim())) return;
@@ -265,27 +263,33 @@ function showOnlyWhenSession(element, visibleWhen) {
 }
 ```
 
-### 5.6 Filas por sesión: `filterRowsBySessionState(block)`
+### 5.6 Filas por tipo de usuario: `filterRowsByUserType(block)`
 
-Una fila de **2 o más columnas** cuya **última celda** es **solo** un estado:
+Una fila de **2 o más columnas** cuya **última celda** es **solo** `login`, `guest` o `logout`
+(tipos `user`, `guest`, `none`), comparada directo con `store` `user.type` (vacío = `none`):
 
-| Última celda (Drive) | La fila existe para |
+| Última columna | La fila la ve |
 |---|---|
-| `login` | Quien tiene sesión (`session.isSession`) |
-| `logout` | Quien no tiene sesión ni es invitado |
-| `guest` | Quien entró como invitado (`session.isGuest`) |
-| `login, guest` (combinados con coma) | Cualquiera de los dos |
-| vacía, o texto que no es solo estados | Todos (la fila no se toca) |
+| `login` | Solo usuario con login |
+| `guest` | Solo invitado |
+| `logout` | Solo sin sesión (ni login ni invitado) |
+| `login, guest` | Usuario o invitado |
+| `login, logout` | Usuario o sin sesión (el invitado no) |
+| `guest, logout` | Invitado o sin sesión (el usuario no) |
+| `login, guest, logout` | Todos |
+| vacía | Todos |
 
-No importan las mayúsculas. `signed-in` y `signed-out` (los nombres de antes) se siguen aceptando.
-Cada fila que queda guarda sus estados internos en `row.dataset.session` (`"signed-in guest"`).
+Se separan con coma, espacio o `;`, y no importan las mayúsculas. Texto que no es solo esas
+palabras es una celda normal (la fila no se toca y la ven todos); `signed-in` y `signed-out` **ya
+no se aceptan**. Cada fila que queda guarda sus tipos en `row.dataset.session` (`"user guest"`,
+`"none"`).
 
-- Las filas de otros estados se **quitan antes** de que el bloque lea su tabla; a las que quedan
-  se les quita la celda del estado. El bloque lee `Title` como siempre: **no cambia su código**.
+- Las filas de otros tipos se **quitan antes** de que el bloque lea su tabla; a las que quedan
+  se les quita la celda del tipo. El bloque lee `Title` como siempre: **no cambia su código**.
 - Funciona igual con 2, 3 o n columnas: siempre decide la **última**.
-- Si la sesión cambia en la misma página (iniciar sesión, invitado, cerrar sesión), la página se
-  recarga para mostrar las filas del nuevo estado (`store.subscribe('session', …)`), salvo que
-  `goToPage()` ya esté navegando.
+- Si `user.type` cambia en la misma página (iniciar sesión, invitado, cerrar sesión), la página se
+  recarga una vez para mostrar las filas del nuevo tipo (`store.subscribe('user.type', …)`), salvo
+  que `goToPage()` ya esté navegando (`isNavigationPending()`).
 
 ## 6. Decisiones importantes (el porqué)
 
@@ -332,7 +336,7 @@ La regla de la página está en `session.js`, que `head.html` carga con **una l�
 páginas, sin tocar `scripts.js` ni `aem.js`. Así una página de solo texto también revisa su regla.
 `block-options.js` se queda con lo de cada bloque (fila `Session` y última columna). Lo que cuesta:
 
-- Los bloques del template (`cards`, `columns`…) no tienen filas por sesión.
+- Los bloques del template (`cards`, `columns`…) no tienen filas por tipo de usuario.
 
 ## 7. Cómo agregarla a un bloque nuevo
 
@@ -347,8 +351,8 @@ export default function decorate(block) {
 }
 ```
 
-Con esa línea el bloque ya tiene `Styles`, `Classname`, `Session` y las filas por sesión (última
-columna). La regla de sesión de la página no depende de esto: corre siempre.
+Con esa línea el bloque ya tiene `Styles`, `Classname`, `Session` y las filas por tipo de usuario
+(última columna). La regla de sesión de la página no depende de esto: corre siempre.
 
 Si el bloque tiene título, usar `buildSectionTitle(block, '<nuevo-bloque>')` de
 `scripts/foundations/block-utils.js` para que quede dentro del bloque.
@@ -377,8 +381,8 @@ d.table("Nuevo Bloque", d.options() + [ …resto de filas… ])
 | Un beneficio solo para invitados o sin sesión | Última columna de la fila | `guest, logout` |
 
 Lo que **no** funciona (se ignora a propósito): `background: url(foto.jpg)`, `color: red; } body {…`,
-propiedades inventadas, valores inválidos, o una última celda con texto además del estado
-("guest y otra palabra").
+propiedades inventadas, valores inválidos, o una última celda con texto además del tipo
+("guest y otra palabra", o `signed-in` / `signed-out`).
 
 ## 9. Historia del cambio
 
@@ -402,7 +406,7 @@ propiedades inventadas, valores inválidos, o una última celda con texto ademá
    verse.
 4. **Session:** con `Session` = `true`, el bloque no se ve sin sesión y aparece al iniciar sesión;
    con `false`, al revés.
-5. **Filas por sesión:** dos filas `Title` con `logout` y `login` en la última columna: sin
+5. **Filas por tipo de usuario:** dos filas `Title` con `logout` y `login` en la última columna: sin
    sesión se ve una y con sesión la otra (la página se recarga sola al cambiar la sesión).
 6. En un bloque del template (por ejemplo `Columns`), las mismas filas se ven como contenido. Así
    debe ser.
@@ -417,6 +421,6 @@ Página de prueba con todo: `content-drive/ejemplo-sesion.docx` (bloque `block-s
 | El estilo no se aplica | Valor inválido o bloqueado por seguridad | Revisar la escritura: `propiedad: valor; propiedad: valor` |
 | El margen no se nota | Se escribió con coma en lugar de `;` | Separar las declaraciones con `;` |
 | `Session` no oculta el bloque | El valor no es `true` ni `false` (por ejemplo `si`) | Escribir `true` o `false` |
-| Una fila por sesión siempre se ve | La última celda trae más texto que el estado, o el estado no está en la **última** columna | Dejar en la última celda solo `login`, `logout` o `guest` |
+| Una fila por tipo siempre se ve | La última celda trae más texto que el tipo (o `signed-in` / `signed-out`), o el tipo no está en la **última** columna | Dejar en la última celda solo `login`, `guest` o `logout` (combinables con coma) |
 | La página privada no redirige | La página no tiene ningún bloque NovaMóvil | Agregar un bloque NovaMóvil (por ejemplo `Breadcrumb`) |
 | El título queda fuera del margen | El documento de Drive tiene el título fuera de la tabla (versión anterior) | Poner el título en la fila `Title` |

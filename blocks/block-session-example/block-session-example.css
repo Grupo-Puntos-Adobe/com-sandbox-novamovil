@@ -96,9 +96,9 @@
     line-height: 1.4;
   }
 
-  & .block-session-example-badge-signed-in {
-    background: var(--block-session-example-signed-in-background);
-    color: var(--block-session-example-signed-in-text);
+  & .block-session-example-badge-user {
+    background: var(--block-session-example-user-background);
+    color: var(--block-session-example-user-text);
   }
 
   & .block-session-example-badge-guest {
@@ -106,9 +106,9 @@
     color: var(--block-session-example-guest-text);
   }
 
-  & .block-session-example-badge-signed-out {
-    background: var(--block-session-example-signed-out-background);
-    color: var(--block-session-example-signed-out-text);
+  & .block-session-example-badge-none {
+    background: var(--block-session-example-none-background);
+    color: var(--block-session-example-none-text);
   }
 
   /* ========================================================================

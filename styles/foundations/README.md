@@ -9,7 +9,7 @@ igual. Son el par de `scripts/foundations/` (JavaScript, ver su `README.md`).
 |---|---|---|---|
 | [`breakpoints.css`](#1-las-3-resoluciones) | Tener las **3 resoluciones** del sitio con nombre, para no repetir números en cada CSS | 6 nombres para `@container style(…)`: `--mobile`, `--tablet`, `--desktop`, `--mobile-tablet`, `--tablet-desktop`, `--mobile-desktop` | Nada (solo CSS) |
 | [`grid.css`](#8-grid-gridcss) | Acomodar el contenido en **columnas de 24 partes** que cambian por resolución | `container`, `container-fluid`, `row` (con alineación y gutters) y `col-*` (`sm`, `md`, `lg`), con offset y orden | `breakpoints.css` antes |
-| [`sessions.css`](#9-sesiones-sessionscss) | **Mostrar u ocultar** cualquier elemento según quién visita (con sesión, invitado, sin sesión) | `session-only` + `session-only-signed-in` / `-guest` / `-signed-out`. Solo visibilidad: sin colores ni tamaños | `scripts/foundations/session.js` (pone `session-state-*` en `<html>` y carga este CSS) |
+| [`sessions.css`](#9-sesiones-sessionscss) | **Mostrar u ocultar** cualquier elemento según quién visita (con sesión, invitado, sin sesión) | `session-only` + `session-only-user` / `-guest` / `-none`. Solo visibilidad: sin colores ni tamaños | `scripts/foundations/session.js` (pone `session-state-*` en `<html>` y carga este CSS) |
 | [`toast.css`](#10-alerta-toastcss) | Los estilos de la **alerta flotante** | `toast-novamovil` y sus variantes (`-error`, `-warning`, `-success`, `-info`) | `scripts/foundations/toast.js` (lo carga) y las variables `--toast-*`, `--z-index-toast`, `--nav-height` |
 | `store.css` | Que un texto con una marca del store (`{store.breadcrumb.name}`) **espere oculto** hasta tener su valor | `[data-store-pending]` (lo pone `store.js`, nunca a mano) | `scripts/foundations/store.js` (lo carga) |
 
@@ -363,16 +363,16 @@ No va como `<link>` en `head.html`. Lo agrega `scripts/foundations/session.js` a
 (`initPageSession`), que `head.html` carga en todas las páginas antes de `scripts.js`, así que ya
 está pedido antes de que se pinte cualquier bloque. Va siempre con `session.js`.
 
-### El estado: una clase en `<html>`
+### El tipo de usuario: una clase en `<html>`
 
 `session.js` pone **una** clase en `<html>` antes de pintar y la cambia al iniciar sesión, entrar
 como invitado o cerrar sesión:
 
 | Clase en `<html>` | Cuándo |
 |---|---|
-| `session-state-signed-in` | Hay sesión |
+| `session-state-user` | Hay sesión (login) |
 | `session-state-guest` | "Continuar como invitado" |
-| `session-state-signed-out` | Ninguna de las dos (o la sesión venció) |
+| `session-state-none` | Ninguna de las dos (o la sesión venció) |
 | `session-state-editor` | Panel de edición: **se ve todo**, para poder editar |
 
 ### Las clases para los elementos
@@ -381,34 +381,34 @@ Un elemento lleva `session-only` y **quién lo ve**. Se combinan para decir "o":
 
 | Clases | Se ve con |
 |---|---|
-| `session-only session-only-signed-in` | Sesión |
-| `session-only session-only-signed-out` | Sin sesión |
+| `session-only session-only-user` | Sesión |
+| `session-only session-only-none` | Sin sesión (ni login ni invitado) |
 | `session-only session-only-guest` | Invitado |
-| `session-only session-only-signed-in session-only-guest` | Sesión **o** invitado |
-| `session-only session-only-signed-out session-only-guest` | Sin sesión **o** invitado |
+| `session-only session-only-user session-only-guest` | Sesión **o** invitado |
+| `session-only session-only-none session-only-guest` | Sin sesión **o** invitado |
 | sin `session-only` | Todos (no depende de la sesión) |
 
 ```html
-<div class="session-only session-only-signed-in">Tienes 2 cupones disponibles</div>
-<a class="session-only session-only-signed-out" href="/login">Iniciar sesión</a>
+<div class="session-only session-only-user">Tienes 2 cupones disponibles</div>
+<a class="session-only session-only-none" href="/login">Iniciar sesión</a>
 ```
 
 ### Cómo funciona
 
 ```css
-/* mientras no hay estado, lo que depende de la sesión queda oculto (sin parpadeo) */
+/* mientras no hay tipo, lo que depende de la sesión queda oculto (sin parpadeo) */
 :root:not([class*='session-state-']) .session-only { display: none !important; }
 
-/* con estado: se oculta lo que NO es para ese estado */
-.session-state-signed-in .session-only:not(.session-only-signed-in),
+/* con tipo: se oculta lo que NO es para ese tipo */
+.session-state-user .session-only:not(.session-only-user),
 .session-state-guest .session-only:not(.session-only-guest),
-.session-state-signed-out .session-only:not(.session-only-signed-out) { display: none !important; }
+.session-state-none .session-only:not(.session-only-none) { display: none !important; }
 ```
 
 - **Solo oculta** (`display: none`) lo que no toca. Lo que sí toca conserva su propio `display`
   (`flex`, `grid`…): no lo pisa.
 - **Cambia al instante**, sin recargar: basta con que cambie la clase de `<html>`.
-- **Sin parpadeo:** mientras el estado no se conoce, todo lo marcado con `session-only` está oculto.
+- **Sin parpadeo:** mientras el tipo no se conoce, todo lo marcado con `session-only` está oculto.
 - En el panel de edición (`session-state-editor`) ninguna regla aplica: se ve todo.
 
 ### Quién pone las clases
@@ -418,12 +418,12 @@ Normalmente nadie las escribe a mano:
 | Desde | Cómo |
 |---|---|
 | Drive, un bloque completo | Fila `Session` del bloque: `block-options.js` lee `store` `session.isSession` y pone `session-hidden` en el `-wrapper` mientras no le toca (`true` → se ve solo con sesión; `false` → solo sin sesión, también el invitado). Cambia al instante con el store; en el panel de edición se ve todo |
-| JavaScript de un bloque | `showOnlyForSessionStates(element, 'signed-in, guest')` de `scripts/foundations/session.js` |
+| JavaScript de un bloque | `showOnlyForUserTypes(element, [USER_TYPES.USER, USER_TYPES.GUEST])` de `scripts/foundations/session.js` (solo un array) |
 | HTML o CSS propio | Escribir las clases directamente |
 
-> Las **filas** por sesión (`login`, `logout`, `guest` en la última columna de una tabla) no usan
-> estas clases: esas filas se quitan antes de que el bloque lea su tabla (`filterRowsBySessionState`
-> de `block-options.js`, con el estado del store).
+> Las **filas** por tipo de usuario (`login`, `guest`, `logout` en la última columna de una tabla)
+> no usan estas clases: esas filas se quitan antes de que el bloque lea su tabla
+> (`filterRowsByUserType` de `block-options.js`, con `user.type` del store).
 
 ```css
 /* fila Session de un bloque (block-options.js); en el panel de edición se ve */

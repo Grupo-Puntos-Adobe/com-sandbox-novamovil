@@ -7,23 +7,23 @@
  *
  * What it shows (scripts/foundations/session.js + styles/foundations/sessions.css):
  *   1. Whole block by session: the optional Session row (block-options.js) → the block is only
- *      shown to signed-in / guest / signed-out visitors. It never redirects.
- *   2. Status panel: paints the badge and the text of the current state with getSessionData()
+ *      shown with or without a session (store session.isSession). It never redirects.
+ *   2. Status panel: paints the badge and the text of the current type with getSessionData()
  *      and repaints them on SESSION_CHANGE_EVENT. The name in the authored text is a mark of the
  *      store ("Hola, {store.user.firstName}…"): the store fills it by itself.
  *      Every part that changes with the session does the same, in one line each:
  *        paint(getSessionData());
  *        document.addEventListener(SESSION_CHANGE_EVENT, (event) => paint(event.detail));
- *   3. Items by session, the generic way of ANY block: "Item | text | login" (the state in
- *      the LAST cell). filterRowsBySessionState() (block-options.js) removes the rows of other
- *      states
- *      before this block reads its table, and the page reloads when the session changes.
+ *   3. Items by type of user, the generic way of ANY block: "Item | text | login" (login,
+ *      guest, logout in the LAST cell). filterRowsByUserType() (block-options.js) removes the
+ *      rows of other types before this block reads its table, and the page reloads when the
+ *      type changes.
  *   4. Actions: Iniciar sesión (link to the login, as authored), Continuar como
- *      invitado (continueAsGuest) and Cerrar sesión (logoutUser), each one only for its state.
+ *      invitado (continueAsGuest) and Cerrar sesión (logoutUser), each one only for its type.
  *   5. Private call: with Private Endpoint and a session, post(…, REQUEST_TYPE.PRIVATE) sends
  *      the Bearer token and shows the answer of the service.
  *   6. User data (User Title row): the user comes from the store (store.get('user'), filled by
- *      session.js; signed in or guest) and is repainted with store.subscribe('user', …); this
+ *      session.js; user or guest) and is repainted with store.subscribe('user', …); this
  *      block only puts a label to each value (LABELS.user). Hidden without a session; the token
  *      is never in the store.
  *
@@ -32,7 +32,7 @@
  * Login Link (link), Guest Button Text, Sign Out Text, User Title, Private Title,
  * Private Endpoint.
  * Content rows have no default: without text that part is not painted. Any row can end with a
- * state cell (login | guest | logout, combined with commas); without it, everybody.
+ * type cell (login | guest | logout, combined with commas); without it, everybody.
  *
  * Flow:
  *   decorate(block)
@@ -40,8 +40,8 @@
  *     ├─ readExampleSettings(block)        texts, items, links, endpoint
  *     └─ renderSessionExample()
  *          ├─ buildExampleStatus()         getSessionData(): badge + text, actions by session
- *          ├─ buildExampleUser()           store.subscribe('user'): the user (signed in / guest)
- *          ├─ buildExampleItem() × N       the Item rows left for the current state
+ *          ├─ buildExampleUser()           store.subscribe('user'): the user (user / guest)
+ *          ├─ buildExampleItem() × N       the Item rows left for the current type
  *          └─ buildExamplePrivate()        getSessionData().isSignedIn: private call
  *     each part repaints itself on SESSION_CHANGE_EVENT (event.detail = getSessionData())
  *
@@ -61,17 +61,17 @@ import {
 import MESSAGES from '../../scripts/foundations/messages.js';
 import { store } from '../../scripts/foundations/store.js';
 import {
-  SESSION_CHANGE_EVENT, SESSION_STATES, continueAsGuest, getSessionData,
-  logoutUser, showOnlyForSessionStates,
+  SESSION_CHANGE_EVENT, USER_TYPES, continueAsGuest, getSessionData,
+  logoutUser, showOnlyForUserTypes,
 } from '../../scripts/foundations/session.js';
 import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 
-// texts of the example itself (not authored): the name of each state
+// texts of the example itself (not authored): the name of each type of user
 const LABELS = {
-  states: {
-    [SESSION_STATES.SIGNED_IN]: 'Con sesión',
-    [SESSION_STATES.GUEST]: 'Invitado',
-    [SESSION_STATES.SIGNED_OUT]: 'Sin sesión',
+  types: {
+    [USER_TYPES.USER]: 'Con sesión',
+    [USER_TYPES.GUEST]: 'Invitado',
+    [USER_TYPES.NONE]: 'Sin sesión',
   },
   everybody: 'Todos',
   audience: 'Lo ve:',
@@ -100,17 +100,17 @@ const ITEM_ROW = 'item';
 const USER_ROWS = ['fullName', 'email', 'phone', 'userId', 'verified', 'sessionId'];
 
 /**
- * "Item" rows left for the current state (filterRowsBySessionState already removed the others), in
- * authored order; states = who sees it (row.dataset.session, empty = everybody).
+ * "Item" rows left for the current type (filterRowsByUserType already removed the others), in
+ * authored order; types = who sees it (row.dataset.session, empty = everybody).
  * @param {Element} block
- * @returns {{states: string[], text: string}[]}
+ * @returns {{types: string[], text: string}[]}
  */
 function readItemRows(block) {
   return [...block.querySelectorAll(':scope > div')]
     .filter((row) => row.children[0]?.textContent.trim().toLowerCase() === ITEM_ROW)
     .map((row) => ({
-      // filterRowsBySessionState() leaves the states of the row in dataset.session
-      states: (row.dataset.session || '').split(' ').filter(Boolean),
+      // filterRowsByUserType() leaves the types of the row in dataset.session
+      types: (row.dataset.session || '').split(' ').filter(Boolean),
       text: (row.children[1]?.textContent || '').trim(),
     }))
     .filter((item) => item.text);
@@ -128,9 +128,10 @@ function readExampleSettings(block) {
     texts: {
       title: readCellText('title'),
       statusTitle: readCellText('status title'),
-      [SESSION_STATES.SIGNED_IN]: readCellText('signed in text'),
-      [SESSION_STATES.GUEST]: readCellText('guest text'),
-      [SESSION_STATES.SIGNED_OUT]: readCellText('signed out text'),
+      // status text of each type (Drive rows Signed In Text / Guest Text / Signed Out Text)
+      [USER_TYPES.USER]: readCellText('signed in text'),
+      [USER_TYPES.GUEST]: readCellText('guest text'),
+      [USER_TYPES.NONE]: readCellText('signed out text'),
       guestButton: readCellText('guest button text'),
       signOut: readCellText('sign out text'),
       userTitle: readCellText('user title'),
@@ -144,24 +145,24 @@ function readExampleSettings(block) {
 }
 
 /**
- * Badge with the name of a state (its colour comes from the CSS modifier).
- * @param {string} state One of SESSION_STATES
+ * Badge with the name of a type of user (its colour comes from the CSS modifier).
+ * @param {string} type One of USER_TYPES
  * @returns {Element}
  */
-function buildStateBadge(state) {
+function buildTypeBadge(type) {
   return createElementWithClass(
     'div',
-    `block-session-example-badge block-session-example-badge-${state}`,
-    LABELS.states[state],
+    `block-session-example-badge block-session-example-badge-${type}`,
+    LABELS.types[type],
   );
 }
 
 /**
- * Text of a state, as authored; its {store.…} marks (the name) are filled by the store.
+ * Text of a type, as authored; its {store.…} marks (the name) are filled by the store.
  * @param {string} text Authored text
  * @returns {Element|null}
  */
-function buildStateText(text) {
+function buildTypeText(text) {
   if (!text) {
     return null;
   }
@@ -169,7 +170,7 @@ function buildStateText(text) {
 }
 
 /**
- * Login link, guest button and sign out button; each one only for its state (sessions.css).
+ * Login link, guest button and sign out button; each one only for its type (sessions.css).
  * @param {Object} settings readExampleSettings() result
  * @returns {Element|null} div.block-session-example-actions
  */
@@ -180,19 +181,19 @@ function buildExampleActions(settings) {
   if (login.text && login.href) {
     const link = createElementWithClass('a', 'block-session-example-button block-session-example-button-primary', login.text);
     link.href = login.href;
-    actions.append(showOnlyForSessionStates(link, [SESSION_STATES.SIGNED_OUT]));
+    actions.append(showOnlyForUserTypes(link, [USER_TYPES.NONE]));
   }
   if (texts.guestButton) {
     const guest = createElementWithClass('button', 'block-session-example-button', texts.guestButton);
     guest.type = 'button';
     guest.addEventListener('click', continueAsGuest);
-    actions.append(showOnlyForSessionStates(guest, [SESSION_STATES.SIGNED_OUT]));
+    actions.append(showOnlyForUserTypes(guest, [USER_TYPES.NONE]));
   }
   if (texts.signOut) {
     const out = createElementWithClass('button', 'block-session-example-button', texts.signOut);
     out.type = 'button';
     out.addEventListener('click', () => logoutUser());
-    actions.append(showOnlyForSessionStates(out, [SESSION_STATES.SIGNED_IN, SESSION_STATES.GUEST]));
+    actions.append(showOnlyForUserTypes(out, [USER_TYPES.USER, USER_TYPES.GUEST]));
   }
   return actions.children.length ? actions : null;
 }
@@ -207,7 +208,7 @@ function paintWithSession(paint) {
 }
 
 /**
- * Status panel: title, badge and text of the current state (getSessionData()) and actions.
+ * Status panel: title, badge and text of the current type (getSessionData()) and actions.
  * @param {Object} settings readExampleSettings() result
  * @returns {Element} div.block-session-example-status
  */
@@ -223,8 +224,8 @@ function buildExampleStatus(settings) {
   current.setAttribute('aria-live', 'polite');
   paintWithSession((data) => {
     const content = createElementWithClass('div', 'block-session-example-status-body');
-    content.append(buildStateBadge(data.state));
-    const text = buildStateText(texts[data.state]);
+    content.append(buildTypeBadge(data.type));
+    const text = buildTypeText(texts[data.type]);
     if (text) {
       content.append(text);
     }
@@ -240,14 +241,14 @@ function buildExampleStatus(settings) {
 }
 
 /**
- * The user data as a table: the type (signed in or guest) and one row per value of the user
+ * The user data as a table: the type (user or guest) and one row per value of the user
  * that is not empty, with the label of this block.
  * @param {Object} user store.get('user')
  * @returns {Element} div.block-session-example-user-table[role=table]
  */
 function buildUserTable(user) {
   const labels = LABELS.user;
-  const type = LABELS.states[user.isGuest ? SESSION_STATES.GUEST : SESSION_STATES.SIGNED_IN];
+  const type = LABELS.types[user.type];
   // verified is true / false: shown as Sí / No
   const toText = (value) => {
     if (typeof value === 'boolean') {
@@ -279,7 +280,7 @@ function buildUserTable(user) {
 }
 
 /**
- * User data card (only with the User Title row): the data of whoever visits, signed in or
+ * User data card (only with the User Title row): the data of whoever visits, user or
  * guest, repainted when the session changes. Without a session there is nothing to show.
  * @param {Object} settings readExampleSettings() result
  * @returns {Element|null} div.block-session-example-user
@@ -295,7 +296,7 @@ function buildExampleUser(settings) {
   const data = createElementWithClass('div', 'block-session-example-user-data');
   data.setAttribute('aria-live', 'polite');
   card.append(title, data);
-  // the user of the store, now and every time it changes (signed in or guest; empty: nothing)
+  // the user of the store, now and every time it changes (user or guest; empty: nothing)
   store.subscribe('user', (user) => {
     data.replaceChildren(...(user.userId ? [buildUserTable(user)] : []));
   });
@@ -304,13 +305,13 @@ function buildExampleUser(settings) {
 
 /**
  * One Item card inside its grid column, with a tag that says who sees it.
- * @param {{states: string[], text: string}} item
+ * @param {{types: string[], text: string}} item
  * @returns {Element} div.col-24.col-md-12.col-lg-8
  */
 function buildExampleItem(item) {
   const card = createElementWithClass('div', 'block-session-example-item');
-  const audience = item.states.length
-    ? item.states.map((state) => LABELS.states[state]).join(' o ')
+  const audience = item.types.length
+    ? item.types.map((type) => LABELS.types[type]).join(' o ')
     : LABELS.everybody;
   card.append(
     createElementWithClass('div', 'block-session-example-item-tag', `${LABELS.audience} ${audience}`),
@@ -383,18 +384,15 @@ function renderSessionExample(block, settings) {
   }
   row.append(fullWidth(buildExampleStatus(settings)));
   const userCard = buildExampleUser(settings);
-  // the user card only exists for signed-in and guest visitors
+  // the user card only exists for user and guest visitors
   if (userCard) {
-    row.append(showOnlyForSessionStates(
-      fullWidth(userCard),
-      [SESSION_STATES.SIGNED_IN, SESSION_STATES.GUEST],
-    ));
+    row.append(showOnlyForUserTypes(fullWidth(userCard), [USER_TYPES.USER, USER_TYPES.GUEST]));
   }
   row.append(...settings.items.map(buildExampleItem));
   const privatePanel = buildExamplePrivate(settings);
-  // the whole private panel only exists for signed-in visitors
+  // the whole private panel only exists with a session
   if (privatePanel) {
-    row.append(showOnlyForSessionStates(fullWidth(privatePanel), [SESSION_STATES.SIGNED_IN]));
+    row.append(showOnlyForUserTypes(fullWidth(privatePanel), [USER_TYPES.USER]));
   }
 
   const container = createElementWithClass('div', 'container-fluid');

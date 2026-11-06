@@ -45,7 +45,7 @@
  *   decorate(block)
  *     ├─ applyBlockOptions(block)      Styles / Classname / Session rows
  *     ├─ readLoginSettings(block)      texts, links, endpoint, legal cell
- *     ├─ Session signed-out on the block (sessions.css): hidden once signed in or guest
+ *     ├─ only for type none (+ guest on the login page, sessions.css): hidden once signed in
  *     └─ renderLogin()
  *          ├─ buildLoginHeader()       title + description
  *          ├─ buildLoginTabs()         tablist (arrows / Home / End move between tabs)
@@ -68,8 +68,8 @@ import {
 } from '../../scripts/foundations/block-utils.js';
 import MESSAGES from '../../scripts/foundations/messages.js';
 import {
-  PAGE_SESSION_RULES, SESSION_STATES, continueAsGuest, getSessionData, goToPage,
-  loginUser, showOnlyForSessionStates,
+  PAGE_SESSION_RULES, USER_TYPES, continueAsGuest, getSessionData, goToPage,
+  loginUser, showOnlyForUserTypes,
 } from '../../scripts/foundations/session.js';
 
 // fixed parts of the login request (only data changes)
@@ -395,7 +395,7 @@ async function submitLogin(form, settings) {
       security: LOGIN_REQUEST_SECURITY,
       data: readLoginCredentials(form),
     });
-    // the block is hidden now (signed-out only); leave it clean for a later sign out
+    // the block is hidden now (type none only); leave it clean for a later sign out
     form.reset();
     setLoginBusy(form, false);
   } catch (error) {
@@ -596,9 +596,9 @@ export default function decorate(block) {
     ? block.parentElement : block;
   if (!wrapper.classList.contains('session-only')) {
     const isLoginPage = getSessionData().page.rule === PAGE_SESSION_RULES.SIGNED_OUT_ONLY;
-    showOnlyForSessionStates(wrapper, isLoginPage
-      ? [SESSION_STATES.SIGNED_OUT, SESSION_STATES.GUEST]
-      : [SESSION_STATES.SIGNED_OUT]);
+    showOnlyForUserTypes(wrapper, isLoginPage
+      ? [USER_TYPES.NONE, USER_TYPES.GUEST]
+      : [USER_TYPES.NONE]);
   }
   renderLogin(block, settings);
 }

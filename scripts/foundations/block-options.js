@@ -3,9 +3,10 @@
  * applyBlockOptions(block) as the FIRST line of its decorate(); template blocks (cards,
  * columns, hero…) do not call it and are left untouched.
  * The page Metadata rule (Session / Redirect To) is not here: it runs on every page, with or
- * without blocks, from scripts/foundations/session.js (loaded first by head.html). The session
- * of the blocks is read from the store (store "session", filled by session.js):
- *   isSession  true only with a login        isGuest  true after "Continuar como invitado"
+ * without blocks, from scripts/foundations/session.js (loaded first by head.html). The blocks
+ * read the store (filled by session.js):
+ *   session.isSession  is there a session? (only with a login; a guest is not one)
+ *   user.type          what type of user: 'user' | 'guest' | '' (nobody)
  *
  *   | Styles    | padding-top: 0; padding-left: 20px |  -> inline styles on the block (main class)
  *   | Classname | dark compact                       |  -> extra classes on the block
@@ -18,13 +19,13 @@
  * It never redirects (that is the page Metadata) and changes as soon as the store changes
  * (class session-hidden of styles/foundations/sessions.css; the editing tool preview shows it).
  *
- * Session rows: before anything else, any row whose LAST cell is a state keeps only for that
- * state (filterRowsBySessionState); it works with any number of columns. In Drive:
- *   login   with a session       logout   without a session       guest   as a guest
- *   (several separated by commas; signed-in / signed-out are still accepted)
+ * Rows by type of user: before anything else, any row whose LAST cell is made only of these
+ * words keeps only for those types (filterRowsByUserType); any number of columns. In Drive:
+ *   login → user (with a session)   guest → guest   logout → nobody (no session, no guest)
+ *   combined with commas: login, guest · login, logout · guest, logout · all three = everybody
  *   | Title     | Tus promociones, cliente | login        |
  *   | Benefit 1 | 🚚 | Envío gratis          | guest, login |
- * The state comes from store "session"; when it changes the page reloads once.
+ * The type comes from store user.type; when it changes the page reloads once.
  *
  * The rows are optional and can be anywhere in the table (usually right after the
  * block name). They are removed from the block, so the rest of its code never sees them.
@@ -51,8 +52,8 @@
  *   applyBlockOptions(block)            default export, one call per block
  *     ├─ page redirecting → the block is emptied, nothing else
  *     │                     (getSessionData().page.isAccessAllowed of session.js)
- *     ├─ session rows    → filterRowsBySessionState(block) (rows of other states are removed;
- *     │                     state from store "session")
+ *     ├─ rows by type    → filterRowsByUserType(block) (rows of other types are removed;
+ *     │                     type from store user.type)
  *     ├─ "Styles" row    → applyAuthorStyles(block, text)  + display:flow-root on the wrapper
  *     ├─ "Classname" row → applyAuthorClasses(block, text)
  *     └─ "Session" row   → showOnlyWhenSession(wrapper, true | false) (store session.isSession)
@@ -60,7 +61,7 @@
  *
  * Guide: documentation/06-styles-classname.md
  */
-import { SESSION_STATES, getSessionData, isNavigationPending } from './session.js';
+import { USER_TYPES, getSessionData, isNavigationPending } from './session.js';
 import { store } from './store.js';
 
 const STYLE_KEYS = ['styles', 'style'];
@@ -72,16 +73,13 @@ const BLOCK_SESSION_VALUES = {
 };
 // class of a block hidden by its Session row (sessions.css; the editing tool preview shows it)
 const SESSION_HIDDEN_CLASS = 'session-hidden';
-// what authors write in the LAST cell of a row (Drive) → the state of the visitor; the old
-// names are still accepted so published pages keep working
-const DRIVE_SESSION_WORDS = {
-  login: SESSION_STATES.SIGNED_IN,
-  logout: SESSION_STATES.SIGNED_OUT,
-  guest: SESSION_STATES.GUEST,
-  'signed-in': SESSION_STATES.SIGNED_IN,
-  'signed-out': SESSION_STATES.SIGNED_OUT,
+// what authors write in the LAST cell of a row (Drive) → the type of user it is for
+const DRIVE_USER_TYPE_WORDS = {
+  login: USER_TYPES.USER,
+  guest: USER_TYPES.GUEST,
+  logout: USER_TYPES.NONE,
 };
-const SESSION_WORD_SEPARATOR = /[\s,;]+/;
+const DRIVE_WORD_SEPARATOR = /[\s,;]+/;
 const CLASS_KEYS = [
   'classname',
   'classnames',
@@ -154,46 +152,38 @@ export function applyAuthorClasses(block, names) {
 let reloadRegistered = false;
 
 /**
- * State of the visitor from store "session": 'signed-in' (isSession), 'guest' (isGuest) or
- * 'signed-out'.
- * @returns {string} One of SESSION_STATES
+ * The type of whoever is visiting, from store user.type ('' = nobody → USER_TYPES.NONE).
+ * @returns {string} One of USER_TYPES
  */
-function readStoreSessionState() {
-  const { isSession, isGuest } = store.get('session');
-  if (isSession) {
-    return SESSION_STATES.SIGNED_IN;
-  }
-  if (isGuest) {
-    return SESSION_STATES.GUEST;
-  }
-  return SESSION_STATES.SIGNED_OUT;
+function readStoreUserType() {
+  return store.get('user.type') || USER_TYPES.NONE;
 }
 
 /**
- * States of the last cell of a row ('login, guest' → ['signed-in', 'guest']), or null when the
- * cell is empty or has any word that is not a state (then it is a normal cell).
+ * Types of the last cell of a row ('login, guest' → ['user', 'guest']), or null when the cell
+ * is empty or has any word that is not login / guest / logout (then it is a normal cell).
  * @param {string} text
  * @returns {string[]|null}
  */
-function readDriveSessionStates(text) {
-  const words = String(text || '').toLowerCase().split(SESSION_WORD_SEPARATOR).filter(Boolean);
-  if (!words.length || !words.every((word) => word in DRIVE_SESSION_WORDS)) {
+function readDriveUserTypes(text) {
+  const words = String(text || '').toLowerCase().split(DRIVE_WORD_SEPARATOR).filter(Boolean);
+  if (!words.length || !words.every((word) => word in DRIVE_USER_TYPE_WORDS)) {
     return null;
   }
-  return [...new Set(words.map((word) => DRIVE_SESSION_WORDS[word]))];
+  return [...new Set(words.map((word) => DRIVE_USER_TYPE_WORDS[word]))];
 }
 
 /**
- * Reloads the page once when store "session" changes (pages whose tables have session rows),
+ * Reloads the page once when store user.type changes (pages whose tables have rows by type),
  * unless a navigation already started (goToPage of session.js).
  */
-function reloadPageOnSessionChange() {
+function reloadPageOnUserTypeChange() {
   if (reloadRegistered) {
     return;
   }
   reloadRegistered = true;
   let isFirstCall = true;
-  store.subscribe('session', () => {
+  store.subscribe('user.type', () => {
     // subscribe calls once right away: only later changes reload
     if (isFirstCall) {
       isFirstCall = false;
@@ -208,36 +198,35 @@ function reloadPageOnSessionChange() {
 }
 
 /**
- * Session rows of a block table: a row of 2 or more cells whose LAST cell is made only of
- * states (| … | login |, | … | logout, guest |) stays only for those states, whatever the block
- * and its number of columns. The state comes from store "session". The state cell is removed
- * from the rows that stay (row.dataset.session keeps it, e.g. "signed-in guest"), so the block
- * reads its table as always. Rows with an empty last cell, a single cell, or a last cell that is
- * not only states are not touched (always shown).
+ * Rows by type of user: a row of 2 or more cells whose LAST cell is made only of login / guest /
+ * logout stays only for those types (store user.type), whatever the block and its number of
+ * columns. That cell is removed from the rows that stay (row.dataset.session keeps the types,
+ * e.g. "user guest"), so the block reads its table as always. Rows with an empty last cell, a
+ * single cell, or other text in it are not touched (always shown).
  * @param {Element} block
- * @returns {boolean} true when the block had session rows
+ * @returns {boolean} true when the block had rows by type
  */
-function filterRowsBySessionState(block) {
-  let hasSessionRows = false;
-  const state = readStoreSessionState();
+function filterRowsByUserType(block) {
+  let hasTypeRows = false;
+  const userType = readStoreUserType();
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const cells = [...row.children];
     const lastCell = cells[cells.length - 1];
-    const states = cells.length < 2 ? null : readDriveSessionStates(lastCell.textContent);
-    if (!states) {
+    const types = cells.length < 2 ? null : readDriveUserTypes(lastCell.textContent);
+    if (!types) {
       return;
     }
-    hasSessionRows = true;
+    hasTypeRows = true;
     lastCell.remove();
-    row.dataset.session = states.join(' ');
-    if (!states.includes(state)) {
+    row.dataset.session = types.join(' ');
+    if (!types.includes(userType)) {
       row.remove();
     }
   });
-  if (hasSessionRows) {
-    reloadPageOnSessionChange();
+  if (hasTypeRows) {
+    reloadPageOnUserTypeChange();
   }
-  return hasSessionRows;
+  return hasTypeRows;
 }
 
 /**
@@ -253,8 +242,8 @@ function showOnlyWhenSession(element, visibleWhen) {
 }
 
 /**
- * Applies the session rows, then reads, applies and removes the optional Styles / Classname /
- * Session rows of a block.
+ * Applies the rows by type of user, then reads, applies and removes the optional Styles /
+ * Classname / Session rows of a block.
  * @param {Element} block A decorated block (div.block)
  */
 export default function applyBlockOptions(block) {
@@ -263,8 +252,8 @@ export default function applyBlockOptions(block) {
     block.replaceChildren();
     return;
   }
-  // first: rows that depend on the session (| key | value… | login |)
-  filterRowsBySessionState(block);
+  // first: rows by type of user (| key | value… | login |)
+  filterRowsByUserType(block);
   [...block.querySelectorAll(':scope > div')].forEach((row) => {
     const [keyCell, valueCell, ...extraCells] = row.children;
     // name | value; extra cells are allowed only if empty (tables with 3+ columns)
