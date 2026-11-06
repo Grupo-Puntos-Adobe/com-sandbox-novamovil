@@ -52,7 +52,10 @@
  *
  * In the editing tool preview (EDITOR_PREVIEW_HOSTS) pages never redirect and sessions.css
  * shows everything, so private pages can be edited.
- * Stored in sessionStorage (removed when the tab is closed). The refresh token is not kept.
+ * Stored in sessionStorage (removed when the tab is closed), in ONE key, novamovil-session:
+ *   login  { type: 'user', user, accessToken, tokenType, expiresAt, sessionId }
+ *   guest  { type: 'guest', user (GUEST_USER), sessionId }   no token
+ * Only type 'user' with a token is a session. The refresh token is not kept.
  * Never log the session: it carries the access token.
  */
 import { toSafeSitePath } from './block-utils.js';
@@ -72,8 +75,15 @@ export const PAGE_SESSION_RULES = {
   REQUIRED: 'true', // only with a session
   SIGNED_OUT_ONLY: 'false', // only without a session (login)
 };
+// the ONE sessionStorage key of the session: { type: 'user' | 'guest', user, sessionId, … }
 const SESSION_STORAGE_KEY = 'novamovil-session';
-const GUEST_STORAGE_KEY = 'novamovil-guest';
+// what the stored session is: a login (it has the token) or "Continuar como invitado" (no token)
+const SESSION_TYPES = {
+  USER: 'user',
+  GUEST: 'guest',
+};
+// key of older versions (the guest had its own key): removed when the page starts
+const LEGACY_GUEST_STORAGE_KEY = 'novamovil-guest';
 // where a page sends the visitor it does not accept, without "Redirect To": the home page
 const DEFAULT_REDIRECT_PATH = '/';
 // user stored by continueAsGuest(): same fields as the user of a real session
@@ -151,25 +161,26 @@ function isEditingToolPreview() {
 }
 
 /**
- * Only removes what is stored (session and guest mode) and tells the page. Used by
- * logoutUser(), by an expired session and by the private interceptor on a 401.
+ * Only removes what is stored (login or guest) and tells the page. Used by logoutUser(), by an
+ * expired session and by the private interceptor on a 401.
  */
 export function clearUserSession() {
   useStorage('remove', SESSION_STORAGE_KEY);
-  useStorage('remove', GUEST_STORAGE_KEY);
   // eslint-disable-next-line no-use-before-define
   notifySessionChange();
 }
 
 /**
- * The stored login session, or null when there is none or it expired (an expired one is
- * removed). Internal: blocks use getSessionData().
- * @returns {{user: Object, accessToken: string, tokenType: string, expiresAt: number,
- *   sessionId: string}|null}
+ * The stored login session ({ type: 'user', … } with a token), or null when there is none, it
+ * is a guest or it expired (an expired one is removed). A session of an older version (token,
+ * no type) still counts. Internal: blocks use getSessionData().
+ * @returns {{type: string, user: Object, accessToken: string, tokenType: string,
+ *   expiresAt: number, sessionId: string}|null}
  */
 function readLoginSession() {
   const session = readStoredJson(SESSION_STORAGE_KEY);
-  if (!session?.accessToken) {
+  const isUser = session?.type === SESSION_TYPES.USER || (session && !session.type);
+  if (!isUser || !session.accessToken) {
     return null;
   }
   if (session.expiresAt && Date.now() >= session.expiresAt) {
@@ -180,16 +191,20 @@ function readLoginSession() {
 }
 
 /**
- * The guest session stored by continueAsGuest() ({ user, sessionId }), or null. An older guest
- * flag that is not JSON still counts as a guest.
- * @returns {{user: Object, sessionId: string}|null}
+ * The guest session stored by continueAsGuest() ({ type: 'guest', user, sessionId }), or null.
+ * A guest never has a token (if one is there, it is not read).
+ * @returns {{type: string, user: Object, sessionId: string}|null}
  */
 function readGuestSession() {
-  if (!useStorage('get', GUEST_STORAGE_KEY)) {
+  const session = readStoredJson(SESSION_STORAGE_KEY);
+  if (session?.type !== SESSION_TYPES.GUEST) {
     return null;
   }
-  const guest = readStoredJson(GUEST_STORAGE_KEY);
-  return guest?.user ? guest : { user: { ...GUEST_USER }, sessionId: '' };
+  return {
+    type: SESSION_TYPES.GUEST,
+    user: session.user || { ...GUEST_USER },
+    sessionId: session.sessionId ?? '',
+  };
 }
 
 /**
@@ -350,6 +365,7 @@ function storeLoginSession({
   }
   const seconds = Number(expiresIn);
   const session = {
+    type: SESSION_TYPES.USER,
     user: {
       userId: user?.userId ?? '',
       email: user?.email ?? '',
@@ -363,8 +379,8 @@ function storeLoginSession({
     expiresAt: Number.isFinite(seconds) && seconds > 0 ? Date.now() + seconds * 1000 : 0,
     sessionId: sessionId ?? '',
   };
+  // replaces a guest session, if there was one
   useStorage('set', SESSION_STORAGE_KEY, JSON.stringify(session));
-  useStorage('remove', GUEST_STORAGE_KEY);
   notifySessionChange();
   return true;
 }
@@ -410,10 +426,11 @@ export async function logoutUser() {
  */
 export function continueAsGuest() {
   const guestSession = {
+    type: SESSION_TYPES.GUEST,
     user: { ...GUEST_USER },
     sessionId: `guest-${window.crypto?.randomUUID?.() || Date.now()}`,
   };
-  useStorage('set', GUEST_STORAGE_KEY, JSON.stringify(guestSession));
+  useStorage('set', SESSION_STORAGE_KEY, JSON.stringify(guestSession));
   notifySessionChange();
 }
 
@@ -508,6 +525,8 @@ function loadSessionStyles() {
  */
 function initPageSession() {
   loadSessionStyles();
+  // older versions kept the guest in its own key: that guest starts again as "sin sesión"
+  useStorage('remove', LEGACY_GUEST_STORAGE_KEY);
   // the store starts empty on every page: fill it again from the saved session
   syncSessionStore();
   pageAccessAllowed = applyPageSessionRule();

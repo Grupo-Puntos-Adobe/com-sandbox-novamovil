@@ -471,11 +471,29 @@ Ejemplos reales: `blocks/account-profile/` (sencillo: Mi cuenta) y `blocks/block
 | `syncSessionStore()` | Llena `session` (`isSession`, `isGuest`, `token`) y `user` del store desde la sesión guardada (login o invitado), o los vacía sin sesión. Es el **único** que escribe esos dos apartados |
 | `applyPageSessionRule()` / `canStayOnPage(rule)` | Aplican la regla `Session` del Metadata y redirigen si hace falta |
 | `readPageSessionRule()` / `getPageRedirectPath()` / `readPageMetadataValue(name)` | Leen el Metadata (`page.rule`, `page.redirectPath`) |
-| `readLoginSession()` / `readGuestSession()` / `readSessionState()` | Leen lo guardado en `sessionStorage` (la sesión vencida se borra) |
+| `readLoginSession()` / `readGuestSession()` / `readSessionState()` | Leen la llave `novamovil-session`: login solo con `type: 'user'` y token (la vencida se borra); invitado solo con `type: 'guest'` |
 | `storeLoginSession(data)` | Guarda la respuesta 200 del login (la usa `loginUser`) |
 | `notifySessionChange()` / `updateSessionStateClass()` | Lanzan `SESSION_CHANGE_EVENT` y cambian la clase de `<html>` |
 | `parseSessionStateList(text)` | `'signed-in, guest'` → `['signed-in', 'guest']` (para `showOnlyForSessionStates`) |
 | `loadSessionStyles()` / `useStorage()` / `readStoredJson()` / `isEditingToolPreview()` | Cargar `sessions.css`, `sessionStorage` sin errores y detectar el panel de edición |
+
+### Qué se guarda en `sessionStorage`
+
+Una sola llave, `novamovil-session`. El campo `type` dice qué es:
+
+```js
+// con login
+{ type: 'user', user: { userId, email, phone, firstName, lastName, verified },
+  accessToken, tokenType, expiresAt, sessionId }
+// invitado ("Continuar como invitado"): sin token
+{ type: 'guest', user: { userId: 'guest', firstName: 'Invitado', … }, sessionId: 'guest-…' }
+```
+
+- **Solo `type: 'user'` con token es una sesión.** Un invitado nunca cuenta como sesión, aunque por
+  error traiga un token.
+- Iniciar sesión o entrar como invitado **sobrescribe** la llave; cerrar sesión o que venza la **borra**.
+- Una sesión de versiones anteriores (con token y sin `type`) se sigue leyendo como `user`. La llave
+  vieja `novamovil-guest` se borra al abrir la página: ese invitado vuelve a "sin sesión".
 
 ### Ajustes
 
@@ -483,7 +501,9 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 
 | Ajuste | Valor hoy | Para qué |
 |---|---|---|
-| `SESSION_STORAGE_KEY` / `GUEST_STORAGE_KEY` | `novamovil-session` / `novamovil-guest` | Llaves en `sessionStorage` |
+| `SESSION_STORAGE_KEY` | `novamovil-session` | La **única** llave de la sesión en `sessionStorage` (login o invitado) |
+| `SESSION_TYPES` | `{ USER: 'user', GUEST: 'guest' }` | El `type` guardado en esa llave |
+| `LEGACY_GUEST_STORAGE_KEY` | `novamovil-guest` | Llave de versiones anteriores: se borra al abrir la página |
 | `DEFAULT_REDIRECT_PATH` | `/` | A dónde va una página sin `Redirect To` |
 | `GUEST_USER` | `{ userId: 'guest', firstName: 'Invitado', … }` | El usuario que se guarda al continuar como invitado |
 | `EDITOR_PREVIEW_HOSTS` | `preview-aemcoder.adobe.io` | Dónde no se redirige y se ve todo |

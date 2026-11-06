@@ -349,7 +349,9 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
   nunca se llena.
 - Nada viaja por la URL. Las rutas de las tablas solo aceptan **rutas del sitio** (nada de
   `//otro.com` ni `javascript:`).
-- La sesión vive en `sessionStorage` (se borra al cerrar la pestaña) y vence con `expiresIn`.
+- La sesión vive en `sessionStorage`, en **una sola llave** (`novamovil-session`) con
+  `type: 'user'` (login, con token) o `type: 'guest'` (invitado, sin token). Se borra al cerrar
+  la pestaña y vence con `expiresIn`. Detalle: `scripts/foundations/README.md` (`session.js`).
 - Nunca se escribe la sesión en `console`.
 
 ## 12. Problemas comunes
@@ -370,6 +372,6 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 2. Agrega a `head.html`, antes de `scripts.js`:
    `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`.
    Con eso todas las páginas revisan su regla de Metadata. No se toca `scripts.js` ni `aem.js`.
-3. Ajusta los ajustes de arriba de `session.js`: `DEFAULT_REDIRECT_PATH`, las llaves de
-   `sessionStorage` y `EDITOR_PREVIEW_HOSTS`.
+3. Ajusta los ajustes de arriba de `session.js`: `DEFAULT_REDIRECT_PATH`, la llave de
+   `sessionStorage` (`SESSION_STORAGE_KEY`) y `EDITOR_PREVIEW_HOSTS`.
 4. Para llamadas privadas, copia `privateRequestInterceptor` de `scripts/api/interceptors.js`.
