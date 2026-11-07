@@ -4,7 +4,7 @@ Este manual ha sido generado de forma automática y centralizada a partir de la 
 
 ### Objetivo de la Documentación
 
-Esta documentación tiene como objetivo proporcionar a los desarrolladores, diseñadores y otros miembros del equipo una comprensión de los componentes desarrollados para la implementación del sitio de Partners de Citi Banamex. Cada sección está diseñada para ofrecer información clara y concisa, facilitando la comprensión y el uso eficiente de los componentes en diferentes contextos.
+Esta documentación tiene como objetivo proporcionar a los desarrolladores, diseñadores y otros miembros del equipo una comprensión de los componentes desarrollados para la implementación del sitio de NovaMóvil, la tienda mexicana de celulares y planes construida en AEM Edge Delivery Services con contenido en Google Drive. Cada sección está diseñada para ofrecer información clara y concisa, facilitando la comprensión y el uso eficiente de los componentes en diferentes contextos.
 
 ### Contenido de la Documentación
 

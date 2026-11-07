@@ -9,13 +9,13 @@ igual. Son el par de `scripts/foundations/` (JavaScript, ver su `README.md`).
 |---|---|---|---|
 | [`breakpoints.css`](#1-las-3-resoluciones) | Tener las **3 resoluciones** del sitio con nombre, para no repetir números en cada CSS | 6 nombres para `@container style(…)`: `--mobile`, `--tablet`, `--desktop`, `--mobile-tablet`, `--tablet-desktop`, `--mobile-desktop` | Nada (solo CSS) |
 | [`grid.css`](#8-grid-gridcss) | Acomodar el contenido en **columnas de 24 partes** que cambian por resolución | `container`, `container-fluid`, `row` (con alineación y gutters) y `col-*` (`sm`, `md`, `lg`), con offset y orden | `breakpoints.css` antes |
-| [`sessions.css`](#9-sesiones-sessionscss) | **Mostrar u ocultar** cualquier elemento según quién visita (con sesión, invitado, sin sesión) | `session-only` + `session-only-user` / `-guest` / `-none`. Solo visibilidad: sin colores ni tamaños | `scripts/foundations/session.js` (pone `session-state-*` en `<html>` y carga este CSS) |
+| [`sessions.css`](#9-sesiones-sessionscss) | **Mostrar u ocultar** cualquier elemento según quién visita (con sesión, invitado, sin sesión) | `session-only` + `session-only-user` / `-guest` / `-none`, y `session-hidden` (fila `Session` del bloque, la pone `block-options.js`). Solo visibilidad: sin colores ni tamaños | `scripts/foundations/session.js` (pone `session-state-*` en `<html>` y carga este CSS) |
 | [`toast.css`](#10-alerta-toastcss) | Los estilos de la **alerta flotante** | `toast-novamovil` y sus variantes (`-error`, `-warning`, `-success`, `-info`) | `scripts/foundations/toast.js` (lo carga) y las variables `--toast-*`, `--z-index-toast`, `--nav-height` |
 | `store.css` | Que un texto con una marca del store (`{store.breadcrumb.name}`) **espere oculto** hasta tener su valor | `[data-store-pending]` (lo pone `store.js`, nunca a mano) | `scripts/foundations/store.js` (lo carga) |
 
 `breakpoints.css` y `grid.css` son solo CSS: no necesitan JavaScript, Sass, PostCSS ni paso de
-build. `sessions.css` y `toast.css` son el CSS de `scripts/foundations/` (sesiones y alerta) y los
-carga su JavaScript.
+build. `sessions.css`, `toast.css` y `store.css` son el CSS de `scripts/foundations/` (sesiones,
+alerta y store) y los carga su JavaScript.
 
 ### Cómo se carga cada uno
 
@@ -25,7 +25,7 @@ carga su JavaScript.
 | `grid.css` | `head.html` (y `404.html`) | Siempre, justo después de `breakpoints.css` |
 | `sessions.css` | `scripts/foundations/session.js` (`initPageSession`) | En todas las páginas, antes de `scripts.js` |
 | `toast.css` | `scripts/foundations/toast.js` (`loadCSS`) | La primera vez que se muestra una alerta |
-| `store.css` | `scripts/foundations/store.js` | En todas las páginas: oculta el elemento cuya marca `{apartado.variable}` todavía no tiene valor (`[data-store-pending]`) |
+| `store.css` | `scripts/foundations/store.js` | En todas las páginas: oculta el elemento cuya marca `{store.apartado.variable}` todavía no tiene valor (`[data-store-pending]`) |
 
 ---
 
@@ -50,9 +50,10 @@ carga su JavaScript.
    <link rel="stylesheet" href="/styles/styles.css">
    ```
 
-3. `sessions.css` y `toast.css` **no** van en `head.html`: los cargan
-   `scripts/foundations/block-options.js` y `scripts/foundations/toast.js`. Solo cópialos junto
-   con `scripts/foundations/`.
+3. `sessions.css`, `toast.css` y `store.css` **no** van en `head.html`: los cargan
+   `scripts/foundations/session.js` (`loadSessionStyles` en `initPageSession`),
+   `scripts/foundations/toast.js` y `scripts/foundations/store.js`. Solo cópialos junto con
+   `scripts/foundations/`.
 4. Listo: ya puedes usar los nombres en cualquier archivo CSS.
 
 ## 3. Cómo se usa

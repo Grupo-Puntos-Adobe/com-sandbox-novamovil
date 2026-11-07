@@ -5,20 +5,20 @@ a otro sitio de AEM Edge Delivery Services. Son el par de `styles/foundations/` 
 `README.md`).
 
 `scripts/aem.js`, `scripts/scripts.js` y `404.html` quedan como el template. Los bloques importan
-lo que usan. La única excepción es `session.js`: `head.html` lo carga con **una línea** (antes de
-`scripts.js`) para que la regla de sesión de la página se revise en todas las páginas, tengan
-bloques o no.
+lo que usan. Las únicas excepciones son `session.js` y `store.js`: `head.html` los carga con **dos
+líneas** (en ese orden, antes de `scripts.js`) para que la regla de sesión de la página se revise
+en todas las páginas, tengan bloques o no.
 
 ## Resumen: para qué es cada archivo
 
 | Archivo | Para qué es | Lo usan | Depende de |
 |---|---|---|---|
-| [`block-options.js`](#1-block-optionsjs) | Las filas opcionales que **cualquier bloque NovaMóvil** acepta en Drive: `Styles`, `Classname`, `Session` y el tipo de usuario en la última columna | Todos los bloques NovaMóvil (1.ª línea de `decorate`) | `session.js` |
+| [`block-options.js`](#1-block-optionsjs) | Las filas opcionales que **cualquier bloque NovaMóvil** acepta en Drive: `Styles`, `Classname`, `Session` y el tipo de usuario en la última columna | Todos los bloques NovaMóvil (1.ª línea de `decorate`) | `session.js`, `store.js` |
 | [`block-utils.js`](#2-block-utilsjs) | Ayudas **sin red** para leer la tabla del bloque, validar enlaces y crear elementos | Los bloques NovaMóvil y `session.js` | `messages.js` |
 | [`messages.js`](#3-messagesjs) | Los **mensajes genéricos** con valor por defecto y el idioma / moneda | `card-*`, `product-*`, `login`, `block-session-example`, `empty-list-message` | nada |
 | [`toast.js`](#4-toastjs) | La **alerta flotante** (arriba a la derecha, se cierra sola) | `card-*`, `product-catalog` | `scripts/aem.js` (`loadCSS`), `styles/foundations/toast.css` |
-| [`store.js`](#5-storejs) | **Variables globales** del sitio (como el estado de React): solo las declaradas en `STORE`; `get`, `set`, `reset` y `subscribe`, y las marcas `{store.breadcrumb.name}` de cualquier texto se llenan solas. Lo carga `head.html` (hoy: `breadcrumb` y `user`) | `head.html`, `session.js` (pone `user`), `product-detail` (pone `breadcrumb.name`), `account-profile` y `block-session-example` (leen `user`) | `styles/foundations/store.css` |
-| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, tipo de usuario, reglas de las páginas y mostrar u ocultar; pone el usuario en el store | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `store.js` (pone `user`), `styles/foundations/sessions.css` |
+| [`store.js`](#5-storejs) | **Variables globales** del sitio (como el estado de React): solo las declaradas en `STORE`; `get`, `set`, `reset` y `subscribe`, y las marcas `{store.breadcrumb.name}` de cualquier texto se llenan solas. Lo carga `head.html` (hoy: `breadcrumb`, `user` y `session`) | `head.html`, `session.js` (llena `user` y `session`), `product-detail` (pone `breadcrumb.name`), `account-profile` y `block-session-example` (leen `user`) | `styles/foundations/store.css` |
+| [`session.js`](#6-sessionjs) | **Todo lo de sesión**: iniciar / cerrar sesión, invitado, tipo de usuario, reglas de las páginas y mostrar u ocultar; pone el usuario en el store | `head.html`, `block-options.js`, `login`, `block-session-example`, `account-profile`, `scripts/api/interceptors.js` | `block-utils.js` (`toSafeSitePath`), `store.js` (llena `user` y `session`), `styles/foundations/sessions.css` |
 
 ```js
 // cómo se importan desde un bloque (blocks/<bloque>/<bloque>.js)
@@ -537,8 +537,9 @@ Al inicio del archivo, para adaptarlo a otro proyecto:
 ## Llevarlos a otro proyecto
 
 1. Copia `scripts/foundations/` y `styles/foundations/`.
-2. Para las sesiones, agrega a `head.html`, antes de `scripts.js`, una línea:
-   `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`. No hay que
+2. Para las sesiones, agrega a `head.html`, antes de `scripts.js`, dos líneas en este orden:
+   `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>` y
+   `<script nonce="aem" src="/scripts/foundations/store.js" type="module"></script>`. No hay que
    tocar `scripts.js` ni `aem.js`.
 3. Ajusta lo propio del sitio:
    - **`messages.js`:** los textos, el idioma (`LOCALE`) y la moneda (`CURRENCY`);

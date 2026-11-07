@@ -151,7 +151,7 @@ Un nombre que no existe usa la cadena pública.
 | `card-categories`, `card-featured`, `card-promotions` | `get(Endpoint)` |
 | `product-catalog` | `get(Filters Endpoint)` y `post(Search Endpoint, body, { signal })` |
 | `product-detail` | `post(Endpoint, { meta, security, data: { productId } })` |
-| `login` | `post(Endpoint, { meta, security, data: { emailOrPhone, password } })` (pública; lee los errores de `error.cause`) |
+| `login` | `loginUser(endpoint, { meta, security, data: { emailOrPhone, password } })` de `scripts/foundations/session.js`, que hace el `post` (pública; lee los errores de `error.cause`) |
 | `block-session-example` | `post(Private Endpoint, …, { interceptor: REQUEST_TYPE.PRIVATE })` (fila `Private Endpoint`) |
 
 ## 5. Dependencias y cómo llevarlo a otro proyecto

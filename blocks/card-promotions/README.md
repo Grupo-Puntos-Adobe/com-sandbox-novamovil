@@ -37,7 +37,7 @@ y 3 en tablet y desktop.
 - Aviso de lista vacía configurable (título, descripción e icono)
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - **Por sesión** (como todo bloque NovaMóvil): fila `Session` (`true` / `false`) para el bloque
-  completo y el estado en la última columna de cualquier fila
+  completo y el tipo de usuario en la última columna de cualquier fila
 - Adaptación a móvil, tablet y desktop con el grid (`styles/foundations/grid.css`)
 - Accesible: lista con nombre para lectores de pantalla, título con `role="heading"`, foto decorativa
   (el título y el texto describen la promoción), foco visible y sin animación si el usuario pide
@@ -108,9 +108,9 @@ opcionales y pueden ir en cualquier orden.
 
 > **Sesión** (opcional, como todo bloque NovaMóvil, lo hace `block-options.js`): la fila
 > **`Session`** muestra u oculta el bloque completo (`true` = solo con sesión, `false` = solo sin
-> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el estado en su **última
-> columna** (`login`, `logout`, `guest`, combinables con coma) para existir solo para ese
-> estado. Ver `documentation/08-sesiones.md`.
+> sesión, vacía o sin la fila = siempre) y **cualquier fila** puede llevar el tipo de usuario en su
+> **última columna** (`login`, `guest`, `logout`, combinables con coma) para existir solo para ese
+> tipo de usuario. Ver `documentation/08-sesiones.md`.
 >
 > Ejemplo: otro título y otro aviso de lista vacía para quien inició sesión, sin tocar el código:
 >
@@ -228,7 +228,7 @@ Cada promoción que llega del servicio (o del JSON interno) dentro de
 | Caso | Qué se ve |
 |---|---|
 | Fila `Session` = `true` / `false` | El bloque completo solo se ve con sesión / sin sesión; cambia al instante |
-| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese estado; al cambiar la sesión la página se recarga |
+| Una fila con `login`, `logout` o `guest` en la última columna | Esa fila solo existe para ese tipo de usuario; al cambiar la sesión la página se recarga |
 | Sin `Endpoint` y el JSON interno tiene promociones | Las tarjetas del JSON interno |
 | Sin `Endpoint` y el JSON interno está vacío o sin datos | Aviso de lista vacía, sin alerta |
 | El servicio está respondiendo | Esqueleto de carga (3 tarjetas grises) |
@@ -268,8 +268,8 @@ Móvil:
 - `card-promotions.js` – Construye el bloque, lee la tabla y llama al servicio
 - `card-promotions.css` – Estilos del bloque (tamaños, colores, degradado y estados; las columnas
   vienen del grid)
-- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y estado por
-  fila), `block-utils.js`, `messages.js` y `toast.js`
+- `scripts/foundations/` – `block-options.js` (filas `Styles`, `Classname`, `Session` y tipo de
+  usuario por fila), `block-utils.js`, `messages.js` y `toast.js`
 - `scripts/api/http-client.js` – `get(Endpoint)`, llamada pública (`REQUEST_TYPE.PUBLIC`, sin
   sesión); ver `scripts/api/README.md`
 - `blocks/empty-list-message/` – Aviso de lista vacía compartido

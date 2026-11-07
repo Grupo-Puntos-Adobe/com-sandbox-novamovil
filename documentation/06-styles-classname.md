@@ -90,7 +90,7 @@ Es **opcional por bloque** (*opt-in*): la función es compartida, pero cada bloq
 | `blocks/<bloque NovaMóvil>/<bloque>.js` | 🆕 nuevo | `import` + llamada en la 1.ª línea de `decorate` |
 | `content-drive/*.docx` | 🆕 nuevo | Cada tabla trae las filas `Styles` y `Classname` vacías, listas para usar |
 | 🔒 `migration-work/docx_builder.py` | local | `Doc.options()` genera esas dos filas vacías en cada tabla |
-| `head.html` | 📦 ✏️ | Una línea que carga `session.js` antes de `scripts.js` |
+| `head.html` | 📦 ✏️ | Dos líneas que cargan `session.js` y `store.js` (en ese orden) antes de `scripts.js` |
 | `scripts/scripts.js`, `404.html` | 📦 template | **Sin cambios** |
 | `scripts/aem.js` | 📦 template | **Sin cambios.** Nunca se edita |
 
@@ -332,8 +332,8 @@ opción nueva, se cambia en un solo archivo y la tienen todos los bloques que la
 
 ### 6.5 La sesión de la página no depende de los bloques
 
-La regla de la página está en `session.js`, que `head.html` carga con **una línea** en todas las
-páginas, sin tocar `scripts.js` ni `aem.js`. Así una página de solo texto también revisa su regla.
+La regla de la página está en `session.js`, que `head.html` carga (con `store.js`: **dos líneas**)
+en todas las páginas, sin tocar `scripts.js` ni `aem.js`. Así una página de solo texto también revisa su regla.
 `block-options.js` se queda con lo de cada bloque (fila `Session` y última columna). Lo que cuesta:
 
 - Los bloques del template (`cards`, `columns`…) no tienen filas por tipo de usuario.
@@ -422,5 +422,5 @@ Página de prueba con todo: `content-drive/ejemplo-sesion.docx` (bloque `block-s
 | El margen no se nota | Se escribió con coma en lugar de `;` | Separar las declaraciones con `;` |
 | `Session` no oculta el bloque | El valor no es `true` ni `false` (por ejemplo `si`) | Escribir `true` o `false` |
 | Una fila por tipo siempre se ve | La última celda trae más texto que el tipo (o `signed-in` / `signed-out`), o el tipo no está en la **última** columna | Dejar en la última celda solo `login`, `guest` o `logout` (combinables con coma) |
-| La página privada no redirige | La página no tiene ningún bloque NovaMóvil | Agregar un bloque NovaMóvil (por ejemplo `Breadcrumb`) |
+| La página privada no redirige | La regla corre en todas las páginas desde `session.js` (con o sin bloques): falta la línea de `session.js` en `head.html`, o el valor de `Session` del Metadata no es `true` / `false` | Revisar que `head.html` cargue `session.js` y escribir `true` o `false` en la fila `Session` del Metadata |
 | El título queda fuera del margen | El documento de Drive tiene el título fuera de la tabla (versión anterior) | Poner el título en la fila `Title` |

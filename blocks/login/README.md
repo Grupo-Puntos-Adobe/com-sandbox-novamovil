@@ -410,6 +410,5 @@ Móvil:
 - Guías: `documentation/08-sesiones.md` (sesiones), `documentation/07-integracion-endpoints.md`
   (servicio) y `documentation/06-styles-classname.md`
   (`block-options`)
-- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), el bloque de crear cuenta
-  (tab **Crear cuenta**) y un bloque del proyecto en `/cuenta` para que su regla `Session: true`
-  corra (hoy solo tiene texto)
+- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`) y el bloque de crear cuenta
+  (tab **Crear cuenta**)

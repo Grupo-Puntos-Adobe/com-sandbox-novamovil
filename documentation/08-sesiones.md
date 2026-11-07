@@ -19,14 +19,14 @@ quien programa un bloque y qué archivos llevarse a otro proyecto.
 | Que una **fila** de la tabla (un valor) dependa del tipo de usuario | Tabla del bloque | El tipo en la **última columna**: `Title` \| `Hola, cliente` \| `login` |
 | Que una fila la vean dos tipos | Tabla del bloque | Última columna: `logout, guest` |
 | Mostrar u ocultar **una parte** de un bloque | Código del bloque | `showOnlyForUserTypes(elemento, [USER_TYPES.USER])` |
-| Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque | `getSessionData()` (y `SESSION_CHANGE_EVENT` para repintar) |
+| Pintar **datos del usuario** ("Hola, Cliente") | Código del bloque o Drive | Del **store**: `store.get('user')`, `store.subscribe('user', …)` para repintar, o en Drive `{store.user.firstName}` |
 | Llamar un **servicio privado** con el token | Tabla del bloque + código | Fila `Private Endpoint` (`Endpoint` es para los públicos) y `post(readPrivateEndpoint(block), body, { interceptor: REQUEST_TYPE.PRIVATE })` |
 | Que el **login** mande a "Mi cuenta" al tener sesión | Metadata de `login` | `Session` \| `false` + `Redirect To` \| `/cuenta` |
 | Que el login **no** redirija (paso de compra) | Metadata del paso | Sin la fila `Session` |
 
 Ejemplo de todo junto: `blocks/block-session-example/` y la página `content-drive/ejemplo-sesion.docx`.
-Un bloque real y sencillo que lee los datos con `getSessionData()`: `blocks/account-profile/`
-(página `cuenta`).
+Un bloque real y sencillo que lee los datos del store con `store.subscribe('user', …)`:
+`blocks/account-profile/` (página `cuenta`).
 
 ## 2. Los tres tipos de usuario
 
@@ -71,12 +71,14 @@ Cada regla mira la sesión a su manera:
 | `scripts/api/interceptors.js` | `REQUEST_TYPE.PUBLIC` y `REQUEST_TYPE.PRIVATE` (con Bearer) | Lleva la configuración de la API del proyecto |
 | `blocks/login/` | Inicio de sesión: arma el cuerpo y llama `loginUser(endpoint, body)` | Bloque del sitio |
 | `blocks/block-session-example/` | Ejemplo de todo | Ejemplo para copiar |
-| `blocks/account-profile/` | Mi cuenta: datos del usuario con un solo `getSessionData()` y "Cerrar sesión" | Bloque del sitio |
+| `blocks/account-profile/` | Mi cuenta: datos del usuario del store (`store.subscribe('user', …)`) y "Cerrar sesión" | Bloque del sitio |
 
-`head.html` lleva **una sola línea** para la sesión, antes de `scripts.js`:
+`head.html` lleva **dos líneas** para la sesión, en este orden y antes de `scripts.js`
+(`session.js` importa `store.js`):
 
 ```html
 <script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>
+<script nonce="aem" src="/scripts/foundations/store.js" type="module"></script>
 ```
 
 `scripts/aem.js`, `scripts.js` y `404.html` **no se tocan**: quedan como el template original.
@@ -337,7 +339,7 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 | 4 | Cerrar sesión en una página `Session: true` | Redirige |
 | 5 | `/login` (`Session: false`) ya con sesión, o al iniciar sesión | Va a `/cuenta` |
 | 5b | Invitado en `/login` | Ve el formulario |
-| 6 | Login en un paso de compra (sin `Session`) | Al iniciar sesión o como invitado se oculta y aparece lo `login, guest`, sin recargar |
+| 6 | Login en un paso de compra (sin `Session`) | Al iniciar sesión o como invitado se oculta. Sin recargar cambia al instante solo lo marcado con clases (`showOnlyForUserTypes` / `session-only-*`); si hay filas por tipo de usuario (última columna), la página se recarga al cambiar `user.type` |
 | 7 | Ejemplo sin sesión | Filas `logout` y "para todos"; bloque `Session: true` oculto, `Session: false` visible |
 | 8 | Invitado / cerrar sesión en el ejemplo | Los bloques `Session` cambian al instante; la página se recarga y muestra las filas del nuevo tipo |
 | 9 | Breadcrumb con `Level 2` por tipo (última columna) | Muestra "Visitante", "Invitado" o "Mi cuenta" sin cambiar su código |
@@ -377,11 +379,12 @@ Referencia completa de funciones y ajustes: `scripts/foundations/README.md` (sec
 
 ## 13. Llevarlo a otro proyecto
 
-1. Copia `scripts/foundations/session.js` y `block-utils.js` (con `messages.js`), y
-   `styles/foundations/sessions.css`. Para las filas por tipo de los bloques, también
-   `block-options.js`.
-2. Agrega a `head.html`, antes de `scripts.js`:
-   `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>`.
+1. Copia `scripts/foundations/session.js`, `store.js` (lo importa `session.js`) y `block-utils.js`
+   (con `messages.js`), y `styles/foundations/sessions.css` y `store.css`. Para las filas por tipo
+   de los bloques, también `block-options.js`.
+2. Agrega a `head.html` las dos líneas, en este orden y antes de `scripts.js`:
+   `<script nonce="aem" src="/scripts/foundations/session.js" type="module"></script>` y
+   `<script nonce="aem" src="/scripts/foundations/store.js" type="module"></script>`.
    Con eso todas las páginas revisan su regla de Metadata. No se toca `scripts.js` ni `aem.js`.
 3. Ajusta los ajustes de arriba de `session.js`: `DEFAULT_REDIRECT_PATH`, la llave de
    `sessionStorage` (`SESSION_STORAGE_KEY`) y `EDITOR_PREVIEW_HOSTS`.
