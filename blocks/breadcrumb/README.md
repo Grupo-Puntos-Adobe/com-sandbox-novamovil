@@ -37,8 +37,8 @@ Solo sale en las páginas que agregan la tabla **Breadcrumb** en Drive. Cada niv
 - Solo acepta enlaces del mismo sitio o `http(s)`
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
 - **Por sesión** (como todo bloque NovaMóvil): la fila `Session` (`true` / `false`) muestra u oculta
-  la ruta completa, y un nivel puede llevar el estado en la **última columna** (`Level 2 | Mi cuenta
-  | login`) para cambiar según quién visita
+  la ruta completa, y un nivel puede llevar el tipo de usuario en la **última columna**
+  (`Level 2 | Mi cuenta | login`) para cambiar según quién visita
 - Accesible: navegación con nombre ("Ruta de navegación"), lista de niveles y la página actual con
   `aria-current="page"`
 
@@ -105,8 +105,8 @@ las filas son opcionales y pueden ir en cualquier orden.
       tal cual. Para otro nivel dinámico se usa otra variable declarada (`{store.breadcrumb.brand}`);
       una que no está declarada en `STORE` se queda como texto
     - **Nivel por sesión (opcional):** una tercera columna con `login`, `logout` o `guest`
-      (combinables con coma). Ese nivel solo existe para ese estado; sin la columna lo ven todos.
-      Varios niveles con el mismo número y distinto estado se alternan:
+      (combinables con coma). Ese nivel solo existe para ese tipo de usuario; sin la columna lo
+      ven todos. Varios niveles con el mismo número y distinto tipo de usuario se alternan:
 
       | Breadcrumb | | |
       |---|---|---|
@@ -139,7 +139,7 @@ La tabla en Drive permite al autor configurar:
 | Nivel `Detalle de {store.breadcrumb.name}` | "Detalle de Apple iPhone 15 Pro" cuando llega el nombre |
 | Dos niveles dinámicos (`{store.breadcrumb.brand}` y `{store.breadcrumb.name}`) | Cada uno aparece cuando llega su valor: "Inicio › Celulares › Apple › iPhone 15 Pro" |
 | Nivel sin marca (`Mi cuenta`) | El texto tal cual |
-| Niveles con estado en la última columna | Solo se pintan los del estado de quien visita ("Inicio › Visitante" sin sesión, "Inicio › Mi cuenta" con sesión); al cambiar la sesión la página se recarga |
+| Niveles con tipo de usuario en la última columna | Solo se pintan los del tipo de usuario de quien visita ("Inicio › Visitante" sin sesión, "Inicio › Mi cuenta" con sesión); al cambiar la sesión la página se recarga |
 | Fila `Session` = `true` / `false` | La ruta completa se oculta sin sesión / con sesión, al instante |
 
 ### Cómo probarlo

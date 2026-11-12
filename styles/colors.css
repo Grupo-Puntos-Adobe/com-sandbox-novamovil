@@ -224,12 +224,12 @@
   --block-session-example-button-secondary-hover: color-mix(in srgb, var(--color-primary) 8%, var(--color-gray-100));
   --block-session-example-button-secondary-text: var(--color-gray-900);
   --block-session-example-tag-background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
-  --block-session-example-signed-in-background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
-  --block-session-example-signed-in-text: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
+  --block-session-example-user-background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
+  --block-session-example-user-text: color-mix(in srgb, var(--color-success) 65%, var(--color-gray-900));
   --block-session-example-guest-background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
   --block-session-example-guest-text: var(--color-primary);
-  --block-session-example-signed-out-background: var(--color-gray-100);
-  --block-session-example-signed-out-text: var(--color-gray-700);
+  --block-session-example-none-background: var(--color-gray-100);
+  --block-session-example-none-text: var(--color-gray-700);
 
   /* account-profile ("Mi cuenta": the data of the user of the session) */
   --account-profile-title: var(--heading-color);

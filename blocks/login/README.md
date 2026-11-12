@@ -50,7 +50,8 @@ muestra uno u otro.
 - Columna centrada con el grid (`container-fluid > row row-center > col-24`): todo el ancho en
   móvil y 420 px desde tablet
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`; también acepta la fila
-  `Session` y el estado en la última columna de cualquier fila (como todo bloque NovaMóvil)
+  `Session` y el tipo de usuario en la última columna de cualquier fila (como todo bloque
+  NovaMóvil)
 - Accesible: tabs con `role="tablist"` / `tab` / `tabpanel` (flechas, Inicio y Fin para cambiar
   de tab), cada campo con su `label`, título como encabezado de nivel 1 y foco visible
 - Pintado seguro: los textos se ponen siempre como texto (nunca HTML) y solo acepta enlaces del
@@ -62,8 +63,8 @@ El componente usa el nombre del bloque como prefijo de todas sus clases (`login-
 estilos van dentro de `.login`. Se construye con `div` y roles ARIA, excepto lo que necesita un
 formulario para funcionar (`form`, `label`, `input`, `button`) y los enlaces (`a`).
 
-- `login-wrapper` – Contenedor de la sección; lleva las clases `session-only-*` de
-  `sessions.css` (quién ve el login, ver [Sesión y redirección](#sesión-y-redirección))
+- `login-wrapper` – Contenedor de la sección; lleva las clases `session-only-none` /
+  `session-only-guest` de `sessions.css` (quién ve el login, ver [Sesión y redirección](#sesión-y-redirección))
 - `login` – Contenedor principal del componente (el bloque)
 - `login-frame` – Columna centrada del grid (`col-24`)
 - `login-header` – Título y descripción
@@ -89,7 +90,7 @@ formulario para funcionar (`form`, `label`, `input`, `button`) y los enlaces (`a
 - `login-legal` / `login-legal-link` – Texto legal y sus enlaces
 
 ```text
-div.login-wrapper.session-only.session-only-signed-out[.session-only-guest]   (ver abajo)
+div.login-wrapper.session-only.session-only-none[.session-only-guest]   (ver abajo)
 └─ div.login
    └─ div.container-fluid
       └─ div.row.row-center
@@ -264,9 +265,9 @@ Quién ve el bloque (clases de `styles/foundations/sessions.css` en `login-wrapp
 
 | Página | Lo ven |
 |---|---|
-| `login` (`Session: false`) | Sin sesión **e invitado** (el invitado puede iniciar sesión) |
-| Cualquier otra (paso de compra) | Solo sin sesión (el invitado ya cumplió el paso) |
-| La tabla trae la fila `Session` | Lo que diga esa fila (`true` / `false`) |
+| `login` (`Session: false`) | Sin sesión **e invitado** (`[USER_TYPES.NONE, USER_TYPES.GUEST]`: el invitado puede iniciar sesión) |
+| Cualquier otra (paso de compra) | Solo sin sesión (`[USER_TYPES.NONE]`: el invitado ya cumplió el paso) |
+| La tabla trae la fila `Session` | Además de lo de arriba, lo que diga esa fila (`true` / `false`): las dos reglas se suman |
 
 - La regla de la página (Metadata `Session: false` + `Redirect To`) la revisa `session.js` desde
   `head.html` en todas las páginas, antes de que cargue este bloque: el bloque no necesita nada más.
@@ -388,14 +389,14 @@ Móvil:
 
 - `login.js` – Lee la tabla y construye título, tabs, formulario y texto legal
 - `login.css` – Estilos del bloque, todos dentro de `.login` (tamaños, colores y resoluciones)
-- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y estado en la
-  última columna
+- `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y tipo de
+  usuario en la última columna
 - `scripts/foundations/block-utils.js` – `readTableCell`, `readEndpoint` (fila `Endpoint`), `getSafeHref`,
   `toSafeSitePath` y `createElementWithClass`
 - `scripts/foundations/messages.js` – `errorResponseMessage` por defecto
 - `scripts/foundations/session.js` – `loginUser` (hace la petición y guarda la sesión),
-  `continueAsGuest`, `getSessionData` (`page.rule` dice si es la página `login`), `goToPage` y
-  `showOnlyForSessionStates`; la regla de la página corre sola en todas las páginas desde
+  `continueAsGuest`, `getSessionData` (`page.rule` dice si es la página `login`), `goToPage`,
+  `USER_TYPES` y `showOnlyForUserTypes`; la regla de la página corre sola en todas las páginas desde
   `head.html`
 - `styles/foundations/sessions.css` – Oculta el login cuando ya hay sesión (lo carga
   `session.js`)
@@ -409,6 +410,5 @@ Móvil:
 - Guías: `documentation/08-sesiones.md` (sesiones), `documentation/07-integracion-endpoints.md`
   (servicio) y `documentation/06-styles-classname.md`
   (`block-options`)
-- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`), el bloque de crear cuenta
-  (tab **Crear cuenta**) y un bloque del proyecto en `/cuenta` para que su regla `Session: true`
-  corra (hoy solo tiene texto)
+- Pendiente: enviar los datos del formulario (`SEND_FORM_CREDENTIALS`) y el bloque de crear cuenta
+  (tab **Crear cuenta**)

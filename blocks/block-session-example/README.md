@@ -25,34 +25,35 @@ Es solo de muestra (página `/ejemplo-sesion`, pública): los bloques del sitio 
 cambian. Sirve para copiar la forma de hacerlo en un bloque nuevo.
 
 Lo de sesiones **no** está en este bloque: viene de `scripts/foundations/block-options.js` (filas
-`Session` y estados en la última columna, igual en cualquier bloque NovaMóvil) y de
-`scripts/foundations/session.js` (`getSessionData`, `SESSION_CHANGE_EVENT`, `showOnlyForSessionStates`) y
-del store (`scripts/foundations/store.js`: el usuario). Este bloque
+`Session` y tipos de usuario en la última columna, igual en cualquier bloque NovaMóvil), de
+`scripts/foundations/session.js` (`getSessionData`, `SESSION_CHANGE_EVENT`, `USER_TYPES`,
+`showOnlyForUserTypes`) y del store (`scripts/foundations/store.js`: el usuario y su `type`). Este bloque
 solo lo pone en práctica.
 
 ### Características
 
 - **Bloque completo por sesión:** la fila `Session` (cualquier bloque la acepta): `true` = solo con
   sesión, `false` = solo sin sesión, sin la fila = siempre. Nunca redirige
-- **Panel de estado:** etiqueta del estado (verde con sesión, azul invitado, gris sin sesión) y un
-  texto por estado; con sesión saluda con el nombre usando la marca del store
+- **Panel de estado:** etiqueta del tipo de usuario (verde `user`, azul `guest`, gris `none`) y un
+  texto por tipo; con sesión saluda con el nombre usando la marca del store
   `{store.user.firstName}` en Drive (se llena sola)
-- **Filas por sesión, igual que en cualquier bloque NovaMóvil:** el estado va en la **última
-  columna** (`Item | texto | login`), tenga la fila 2 o más columnas; las filas de otros estados
-  se quitan antes de pintar y la página se recarga al cambiar la sesión
+- **Filas por tipo de usuario, igual que en cualquier bloque NovaMóvil:** el tipo va en la **última
+  columna** (`Item | texto | login`), tenga la fila 2 o más columnas; las filas de otros tipos
+  se quitan antes de pintar y la página se recarga al cambiar `user.type`
 - **Botones por sesión:** "Iniciar sesión" y "Continuar como invitado" solo sin sesión; "Cerrar
   sesión" con sesión o como invitado
 - **Tus datos:** con la fila `User Title`, una tarjeta con los datos del usuario, que vienen del
   **store** (`store.subscribe('user', …)`, lo llena `session.js`): nombre, correo, teléfono, ID,
-  verificado e ID de sesión; el bloque solo le pone su texto a cada uno y agrega el tipo. Se ve con
+  verificado e ID de sesión; el bloque solo le pone su texto a cada uno y agrega el tipo (de
+  `user.type`). Se ve con
   sesión **y como invitado** (el invitado guarda un perfil con la misma forma: usuario `guest`,
   nombre "Invitado"); sin sesión no se ve. Nunca muestra el token
 - **Llamada privada:** con `Private Endpoint` y sesión, llama con el token (Bearer) y muestra la
   respuesta
-- El estado, la etiqueta y los botones cambian al instante; las filas por sesión, al recargar (sola)
+- El tipo, la etiqueta y los botones cambian al instante; las filas por tipo, al recargar (sola)
 - Grid de 24 columnas: 1 tarjeta por fila en móvil, 2 en tablet y 3 en desktop
 - Estilos y clases extra del autor con las filas `Styles` y `Classname`
-- Accesible: el estado se anuncia al cambiar (`aria-live="polite"`) y el título es un encabezado de
+- Accesible: el tipo se anuncia al cambiar (`aria-live="polite"`) y el título es un encabezado de
   nivel 2
 
 ### Estructura / Descripción de clases
@@ -68,9 +69,9 @@ sesión **no** está en su CSS: lo hacen las clases `session-only-*` de
 - `block-session-example-status` – Panel de estado
 - `block-session-example-status-title` – Título del panel ("Tu estado")
 - `block-session-example-status-current` – Lo que cambia con la sesión (`aria-live="polite"`)
-- `block-session-example-badge` – Etiqueta del estado; `-badge-signed-in`, `-badge-guest`,
-  `-badge-signed-out`
-- `block-session-example-status-text` – Texto del estado
+- `block-session-example-badge` – Etiqueta del tipo; `-badge-user`, `-badge-guest`, `-badge-none`
+  (colores `--block-session-example-user-*`, `-guest-*`, `-none-*`)
+- `block-session-example-status-text` – Texto del tipo
 - `block-session-example-actions` – Botones
 - `block-session-example-button` – Botón (y `-button-primary` para "Iniciar sesión")
 - `block-session-example-item` – Tarjeta de cada `Item`
@@ -83,12 +84,14 @@ sesión **no** está en su CSS: lo hacen las clases `session-only-*` de
   `block-session-example-user-label` + `col-10 col-md-6 col-lg-4` (`role="rowheader"`) /
   `block-session-example-user-value` + `col-14 col-md-18 col-lg-20` (`role="cell"`)
 - `block-session-example-private` – Llamada privada (`-private-title`, `-private-text`)
-- `session-only session-only-*` – Clases de `sessions.css`: las pone el JS en los botones y la
-  llamada privada, y `block-options.js` en el wrapper cuando la tabla tiene la fila `Session`
+- `session-only session-only-*` – Clases de `sessions.css`: las pone el JS
+  (`showOnlyForUserTypes`) en los botones, "Tus datos" y la llamada privada
+- `session-hidden` – La pone `block-options.js` en el wrapper cuando la tabla tiene la fila
+  `Session` y no toca (`store` `session.isSession`)
 
 ```text
-div.block-session-example-wrapper            (fila Session: true → .session-only-signed-in;
-│                                              false → .session-only-signed-out.session-only-guest)
+div.block-session-example-wrapper            (fila Session: .session-hidden mientras
+│                                              session.isSession no es true / false)
 └─ div.block-session-example
    └─ div.container-fluid
       └─ div.row.row-gutter-16.row-gutter-y-16
@@ -96,12 +99,12 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24 > div.block-session-example-status
          │  ├─ div.block-session-example-status-title
          │  ├─ div.block-session-example-status-current[aria-live]   (getSessionData + marcas del store)
-         │  │  └─ div.-status-body > div.-badge.-badge-{estado} + div.-status-text
+         │  │  └─ div.-status-body > div.-badge.-badge-{user|guest|none} + div.-status-text
          │  └─ div.block-session-example-actions
-         │     ├─ a.-button.-button-primary.session-only.session-only-signed-out
-         │     ├─ button.-button.session-only.session-only-signed-out
-         │     └─ button.-button.session-only.session-only-signed-in.session-only-guest
-         ├─ div.col-24.session-only.session-only-signed-in.session-only-guest
+         │     ├─ a.-button.-button-primary.session-only.session-only-none
+         │     ├─ button.-button.session-only.session-only-none
+         │     └─ button.-button.session-only.session-only-user.session-only-guest
+         ├─ div.col-24.session-only.session-only-user.session-only-guest
          │  └─ div.block-session-example-user
          │     ├─ div.block-session-example-user-title[role=heading][aria-level=3]
          │     └─ div.block-session-example-user-data[aria-live]          (store.subscribe('user'))
@@ -112,7 +115,7 @@ div.block-session-example-wrapper            (fila Session: true → .session-on
          ├─ div.col-24.col-md-12.col-lg-8 > div.block-session-example-item × N   (filas que quedan)
          │  ├─ div.block-session-example-item-tag
          │  └─ div.block-session-example-item-text
-         └─ div.col-24.session-only.session-only-signed-in > div.block-session-example-private
+         └─ div.col-24.session-only.session-only-user > div.block-session-example-private
 ```
 
 ### Resoluciones
@@ -145,16 +148,17 @@ contenido no tienen texto por defecto: sin texto, esa parte no se pinta.
 
 4. **`Signed In Text`** / **`Guest Text`** / **`Signed Out Text`**
     - **Tipo:** Texto
-    - **Descripción:** Texto del panel en cada estado. Puede llevar marcas del store, como
+    - **Descripción:** Texto del panel para cada tipo (`user`, `guest`, `none`). Puede llevar marcas del store, como
       `{store.user.firstName}` (el nombre del usuario): se llenan solas
     - **Por defecto:** ninguno. Sin `Guest Text`, el invitado ve solo su etiqueta
 
 5. **`Item`** (las que quieras)
-    - **Tipo:** `Item` | texto | estado (opcional, en la **última columna**)
-    - **Descripción:** Una tarjeta. Estado: `login`, `guest`, `logout` o combinados
-      (`login, guest`); sin estado (o vacía) la ven todos. Es la regla general: **cualquier
-      fila de cualquier bloque NovaMóvil** puede terminar con un estado, sin importar cuántas
-      columnas tenga; si la celda trae otro texto además del estado, no cuenta
+    - **Tipo:** `Item` | texto | tipo de usuario (opcional, en la **última columna**)
+    - **Descripción:** Una tarjeta. Tipo: `login`, `guest`, `logout` o combinados con coma
+      (`login, guest`); sin tipo (o vacía) la ven todos (todas las combinaciones en
+      `documentation/08-sesiones.md`, 6.1). Es la regla general: **cualquier fila de cualquier
+      bloque NovaMóvil** puede terminar con un tipo, sin importar cuántas columnas tenga; si la
+      celda trae otro texto (o `signed-in` / `signed-out`), no cuenta
     - **Por defecto:** ninguna
 
 6. **`Login Link`**
@@ -189,7 +193,7 @@ tablas **Block Session Example**:
 
 | # | Fila `Session` | Qué demuestra |
 |---|---|---|
-| 1 | vacía | El bloque completo: estado, tus datos, tarjetas por estado, botones y llamada privada. Se ve siempre |
+| 1 | vacía | El bloque completo: tipo, tus datos, tarjetas por tipo, botones y llamada privada. Se ve siempre |
 | 2 | `true` | "Solo con sesión": el bloque entero se oculta sin sesión (y como invitado) |
 | 3 | `false` | "Solo sin sesión": el bloque entero se oculta al iniciar sesión; el invitado lo sigue viendo |
 
@@ -201,7 +205,7 @@ La regla de la **página** (Metadata `Session` / `Redirect To`) no se usa aquí:
 La tabla en Drive permite al autor configurar:
 
 - **Quién ve** el bloque completo (`Session`) y cada tarjeta (`Item`)
-- Los **textos** de cada estado, los **botones** y el título de **tus datos** (`User Title`)
+- Los **textos** de cada tipo, los **botones** y el título de **tus datos** (`User Title`)
 - La **llamada privada** (`Private Endpoint`)
 
 ![Vista Tabla en Drive](/documentation/readme/block-session-example/drive-table.png)
@@ -218,7 +222,7 @@ La tabla en Drive permite al autor configurar:
 | Fila `Session` = `true` | El bloque entero solo se ve con sesión (la página no redirige) |
 | Fila `Session` = `false` | El bloque entero se oculta al iniciar sesión (el invitado lo sigue viendo) |
 | Fila `Session` = `true` / `false` y se inicia o cierra sesión | El bloque aparece o desaparece al instante, sin recargar |
-| `Item` con `guest y otra palabra` en la última columna | No cuenta como estado: la tarjeta se ve siempre |
+| `Item` con `guest y otra palabra` (o `signed-in`) en la última columna | No cuenta como tipo: la tarjeta se ve siempre |
 | Panel de edición | Se ve todo, para poder editarlo |
 | Clic en "Iniciar sesión" (`Login Link` = `/login`) | Va a `/login`; al iniciar sesión, la página `login` manda a su `Redirect To` (`/cuenta`), no de regreso al ejemplo (nada viaja en la URL) |
 | Sin `Private Endpoint` | No se pinta la llamada privada |
@@ -260,7 +264,7 @@ Móvil:
 ### Cómo hacerlo en tu bloque (copiar y pegar)
 
 ```js
-import { getSessionData, showOnlyForSessionStates } from '../../scripts/foundations/session.js';
+import { USER_TYPES, getSessionData, showOnlyForUserTypes } from '../../scripts/foundations/session.js';
 import { store } from '../../scripts/foundations/store.js';
 import {
   createElementWithClass, readPrivateEndpoint,
@@ -271,15 +275,15 @@ import { post, REQUEST_TYPE } from '../../scripts/api/http-client.js';
 //    | Session | true |                          ← el bloque entero solo con sesión
 //    | Title   | Tus promociones | login |       ← esta fila solo con sesión (última columna)
 
-// 1) el estado de la sesión con un solo llamado
-const { state, isSignedIn, isGuest } = getSessionData();
+// 1) el tipo de usuario con un solo llamado ('user' | 'guest' | 'none')
+const { type, isSignedIn, isGuest } = getSessionData();
 
 // 2) los datos del usuario: siempre del store (lo llena session.js en cada página)
-const user = store.get('user');      // { userId, firstName, fullName, email, …, isGuest }
+const user = store.get('user');      // { type, userId, firstName, fullName, email, … }
 //    para solo mostrarlos como texto, en Drive: "Hola, {store.user.firstName}" (sin código)
 
 // 3) algo que solo ve quien tiene sesión (sessions.css lo oculta a los demás)
-showOnlyForSessionStates(couponCard, 'signed-in');
+showOnlyForUserTypes(couponCard, [USER_TYPES.USER]);
 
 // 4) repintar HTML con el usuario cuando cambie (ahora y en cada cambio)
 const LABELS = { fullName: 'Nombre', email: 'Correo', phone: 'Teléfono' };
@@ -296,16 +300,16 @@ if (privateEndpoint) post(privateEndpoint, body, { interceptor: REQUEST_TYPE.PRI
 
 ### Archivos y dependencias
 
-- `block-session-example.js` – Lee la tabla y arma el estado, las tarjetas y los botones
+- `block-session-example.js` – Lee la tabla y arma el panel del tipo, las tarjetas y los botones
 - `block-session-example.css` – Estilos del bloque, todos dentro de `.block-session-example`
-- `scripts/foundations/session.js` – `getSessionData` (estado), `SESSION_CHANGE_EVENT` (para
-  repintar), `showOnlyForSessionStates`, `continueAsGuest`, `logoutUser`
-- `scripts/foundations/store.js` – El usuario (`store.subscribe('user', …)`) y la marca
+- `scripts/foundations/session.js` – `getSessionData` (`type`), `SESSION_CHANGE_EVENT` (para
+  repintar), `USER_TYPES`, `showOnlyForUserTypes`, `continueAsGuest`, `logoutUser`
+- `scripts/foundations/store.js` – El usuario y su `type` (`store.subscribe('user', …)`) y la marca
   `{store.user.firstName}` del saludo
 - `styles/foundations/sessions.css` – Clases `session-only-*` que muestran u ocultan (lo carga
   `session.js`)
 - `scripts/foundations/block-options.js` – Filas `Styles`, `Classname` y `Session`, y filas por
-  sesión (última columna)
+  tipo de usuario (`filterRowsByUserType`, última columna)
 - `scripts/api/http-client.js` – `post` con `REQUEST_TYPE.PRIVATE`
 - `scripts/foundations/block-utils.js` – `readPrivateEndpoint` para la fila `Private Endpoint`,
   `toSafeSitePath` para el enlace de `Login Link` y `createElementWithClass`

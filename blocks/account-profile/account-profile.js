@@ -4,8 +4,8 @@
  * place that has it (session.js fills it on every page):
  *
  *   store.subscribe('user', (user) => render(user));   now and every time the user changes
- *     user → { userId, firstName, lastName, fullName, email, phone, verified, sessionId,
- *              isGuest } (empty values without a session; never the token)
+ *     user → { type, userId, firstName, lastName, fullName, email, phone, verified,
+ *              sessionId } (type 'user' | 'guest'; empty values without a session; no token)
  *
  * The block only decides WHICH data to paint and WITH WHICH label: each one has a label row in
  * the table (FIELD_LABEL_ROWS); without its row, or empty in the user, it is not painted.

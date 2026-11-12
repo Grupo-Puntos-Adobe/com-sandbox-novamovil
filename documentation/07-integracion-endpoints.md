@@ -51,7 +51,7 @@ Lo que axios hace (interceptores, timeout, errores uniformes, JSON automático) 
 | `styles/foundations/toast.css` | 🆕 | Estilos de la alerta (`.toast-novamovil`) | `1bccaff`, `db5a73d` |
 | `blocks/empty-list-message/` | 🆕 | Aviso "no hay elementos" compartido por las tres tarjetas: `buildEmptyListMessage({ icon, title, description })` + su CSS. Solo pinta lo que le manda la tarjeta | — |
 | `styles/colors.css` | 🆕 | Colores de la alerta (`--toast-*`) | `1bccaff` |
-| `scripts/foundations/block-utils.js` | 🆕 | `readTableCell` (leer el endpoint tal cual), `getAlertOptions`, `getSafeHref` | `70c643f` |
+| `scripts/foundations/block-utils.js` | 🆕 | `readEndpoint` (leer la fila `Endpoint` tal cual), `readTableCell` (las demás filas), `getAlertOptions`, `getSafeHref` | `70c643f` |
 | `blocks/card-categories/card-categories.js` | 🆕 | Pide `data.categories` | `1bccaff` |
 | `blocks/card-featured/card-featured.js` | 🆕 | Pide `data.products` | `70c643f` |
 | `blocks/card-promotions/card-promotions.js` | 🆕 | Pide `data.promotions` | `b44c69d` |
@@ -78,7 +78,7 @@ Documento de Drive
                      │
                      ▼
 blocks/card-categories/card-categories.js  (decorate)
-  ├─ readTableCell(block, 'endpoint')          ← scripts/foundations/block-utils.js
+  ├─ readEndpoint(block)                       ← scripts/foundations/block-utils.js
   ├─ ¿hay endpoint?
   │    ├─ NO → pinta FALLBACK_CATEGORIES (JSON interno del bloque)
   │    └─ SÍ → pinta esqueleto y llama:
@@ -271,11 +271,12 @@ header fijo:
 
 | Función | Por qué existe |
 |---|---|
-| `readTableCell(block, 'endpoint')` | `readBlockConfig` de AEM convierte los enlaces en URLs absolutas **de la página**. Una ruta relativa `/api/v1/...` terminaría apuntando al sitio y no a la API. Esta función lee la celda **tal como la escribió el autor** (texto o `href`) |
+| `readEndpoint(block)` | `readBlockConfig` de AEM convierte los enlaces en URLs absolutas **de la página**. Una ruta relativa `/api/v1/...` terminaría apuntando al sitio y no a la API. Esta función lee la fila `Endpoint` **tal como la escribió el autor** (texto o `href`); sin la fila devuelve `''`. La usan `card-*` y `product-detail` |
+| `readTableCell(block, fila)` | Lee cualquier otra fila de la tabla tal cual (`{ found, text, href }`); `readEndpoint` la usa por dentro |
 | `readRowTextOrDefault(block, fila, textoPorDefecto)` | Fila que no existe → el texto por defecto; fila vacía → `''` (esa parte no se pinta) |
 | `getAlertOptions(config)` | Convierte las filas `Alert Duration` (segundos) y `Alert Color` en `{ duration, variant }` para `showToast`. Por defecto 5 s y `error` |
 | `getSafeHref(path)` | Los enlaces que vienen del servicio solo se aceptan si son rutas del sitio o `http(s)`. Bloquea `javascript:` y similares |
-| `formatPrice(value, currency)` | Devuelve el precio ya formateado (`$19,999`, sin decimales) con `LOCALE` y `CURRENCY` de `scripts/foundations/messages.js`; si la moneda no es válida usa `CURRENCY`. Hoy lo usa `card-featured`; cualquier bloque con precios debe usarlo |
+| `formatPrice(value, currency)` | Devuelve el precio ya formateado (`$19,999`, sin decimales) con `LOCALE` y `CURRENCY` de `scripts/foundations/messages.js`; si la moneda no es válida usa `CURRENCY`. Hoy lo usan `card-featured`, `product-catalog` y `product-detail`; cualquier bloque con precios debe usarlo |
 | `buildSectionTitle(block, prefijo)` | Arma el título de la sección desde la fila `Title` (`div.{prefijo}-header` con el título); sin texto no pinta nada. Sirve para cualquier bloque con fila `Title` |
 
 ### Paso 7 · Usarlo en cada bloque (`blocks/card-*/card-*.js`)
@@ -289,7 +290,7 @@ import { readBlockConfig } from '../../scripts/aem.js';
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
 import MESSAGES from '../../scripts/foundations/messages.js';            // mensajes genéricos
-import { readTableCell, readRowTextOrDefault, getAlertOptions, … } from '../../scripts/foundations/block-utils.js';
+import { readEndpoint, readTableCell, readRowTextOrDefault, getAlertOptions, … } from '../../scripts/foundations/block-utils.js';
 
 const FALLBACK_CATEGORIES = [ … ];   // JSON interno: se usa si NO hay fila Endpoint
 const SKELETON_ELEMENTS = 6;         // tarjetas grises mientras carga
@@ -298,7 +299,7 @@ const EMPTY_LIST_ICON = '🗂️';        // icono del aviso vacío si la tabla 
 function readCategoriesSettings(block) {   // todo lo que viene de la tabla, con sus defaults
   const readCellText = (key) => readTableCell(block, key).text;
   return {
-    endpoint: …,                                      // fila Endpoint, tal cual
+    endpoint: readEndpoint(block),                    // fila Endpoint, tal cual
     alert: getAlertOptions(readBlockConfig(block)),   // Alert Duration / Alert Color
     messages: {
       errorResponseMessage: readCellText('error response message')  // fila de la tabla…
@@ -423,7 +424,7 @@ elementos". El detalle técnico queda en la consola del navegador (`[card-catego
 ```js
 import { get } from '../../scripts/api/http-client.js';
 import { showToast } from '../../scripts/foundations/toast.js';
-import { readTableCell, getAlertOptions } from '../../scripts/foundations/block-utils.js';
+import { readEndpoint, getAlertOptions } from '../../scripts/foundations/block-utils.js';
 // … mismo patrón del paso 7: endpoint del documento, fallback, esqueleto, try/catch
 ```
 
@@ -502,7 +503,7 @@ try {
 |---|---|---|
 | `scripts/aem.js` | ❌ No | Se **usan** `readBlockConfig` y `loadCSS` |
 | `scripts/scripts.js` | ❌ No | Tampoco para las sesiones: arrancan desde `session.js`, que carga `head.html` |
-| `head.html` | ✏️ Sí, para las sesiones | Una línea que carga `scripts/foundations/session.js` (no es parte de la integración de endpoints) |
+| `head.html` | ✏️ Sí, para las sesiones | Dos líneas que cargan `scripts/foundations/session.js` y `store.js` (no son parte de la integración de endpoints) |
 | `styles/styles.css` | ✅ Sí, 1 variable | `--z-index-toast: 900` |
 | `package.json` | ❌ No | No se instaló ninguna dependencia |
 | `fstab.yaml` / configuración | ❌ No | El endpoint vive en el documento, no en configuración |

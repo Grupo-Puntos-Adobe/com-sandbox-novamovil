@@ -36,6 +36,7 @@ const STORE = {
   // the user of the session, filled ONLY by session.js (login, guest, every page start) and
   // emptied when the session ends; never the token
   user: {
+    type: '', // what type of user it is: 'user' (login) | 'guest' (invitado) | '' (nobody)
     userId: '',
     firstName: '', // {store.user.firstName}
     lastName: '',
@@ -44,13 +45,11 @@ const STORE = {
     phone: '',
     verified: false,
     sessionId: '',
-    isGuest: false, // true for "Continuar como invitado" (userId 'guest', firstName 'Invitado')
   },
-  // who is visiting, filled ONLY by session.js (every page start, login, guest, logout, expiry):
-  //   login → isSession true · guest → isGuest true · nobody → both false
+  // is there a session? filled ONLY by session.js (every page start, login, guest, logout,
+  // expiry). A guest is not a session (its type is in user.type)
   session: {
-    isSession: false, // true ONLY with a real login (it has a token); a guest is not a session
-    isGuest: false, // true after "Continuar como invitado"
+    isSession: false, // true ONLY with a real login (it has a token)
     token: '', // 'Bearer …' for the Authorization header of private calls; '' without a login
   },
 };

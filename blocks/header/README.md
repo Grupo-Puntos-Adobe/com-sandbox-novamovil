@@ -163,8 +163,8 @@ El documento en Drive permite al autor configurar:
 2. **Móvil o tablet:** marca, lupa, cuenta, carrito y hamburguesa; la hamburguesa abre el menú
    debajo y `Escape` lo cierra.
 3. **Lupa:** se despliega el buscador; con el campo vacío no se envía.
-4. **Mi cuenta** sin sesión: va a `/cuenta`, y esa página decide con su Metadata (hoy `cuenta` solo
-   tiene texto: se ve; con un bloque del proyecto redirigiría a `/login`).
+4. **Mi cuenta** sin sesión: va a `/cuenta`, y esa página decide con su Metadata
+   (`Session: true`): sin sesión `/cuenta` va a `/login`.
 5. **Documento `nav` sin logo o sin enlaces de herramientas:** logo por defecto, `/cuenta` y
    `/carrito`.
 
@@ -200,8 +200,8 @@ El header **no cambia con la sesión** por ahora: siempre muestra los mismos ico
   Metadata (`Session: true` + `Redirect To: /login`; ver `documentation/08-sesiones.md`). La regla
   corre en todas las páginas, tengan bloques o no.
 - Pendiente para otra entrega: mostrar "Hola, {nombre}" y "Cerrar sesión" con sesión, usando
-  `getSessionData()` y `SESSION_CHANGE_EVENT` de `scripts/foundations/session.js` (como
-  `blocks/account-profile/`).
+  los datos del usuario del store (`store.subscribe('user', …)` de `scripts/foundations/store.js`,
+  como `blocks/account-profile/`).
 
 ### Archivos y dependencias
 
